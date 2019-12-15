@@ -85,7 +85,7 @@ public class GameSocket {
 
                 this.gameLoopService.enqueue(() -> Player
                         .createOrGet(userId)
-                        .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY())
+                        .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY(), moveCommandDto.getAngle())
                         .map(Collections::singletonList)
                         .orElse(Collections.emptyList())
                 );

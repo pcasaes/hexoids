@@ -102,14 +102,21 @@
         const m = {
             "command": "MOVE_PLAYER",
             "moveX": 0,
-            "moveY": 0
+            "moveY": 0,
         };
 
+        let hasAngle = false;
         for (let evt = moveQueue.shift(); !!evt; evt = moveQueue.shift()) {
-            m.moveX += evt.x;
-            m.moveY += evt.y;
+            if (evt.move) {
+                m.moveX += evt.move.x;
+                m.moveY += evt.move.y;
+            }
+            if (evt.angle) {
+                m.angle = evt.angle.value;
+                hasAngle = true;
+            }
         }
-        if (m.moveX !== 0 || m.moveY !== 0) {
+        if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
             sendMessage(m);
         }
     }, 50);
@@ -137,7 +144,7 @@
                 sprite.x = move.x;
                 sprite.y = move.y;
 
-                sprite.setRotation(resp.angle + Math.PI / 2);
+                sprite.setRotation(resp.angle);
 
             } else if (players[resp.playerId] && resp.event === 'PLAYER_LEFT') {
                 const sprite = players[resp.playerId].sprite;
@@ -263,8 +270,21 @@
                 */
 
                 //console.log(pointer.movementX + " " + pointer.movementY);
-                const move = transform.model(pointer.movementX, pointer.movementY);
-                moveQueue.push(move);
+                const command = {};
+                if (MOVE_CARTESIAN) {
+                    command.move = transform.model(pointer.movementX, pointer.movementY);
+                }
+                if (MOVE_RADIAL) {
+                    const sprite = players[USER_ID].sprite;
+                    const x = sprite.x + pointer.movementX;
+                    const y = sprite.y + pointer.movementY;
+                    if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
+                        command.angle = {
+                            "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y)
+                        };
+                    }
+                }
+                moveQueue.push(command);
 
             }
         }, this);
@@ -277,7 +297,24 @@
             }
         }, this);
 
+        let MOVE_CARTESIAN = true;
+        let MOVE_RADIAL = true;
+
         this.input.keyboard.on('keydown_Z', function (event) {
+            MOVE_CARTESIAN = true;
+        }, this);
+        this.input.keyboard.on('keyup_Z', function (event) {
+            MOVE_CARTESIAN = false;
+        }, this);
+
+        this.input.keyboard.on('keydown_X', function (event) {
+            MOVE_RADIAL = true;
+        }, this);
+        this.input.keyboard.on('keyup_X', function (event) {
+            MOVE_RADIAL = false;
+        }, this);
+
+        this.input.keyboard.on('keydown_C', function (event) {
             sendMessage({
                 "command": "FIRE_BOLT"
             })
