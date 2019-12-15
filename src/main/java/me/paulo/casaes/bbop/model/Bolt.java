@@ -91,6 +91,10 @@ public class Bolt {
         return false;
     }
 
+    boolean isActive() {
+        return !isExhausted();
+    }
+
     private List<EventDto> hits() {
         return StreamSupport
                 .stream(Player.iterable().spliterator(), false)
@@ -103,12 +107,12 @@ public class Bolt {
         if (isExhausted()) {
             return Collections.emptyList();
         }
-        boolean isHit = !player.getId().equals(ownerPlayerId) && player.collision(prevX, prevY, x, y, COLLISION_RADIUS);
+        boolean isHit = !player.is(ownerPlayerId) && player.collision(prevX, prevY, x, y, COLLISION_RADIUS);
 
         if (isHit) {
             this.exhausted = true;
             List<EventDto> events = new ArrayList<>(2);
-            events.add(player.destroyedBy(this.ownerPlayerId));
+            events.addAll(player.destroyedBy(this.ownerPlayerId));
             events.add(BoltExhaustedEventDto.of(this.idString));
             return events;
         }
@@ -116,7 +120,7 @@ public class Bolt {
         return Collections.emptyList();
     }
 
-    private EventDto toEvent() {
+    EventDto toEvent() {
         return isExhausted() ?
                 BoltExhaustedEventDto.of(this.idString) :
                 BoltMovedEventDto.of(this.idString, this.ownerPlayerId, this.x, this.y, this.angle);
@@ -160,6 +164,10 @@ public class Bolt {
         toRemove
                 .forEach(ACTIVE_BOLTS::remove);
 
+    }
+
+    boolean isOwnedBy(String playerId) {
+        return this.ownerPlayerId.equals(playerId);
     }
 
 }

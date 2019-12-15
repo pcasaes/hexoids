@@ -1,8 +1,5 @@
 package me.paulo.casaes.bbop.model;
 
-import io.quarkus.arc.Arc;
-import me.paulo.casaes.bbop.service.ConfigurationService;
-
 public class Config {
 
     public enum Environment {
@@ -10,30 +7,31 @@ public class Config {
         DEV
     }
 
-    private ConfigurationService configurationService;
-
     private Environment env;
+    private int maxBolts;
 
 
     private static class ConfigHolder {
         static final Config INSTANCE = new Config();
     }
 
-    public static Config getConfig() {
+    public static Config get() {
         return ConfigHolder.INSTANCE;
     }
 
     public Environment getEnv() {
-        if (this.env == null) {
-            this.env = Environment.valueOf(getConfigurationService().getEnvironment());
-        }
-        return this.env;
+        return env;
     }
 
-    private ConfigurationService getConfigurationService() {
-        if (this.configurationService == null) {
-            this.configurationService = Arc.container().instance(ConfigurationService.class).get();
-        }
-        return this.configurationService;
+    public void setEnv(String env) {
+        this.env = Environment.valueOf(env);
+    }
+
+    public int getMaxBolts() {
+        return maxBolts;
+    }
+
+    public void setMaxBolts(int maxBolts) {
+        this.maxBolts = maxBolts;
     }
 }

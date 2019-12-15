@@ -1,6 +1,7 @@
 package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.EventDto;
+import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
@@ -10,6 +11,7 @@ import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -18,8 +20,6 @@ import java.util.stream.Collectors;
 public class Player {
 
     private static final float MIN_MOVE = 100f * Float.MIN_VALUE;
-
-    private static final int MAX_BOLTS = 5;
 
     private static final Random RNG = new Random();
 
@@ -47,13 +47,20 @@ public class Player {
 
     public void fire() {
         firedBolts.removeIf(Bolt::isExhausted);
-        if (firedBolts.size() < MAX_BOLTS) {
+        if (firedBolts.size() < Config.get().getMaxBolts()) {
             firedBolts.add(Bolt.fire(this.id, this.x, this.y, this.angle, this.currentSpeed));
         }
     }
 
-    String getId() {
-        return id;
+    Iterable<Bolt> getActiveBolts() {
+        return this.firedBolts
+                .stream()
+                .filter(Bolt::isActive)
+                .collect(Collectors.toList());
+    }
+
+    boolean is(String playerId) {
+        return id.equals(playerId);
     }
 
     public static Player createOrGet(String id) {
@@ -69,7 +76,7 @@ public class Player {
     }
 
     private void resetPosition() {
-        if (Config.getConfig().getEnv() == Config.Environment.DEV) {
+        if (Config.get().getEnv() == Config.Environment.DEV) {
             this.x = 0f;
             this.y = 0f;
         } else {
@@ -138,10 +145,17 @@ public class Player {
 
     }
 
-    EventDto destroyedBy(String playerId) {
-        // TODO: tab kill for playerId
+    List<EventDto> destroyedBy(String playerId) {
         resetPosition();
 
-        return PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle);
+        List<EventDto> events = new ArrayList<>(2);
+        events.add(PlayerDestroyedEventDto.of(this.id, playerId));
+        events.add(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
+
+        return events;
+    }
+
+    static void reset() {
+        PLAYERS.clear();
     }
 }
