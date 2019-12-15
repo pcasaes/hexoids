@@ -84,18 +84,22 @@ public class Player {
         return PlayerJoinedEventDto.of(id, ship, x, y, angle);
     }
 
-    public Optional<EventDto> move(float moveX, float moveY) {
+    public Optional<EventDto> move(float moveX, float moveY, Float angle) {
 
         if (Math.abs(moveX) <= MIN_MOVE &&
                 Math.abs(moveY) <= MIN_MOVE
         ) {
             this.currentSpeed = 0f;
-            return Optional.empty();
+            if (angle == null) {
+                return Optional.empty();
+            }
         }
 
         float nx = this.x + moveX;
         float ny = this.y + moveY;
-        this.angle = (float) Math.atan2(ny - this.y, nx - this.x);
+        if (angle != null) {
+            this.angle = angle;
+        }
 
         this.currentSpeed = (float) Math.sqrt(Math.pow(Math.abs(moveX), 2) + Math.pow(Math.abs(moveY), 2));
 
