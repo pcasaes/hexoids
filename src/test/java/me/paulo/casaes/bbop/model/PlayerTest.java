@@ -11,11 +11,15 @@ import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -23,20 +27,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
 
 class PlayerTest {
 
+    @Mock
+    private Clock clock;
+
     @BeforeEach
     public void setup() {
+        MockitoAnnotations.initMocks(this);
+
+        doReturn(0L).when(clock).getTime();
+
         Config.get().setEnv(Config.Environment.DEV.name());
-        Player.reset();
+        SingletonProvider.setClock(() -> clock);
+        SingletonProvider.setPlayers(() -> Players.INSTANCE);
+
+        Players.get().reset();
     }
 
     @Test
     void testCreate() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
 
-        assertTrue(StreamSupport.stream(Player.iterable().spliterator(), false)
+        assertTrue(StreamSupport.stream(Players.get().iterable().spliterator(), false)
                 .anyMatch(p -> p == player));
 
         assertTrue(player.is("1"));
@@ -46,7 +61,7 @@ class PlayerTest {
     @Test
     void testJoin() {
 
-        PlayerJoinedEventDto event = Player.createOrGet("1").join();
+        PlayerJoinedEventDto event = Players.get().createOrGet("1").join();
 
         assertNotNull(event);
         assertEquals(EventType.PLAYER_JOINED, event.getEvent());
@@ -58,24 +73,24 @@ class PlayerTest {
 
     @Test
     void testLeave() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         PlayerLeftEventDto event = player.leave();
 
         assertNotNull(event);
         assertEquals(EventType.PLAYER_LEFT, event.getEvent());
         assertEquals("1", event.getPlayerId());
 
-        assertFalse(StreamSupport.stream(Player.iterable().spliterator(), false)
+        assertFalse(StreamSupport.stream(Players.get().iterable().spliterator(), false)
                 .anyMatch(p -> p == player));
 
     }
 
     @Test
     void testRequestListOfPlayers() {
-        Player.createOrGet("1").join();
-        Player.createOrGet("2").join();
+        Players.get().createOrGet("1").join();
+        Players.get().createOrGet("2").join();
 
-        PlayersListCommandDto command = Player.requestListOfPlayers();
+        PlayersListCommandDto command = Players.get().requestListOfPlayers();
 
         assertNotNull(command);
         assertEquals(CommandType.LIST_PLAYERS, command.getCommand());
@@ -92,7 +107,7 @@ class PlayerTest {
 
     @Test
     void testMove() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         Optional<PlayerMovedEventDto> event = player.move(0.1f, 0.2f, (float) Math.PI)
                 .map(ev -> (PlayerMovedEventDto) ev);
@@ -110,7 +125,7 @@ class PlayerTest {
 
     @Test
     void testBoundedMove() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         Optional<PlayerMovedEventDto> event = player.move(-1f, 2f, null)
                 .map(ev -> (PlayerMovedEventDto) ev);
@@ -128,7 +143,7 @@ class PlayerTest {
 
     @Test
     void testOnlyAngleMove() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         Optional<PlayerMovedEventDto> event = player.move(0f, 0f, (float) Math.PI)
                 .map(ev -> (PlayerMovedEventDto) ev);
@@ -146,7 +161,7 @@ class PlayerTest {
 
     @Test
     void testNoMove() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         Optional<PlayerMovedEventDto> event = player.move(0f, 0f, null)
                 .map(ev -> (PlayerMovedEventDto) ev);
@@ -160,7 +175,7 @@ class PlayerTest {
     void testMaxFire() {
         Config.get().setMaxBolts(2);
 
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
 
         player.fire();
@@ -185,7 +200,7 @@ class PlayerTest {
     void testFireDirection() {
         Config.get().setMaxBolts(2);
 
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.5f, 0.5f, (float) Math.PI);
 
@@ -204,7 +219,7 @@ class PlayerTest {
 
     @Test
     void testCollisionHitBullseye() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.5f, 0.5f, null);
 
@@ -213,7 +228,7 @@ class PlayerTest {
 
     @Test
     void testCollisionHitWithinRadius() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.54f, 0.54f, null);
 
@@ -222,7 +237,7 @@ class PlayerTest {
 
     @Test
     void testCollisionNoHitInsideSquare() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.4f, 0.6f, null);
 
@@ -231,7 +246,7 @@ class PlayerTest {
 
     @Test
     void testCollisionNoHitOutsideSquareX() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.2f, 0.2f, null);
 
@@ -240,7 +255,7 @@ class PlayerTest {
 
     @Test
     void testCollisionNoHitOutsideSquareY() {
-        Player player = Player.createOrGet("1");
+        Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.5f, 0.2f, null);
 
@@ -249,9 +264,9 @@ class PlayerTest {
 
     @Test
     void testDestroyedBy() {
-        Player player1 = Player.createOrGet("1");
+        Player player1 = Players.get().createOrGet("1");
         player1.join();
-        Player player2 = Player.createOrGet("2");
+        Player player2 = Players.get().createOrGet("2");
         player2.join();
 
         player1.move(0.5f, 0.5f, 1f);

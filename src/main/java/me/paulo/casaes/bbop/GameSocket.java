@@ -4,7 +4,7 @@ import me.paulo.casaes.bbop.dto.CommandType;
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.MoveCommandDto;
-import me.paulo.casaes.bbop.model.Player;
+import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.GameLoopService;
 import me.paulo.casaes.bbop.service.SessionService;
@@ -55,8 +55,8 @@ public class GameSocket {
         this.sessionService.add(userId, session);
         this.gameLoopService.enqueue(() -> {
                     List<Dto> dtos = new ArrayList<>(2);
-                    dtos.add(DirectedCommandDto.of(userId, Player.requestListOfPlayers()));
-                    dtos.add(Player.createOrGet(userId).join());
+                    dtos.add(DirectedCommandDto.of(userId, Players.get().requestListOfPlayers()));
+                    dtos.add(Players.get().createOrGet(userId).join());
                     return dtos;
                 }
         );
@@ -66,14 +66,14 @@ public class GameSocket {
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Collections.singletonList(Player.createOrGet(userId).leave()));
+            gameLoopService.enqueue(() -> Collections.singletonList(Players.get().createOrGet(userId).leave()));
         }
     }
 
     @OnError
     public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Collections.singletonList(Player.createOrGet(userId).leave()));
+            gameLoopService.enqueue(() -> Collections.singletonList(Players.get().createOrGet(userId).leave()));
         }
     }
 
@@ -83,7 +83,7 @@ public class GameSocket {
             if (dtoProcessorService.isCommand(message, CommandType.MOVE_PLAYER)) {
                 final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
 
-                this.gameLoopService.enqueue(() -> Player
+                this.gameLoopService.enqueue(() -> Players.get()
                         .createOrGet(userId)
                         .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY(), moveCommandDto.getAngle())
                         .map(Collections::singletonList)
@@ -91,7 +91,7 @@ public class GameSocket {
                 );
             } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
                 this.gameLoopService.enqueue(() -> {
-                            Player
+                            Players.get()
                                     .createOrGet(userId)
                                     .fire();
                             return Collections.emptyList();

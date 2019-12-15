@@ -18,10 +18,6 @@ public class Bolt {
 
     private static final Map<UUID, Bolt> ACTIVE_BOLTS = new HashMap<>();
 
-    private static final float COLLISION_RADIUS = 0.001f;
-
-    private static final long MAX_DURATION = 10_000;
-
     private UUID id;
     private String idString;
     private String ownerPlayerId;
@@ -45,19 +41,24 @@ public class Bolt {
         this.prevY = y;
         this.angle = angle;
         this.speed = speed;
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = Clock.get().getTime();
         this.startTimestamp = this.timestamp;
         this.exhausted = false;
     }
 
     static Bolt fire(String ownerPlayerId, float x, float y, float angle, float speedAdjustment) {
-        Bolt bolt = new Bolt(ownerPlayerId, x, y, angle, 0.07f + speedAdjustment);
+        Bolt bolt = new Bolt(ownerPlayerId, x, y, angle, Config.get().getBoltSpeed() + speedAdjustment);
         ACTIVE_BOLTS.put(bolt.id, bolt);
         return bolt;
     }
 
+    boolean is(UUID id) {
+        return this.id.equals(id);
+    }
+
     private Optional<EventDto> move(long timestamp) {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
+        this.timestamp = timestamp;
 
         EventDto event = null;
         this.prevX = this.x;
@@ -65,15 +66,24 @@ public class Bolt {
         if (elapsed > 0L) {
             float r = speed * elapsed / 1000f;
 
+            float ox = this.x;
+            float oy = this.y;
+
             float mx = (float) Math.cos(angle) * r;
             float my = (float) Math.sin(angle) * r;
 
-            this.x += mx;
-            this.y += my;
+            float minMove = Config.get().getMinMove();
+            if (Math.abs(mx) > minMove) {
+                this.x += mx;
+            }
+            if (Math.abs(my) > minMove) {
+                this.y += my;
+            }
 
-            event = toEvent();
+            if (ox != this.x || oy != this.y) {
+                event = toEvent();
+            }
         }
-        this.timestamp = timestamp;
 
         return Optional.ofNullable(event);
     }
@@ -84,7 +94,7 @@ public class Bolt {
         }
         if (x < 0f || x > 1f ||
                 y < 0f || y > 1f ||
-                this.timestamp - this.startTimestamp > MAX_DURATION) {
+                this.timestamp - this.startTimestamp > Config.get().getBoltMaxDuration()) {
             this.exhausted = true;
             return true;
         }
@@ -97,23 +107,22 @@ public class Bolt {
 
     private List<EventDto> hits() {
         return StreamSupport
-                .stream(Player.iterable().spliterator(), false)
+                .stream(Players.get().iterable().spliterator(), false)
                 .map(this::hit)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
 
     private List<EventDto> hit(Player player) {
-        if (isExhausted()) {
-            return Collections.emptyList();
-        }
-        boolean isHit = !player.is(ownerPlayerId) && player.collision(prevX, prevY, x, y, COLLISION_RADIUS);
+        boolean isHit = !player.is(ownerPlayerId) && player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
-            this.exhausted = true;
             List<EventDto> events = new ArrayList<>(2);
             events.addAll(player.destroyedBy(this.ownerPlayerId));
-            events.add(BoltExhaustedEventDto.of(this.idString));
+            if (!this.exhausted) {
+                this.exhausted = true;
+                events.add(BoltExhaustedEventDto.of(this.idString));
+            }
             return events;
         }
 
@@ -168,6 +177,10 @@ public class Bolt {
 
     boolean isOwnedBy(String playerId) {
         return this.ownerPlayerId.equals(playerId);
+    }
+
+    static void reset() {
+        ACTIVE_BOLTS.clear();
     }
 
 }
