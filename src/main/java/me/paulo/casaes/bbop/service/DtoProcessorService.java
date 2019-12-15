@@ -1,0 +1,56 @@
+package me.paulo.casaes.bbop.service;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import me.paulo.casaes.bbop.dto.CommandType;
+
+import javax.enterprise.context.Dependent;
+import java.io.IOException;
+import java.util.logging.Logger;
+
+@Dependent
+public class DtoProcessorService {
+
+    private static final Logger LOGGER = Logger.getLogger(DtoProcessorService.class.getName());
+
+
+    private static final ObjectMapper SERIALIZER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .configure(SerializationFeature.INDENT_OUTPUT, false);
+
+    private static final ObjectMapper DESERIALIZER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    public String serializeToString(Object dto) {
+        try {
+            return SERIALIZER.writeValueAsString(dto);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+    }
+
+    public <T> T deserialize(String value, Class<T> type) {
+        try {
+            return DESERIALIZER.readValue(value, type);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+    }
+
+    public boolean isCommand(String value, CommandType command) {
+        try {
+            JsonNode node = DESERIALIZER.readTree(value);
+            if (!node.has("command")) {
+                return false;
+            }
+            return command == CommandType.valueOf(node.get("command").asText());
+        } catch (IOException | RuntimeException ex) {
+            LOGGER.warning(ex.getMessage());
+            return false;
+        }
+    }
+
+}

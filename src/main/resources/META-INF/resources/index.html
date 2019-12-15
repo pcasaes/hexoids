@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>BBOP MMO ARCADE</title>
+    <meta charset="UTF-8">
+    <!-- https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js -->
+    <script src="js/phaser-arcade-physics.min.js"></script>
+</head>
+<body>
+
+<script>
+
+    function uuidv4() {
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    }
+
+    const USER_ID = uuidv4();
+    console.log(USER_ID);
+
+    const players = {};
+
+    function gameScene() {
+        return game.scene.scenes[0];
+    }
+
+
+    let socket;
+
+    function getColorFromShip(ship) {
+        switch (ship) {
+            case 0:
+                return 0xff0000;
+            case 1:
+                return 0x00ff00;
+            case 2:
+                return 0x0000ff;
+            case 3:
+                return 0xffff00;
+            case 4:
+                return 0x00ffff;
+            default:
+                return 0xff00ff;
+        }
+    }
+
+    function createShip(p) {
+        const move = transform.view(p.x, p.y);
+        const sprite = gameScene().physics.add.image(move.x, move.y, 'ship');
+        const color = getColorFromShip(p.ship);
+        sprite.setTint(color, color, color | 0x555555, color | 0x555555);
+        sprite.setBounce(0, 0);
+        sprite.setScale(0.5);
+        sprite.setCollideWorldBounds(true);
+
+        players[p.playerId] = {
+            "playerId": p.playerId,
+            "color": color,
+            "sprite": sprite
+        }
+    }
+
+    const bolts = {};
+
+    const PULSE = [0xfffff, 0x888888, 0x888888, 0x000000];
+
+    function boltMove(b) {
+        const move = transform.view(b.x, b.y);
+        if (!bolts[b.boltId]) {
+            const sprite = gameScene().physics.add.image(move.x, move.y, 'bolt');
+
+            const owner = players[b.ownerPlayerId];
+            if (owner) {
+                sprite.setTint(owner.color, owner.color, owner.color, owner.color);
+            }
+            sprite.setBounce(0, 0);
+            sprite.setScale(0.15);
+            sprite.setCollideWorldBounds(true);
+
+            bolts[b.boltId] = {
+                "sprite": sprite,
+                "color": owner.color,
+                "pulsePos": 0
+            };
+        } else {
+            let bolt = bolts[b.boltId];
+            bolt.sprite.x = move.x;
+            bolt.sprite.y = move.y;
+            bolt.sprite.setTint(
+                bolt.color | PULSE[bolt.pulsePos],
+                bolt.color | PULSE[(bolt.pulsePos + 1) % 4],
+                bolt.color | PULSE[(bolt.pulsePos + 2) % 4],
+                bolt.color | PULSE[(bolt.pulsePos + 3) % 4],
+            );
+            bolt.pulsePos = (bolt.pulsePos + 1) % 4;
+        }
+    }
+
+    const moveQueue = [];
+    setInterval(() => {
+        const m = {
+            "command": "MOVE_PLAYER",
+            "moveX": 0,
+            "moveY": 0
+        };
+
+        for (let evt = moveQueue.shift(); !!evt; evt = moveQueue.shift()) {
+            m.moveX += evt.x;
+            m.moveY += evt.y;
+        }
+        if (m.moveX !== 0 || m.moveY !== 0) {
+            sendMessage(m);
+        }
+    }, 50);
+
+    function setupSocket() {
+        socket = new WebSocket("ws://" + location.host + "/game/" + USER_ID);
+        socket.onopen = function () {
+            console.log("Connected to the web socket");
+        };
+        socket.onmessage = function (m) {
+            console.log("Got message: " + m.data);
+            const resp = JSON.parse(m.data);
+            if (resp.command === 'LIST_PLAYERS') {
+                resp.players.forEach(createShip);
+            } else if (resp.event === 'PLAYER_JOINED') {
+                createShip(resp);
+
+                if (USER_ID === resp.playerId) {
+                    gameScene().cameras.main.startFollow(players[resp.playerId].sprite, true);
+                }
+            } else if (players[resp.playerId] && resp.event === 'PLAYER_MOVED') {
+                const sprite = players[resp.playerId].sprite;
+                const move = transform.view(resp.x, resp.y);
+
+                sprite.x = move.x;
+                sprite.y = move.y;
+
+                sprite.setRotation(resp.angle + Math.PI / 2);
+
+            } else if (players[resp.playerId] && resp.event === 'PLAYER_LEFT') {
+                const sprite = players[resp.playerId].sprite;
+                sprite.destroy();
+                delete players[resp.playerId];
+            } else if (resp.event === 'BOLT_MOVED') {
+                boltMove(resp);
+            } else if (resp.event === 'BOLT_EXHAUSTED' && bolts[resp.boltId]) {
+                bolts[resp.boltId].sprite.destroy();
+                delete bolts[resp.boltId];
+            }
+        };
+    }
+
+    function sendMessage(value) {
+        const s = JSON.stringify(value);
+        console.log("Sending " + s);
+        socket.send(s);
+    };
+
+
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: {y: 0}
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create
+        }
+    };
+
+    const game = new Phaser.Game(config);
+
+    function preload() {
+        //this.load.setBaseURL('http://labs.phaser.io');
+
+        this.load.image('ship', 'assets/triangle.png');
+
+        this.load.image('bolt', 'assets/white.png');
+
+        //https://hubblesite.org/contents/media/images/2019/17/4493-Image.html
+        this.load.image('grid', 'assets/grid.png');
+    }
+
+    const BOUNDS = {
+        "min": {
+            "x": 0,
+            "y": 0,
+        },
+        "max": {
+            "x": 10000,
+            "y": 9235
+        }
+    };
+
+    BOUNDS["width"] = BOUNDS.max.x - BOUNDS.min.x;
+    BOUNDS["height"] = BOUNDS.max.y - BOUNDS.min.y;
+
+    BOUNDS["width_float"] = 1.0 * BOUNDS.width;
+    BOUNDS["height_float"] = 1.0 * BOUNDS.height;
+
+    const transform = {
+        "model": (x, y) => {
+            return {
+                "x": x / BOUNDS.width_float,
+                "y": y / BOUNDS.height_float,
+            }
+        },
+        "view": (x, y) => {
+            return {
+                "x": x * BOUNDS.width_float, // + BOUNDS.min.x,
+                "y": y * BOUNDS.height_float// + BOUNDS.min.y,
+            }
+        },
+    };
+
+    function create() {
+
+        this.cameras.main.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
+        this.physics.world.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
+
+
+        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'grid')
+            .setOrigin(0)
+            .setScale(1);
+
+
+        this.cameras.main.setDeadzone(100, 100);
+
+        setupSocket();
+
+
+        // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
+        this.input.on('pointerdown', function (pointer) {
+
+            this.input.mouse.requestPointerLock();
+
+        }, this);
+
+
+        // When locked, you will have to use the movementX and movementY properties of the pointer
+        // (since a locked cursor's xy position does not update)
+        this.input.on('pointermove', function (pointer) {
+
+            if (this.input.mouse.locked) {
+
+                /*
+                                const x = sprite.x + pointer.movementX;
+                                const y = sprite.y + pointer.movementY;
+
+                                let angle = Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + 0.5 * Math.PI;
+
+                                sprite.x = x;
+                                sprite.y = y;
+
+                                sprite.setRotation(angle);
+                */
+
+                //console.log(pointer.movementX + " " + pointer.movementY);
+                const move = transform.model(pointer.movementX, pointer.movementY);
+                moveQueue.push(move);
+
+            }
+        }, this);
+
+        // Exit pointer lock when Q is pressed. Browsers will also exit pointer lock when escape is
+        // pressed.
+        this.input.keyboard.on('keydown_Q', function (event) {
+            if (this.input.mouse.locked) {
+                this.input.mouse.releasePointerLock();
+            }
+        }, this);
+
+        this.input.keyboard.on('keydown_Z', function (event) {
+            sendMessage({
+                "command": "FIRE_BOLT"
+            })
+        }, this);
+
+
+    }
+</script>
+
+</body>
+</html>
