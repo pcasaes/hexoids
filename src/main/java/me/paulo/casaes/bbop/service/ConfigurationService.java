@@ -1,5 +1,7 @@
 package me.paulo.casaes.bbop.service;
 
+
+import me.paulo.casaes.bbop.model.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
@@ -14,14 +16,14 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
 
-    private final String environment;
+    private String environment;
+    private int maxBolts;
 
 
     /**
      * Required for CDI Normal Scoped beans
      */
     ConfigurationService() {
-        this.environment = null;
     }
 
     @Inject
@@ -29,8 +31,15 @@ public class ConfigurationService {
             @ConfigProperty(
                     name = "bbop.config.environment",
                     defaultValue = "PRODUCTION"
-            ) String environment) {
+            ) String environment,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.max.bolts",
+                    defaultValue = "10"
+            ) int maxBolts
+    ) {
         this.environment = environment;
+        this.maxBolts = maxBolts;
     }
 
     public void startup(@Observes @Initialized(ApplicationScoped.class) Object env) {
@@ -40,10 +49,18 @@ public class ConfigurationService {
     @PostConstruct
     public void start() {
         LOGGER.info("\tbbop.config.environment=" + getEnvironment());
+        LOGGER.info("\tbbop.config.player.max.bolts=" + getMaxBolts());
+
+        Config.get().setEnv(getEnvironment());
+        Config.get().setMaxBolts(getMaxBolts());
     }
 
 
     public String getEnvironment() {
         return environment;
+    }
+
+    public int getMaxBolts() {
+        return maxBolts;
     }
 }
