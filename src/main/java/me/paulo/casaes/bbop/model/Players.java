@@ -1,0 +1,51 @@
+package me.paulo.casaes.bbop.model;
+
+import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class Players {
+
+    public static final Players INSTANCE = new Players();
+
+    private final Map<String, Player> playerMap = new HashMap<>();
+
+    public static Players get() {
+        return SingletonProvider.getPlayers();
+    }
+
+    static {
+        SingletonProvider.setPlayers(() -> INSTANCE);
+    }
+
+    private Players() {
+    }
+
+    public Player createOrGet(String id) {
+        return playerMap.computeIfAbsent(id, Player::create);
+    }
+
+    public PlayersListCommandDto requestListOfPlayers() {
+        return PlayersListCommandDto.of(playerMap
+                .values()
+                .stream()
+                .map(Player::toDto)
+                .collect(Collectors.toList()));
+    }
+
+    void remove(String id) {
+        playerMap.remove(id);
+    }
+
+    public Iterable<Player> iterable() {
+        return playerMap.values();
+    }
+
+
+    void reset() {
+        playerMap.clear();
+    }
+
+}

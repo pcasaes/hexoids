@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.service;
 
+import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.model.Game;
@@ -60,7 +61,7 @@ public class GameLoopService {
     }
 
     private long fixedUpdate(long lastTimestamp) {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = Clock.get().getTime();
         if (timestamp - lastTimestamp > UPDATE_DELTA) {
             Game.get()
                     .fixedUpdate(timestamp)
@@ -72,7 +73,7 @@ public class GameLoopService {
     }
 
     private void run() {
-        long lastTimestamp = System.currentTimeMillis();
+        long lastTimestamp = Clock.get().getTime();
         while (running) {
             lastTimestamp = fixedUpdate(lastTimestamp);
 

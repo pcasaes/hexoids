@@ -271,10 +271,10 @@
 
                 //console.log(pointer.movementX + " " + pointer.movementY);
                 const command = {};
-                if (MOVE_CARTESIAN) {
+                if (MOVE_CARTESIAN || MOVE_CARTESIAN === MOVE_RADIAL) {
                     command.move = transform.model(pointer.movementX, pointer.movementY);
                 }
-                if (MOVE_RADIAL) {
+                if (MOVE_RADIAL || MOVE_CARTESIAN === MOVE_RADIAL) {
                     const sprite = players[USER_ID].sprite;
                     const x = sprite.x + pointer.movementX;
                     const y = sprite.y + pointer.movementY;
@@ -297,8 +297,8 @@
             }
         }, this);
 
-        let MOVE_CARTESIAN = true;
-        let MOVE_RADIAL = true;
+        let MOVE_CARTESIAN = false;
+        let MOVE_RADIAL = false;
 
         this.input.keyboard.on('keydown_Z', function (event) {
             MOVE_CARTESIAN = true;
