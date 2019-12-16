@@ -275,9 +275,12 @@
                     command.move = transform.model(pointer.movementX, pointer.movementY);
                 }
                 if (MOVE_RADIAL || MOVE_CARTESIAN === MOVE_RADIAL) {
+                    const moveX = pointer.movementX / 2.0;
+                    const moveY = pointer.movementY / 2.0;
+
                     const sprite = players[USER_ID].sprite;
-                    const x = sprite.x + pointer.movementX;
-                    const y = sprite.y + pointer.movementY;
+                    const x = sprite.x + moveX;
+                    const y = sprite.y + moveY;
                     if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
                         command.angle = {
                             "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y)
