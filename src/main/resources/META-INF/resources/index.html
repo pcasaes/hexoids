@@ -269,7 +269,7 @@
                     const y = sprite.y + moveY;
                     if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
                         command.angle = {
-                            "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y)
+                            "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + FORWARD_DIR
                         };
                     }
                 }
@@ -288,6 +288,20 @@
 
         let MOVE_CARTESIAN = false;
         let MOVE_RADIAL = false;
+        let FORWARD_DIR = 0;
+
+        this.input.keyboard.on('keydown_W', function (event) {
+            FORWARD_DIR = 0;
+        }, this);
+        this.input.keyboard.on('keydown_D', function (event) {
+            FORWARD_DIR = Math.PI / 2;
+        }, this);
+        this.input.keyboard.on('keydown_S', function (event) {
+            FORWARD_DIR = Math.PI;
+        }, this);
+        this.input.keyboard.on('keydown_A', function (event) {
+            FORWARD_DIR = Math.PI / -2;
+        }, this);
 
         this.input.keyboard.on('keydown_Z', function (event) {
             MOVE_CARTESIAN = true;
