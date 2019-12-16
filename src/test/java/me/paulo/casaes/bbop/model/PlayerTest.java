@@ -43,6 +43,8 @@ class PlayerTest {
         doReturn(0L).when(clock).getTime();
 
         Config.get().setEnv(Config.Environment.DEV.name());
+        Config.get().setPlayerMaxMove(1f);
+        Config.get().setPlayerMinMove(0.000000001f);
         SingletonProvider.setClock(() -> clock);
         SingletonProvider.setPlayers(() -> Players.INSTANCE);
 

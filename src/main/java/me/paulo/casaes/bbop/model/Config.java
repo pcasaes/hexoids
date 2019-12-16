@@ -10,6 +10,8 @@ public class Config {
     }
 
     private Environment env;
+    private float playerMinMove;
+    private float playerMaxMove;
     private int maxBolts;
     private long boltMaxDuration;
     private float boltSpeed;
@@ -34,6 +36,22 @@ public class Config {
 
     public int getMaxBolts() {
         return maxBolts;
+    }
+
+    public float getPlayerMinMove() {
+        return playerMinMove;
+    }
+
+    public void setPlayerMinMove(float playerMinMove) {
+        this.playerMinMove = playerMinMove;
+    }
+
+    public float getPlayerMaxMove() {
+        return playerMaxMove;
+    }
+
+    public void setPlayerMaxMove(float playerMaxMove) {
+        this.playerMaxMove = playerMaxMove;
     }
 
     public void setMaxBolts(int maxBolts) {

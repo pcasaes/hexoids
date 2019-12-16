@@ -261,8 +261,8 @@
                     command.move = transform.model(pointer.movementX, pointer.movementY);
                 }
                 if (MOVE_RADIAL || MOVE_CARTESIAN === MOVE_RADIAL) {
-                    const moveX = pointer.movementX / 2.0;
-                    const moveY = pointer.movementY / 2.0;
+                    const moveX = pointer.movementX;
+                    const moveY = pointer.movementY;
 
                     const sprite = players[USER_ID].sprite;
                     const x = sprite.x + moveX;

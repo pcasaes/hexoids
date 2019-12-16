@@ -19,6 +19,8 @@ public class ConfigurationService {
     private String environment;
     private int maxBolts;
     private long boltMaxDuration;
+    private float playerMinMove;
+    private float playerMaxMove;
     private float boltSpeed;
     private float boltCollisionRadius;
 
@@ -46,6 +48,16 @@ public class ConfigurationService {
                     name = "bbop.config.player.max.bolts",
                     defaultValue = "10"
             ) int maxBolts,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.min.move",
+                    defaultValue = "10"
+            ) float playerMinMove,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.max.move",
+                    defaultValue = "10"
+            ) float playerMaxMove,
 
             @ConfigProperty(
                     name = "bbop.config.bolt.max.duration",
@@ -83,6 +95,8 @@ public class ConfigurationService {
             ) int gameLoopMaxSizeExponent
     ) {
         this.environment = environment;
+        this.playerMaxMove = playerMaxMove;
+        this.playerMinMove = playerMinMove;
         this.maxBolts = maxBolts;
         this.boltMaxDuration = boltMaxDuration;
         this.boltSpeed = boltSpeed;
@@ -102,6 +116,8 @@ public class ConfigurationService {
     @PostConstruct
     public void start() {
         LOGGER.info("bbop.config.environment=" + getEnvironment());
+        LOGGER.info("bbop.config.player.min.min=" + getPlayerMinMove());
+        LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
         LOGGER.info("bbop.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
@@ -113,6 +129,8 @@ public class ConfigurationService {
 
         Config.get().setEnv(getEnvironment());
         Config.get().setMaxBolts(getMaxBolts());
+        Config.get().setPlayerMinMove(getPlayerMinMove());
+        Config.get().setPlayerMaxMove(getPlayerMaxMove());
         Config.get().setBoltMaxDuration(getBoltMaxDuration());
         Config.get().setBoltSpeed(getBoltSpeed());
         Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
@@ -121,6 +139,14 @@ public class ConfigurationService {
 
     public String getEnvironment() {
         return environment;
+    }
+
+    public float getPlayerMinMove() {
+        return playerMinMove;
+    }
+
+    public float getPlayerMaxMove() {
+        return playerMaxMove;
     }
 
     public int getMaxBolts() {
