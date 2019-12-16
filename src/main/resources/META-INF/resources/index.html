@@ -256,20 +256,6 @@
         this.input.on('pointermove', function (pointer) {
 
             if (this.input.mouse.locked) {
-
-                /*
-                                const x = sprite.x + pointer.movementX;
-                                const y = sprite.y + pointer.movementY;
-
-                                let angle = Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + 0.5 * Math.PI;
-
-                                sprite.x = x;
-                                sprite.y = y;
-
-                                sprite.setRotation(angle);
-                */
-
-                //console.log(pointer.movementX + " " + pointer.movementY);
                 const command = {};
                 if (MOVE_CARTESIAN || MOVE_CARTESIAN === MOVE_RADIAL) {
                     command.move = transform.model(pointer.movementX, pointer.movementY);
