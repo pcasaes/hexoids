@@ -22,6 +22,12 @@ public class ConfigurationService {
     private float boltSpeed;
     private float boltCollisionRadius;
 
+    private boolean clientBroadcastUseLinkedList;
+    private int clientBroadcastMaxSizeExponent;
+
+    private boolean gameLoopUseLinkedList;
+    private int gameLoopMaxSizeExponent;
+
 
     /**
      * Required for CDI Normal Scoped beans
@@ -54,13 +60,39 @@ public class ConfigurationService {
             @ConfigProperty(
                     name = "bbop.config.bolt.collision.radius",
                     defaultValue = "0.001"
-            ) float boltCollisionRadius
+            ) float boltCollisionRadius,
+
+            @ConfigProperty(
+                    name = "bbop.config.service.client.broadcast.eventqueue.linkedlist",
+                    defaultValue = "false"
+            ) boolean clientBroadcastUseLinkedList,
+
+            @ConfigProperty(
+                    name = "bbop.config.service.client.broadcast.eventqueue.exponent",
+                    defaultValue = "17"
+            ) int clientBroadcastMaxSizeExponent,
+
+            @ConfigProperty(
+                    name = "bbop.config.service.game.loop.eventqueue.linkedlist",
+                    defaultValue = "false"
+            ) boolean gameLoopUseLinkedList,
+
+            @ConfigProperty(
+                    name = "bbop.config.service.game.loop.eventqueue.exponent",
+                    defaultValue = "17"
+            ) int gameLoopMaxSizeExponent
     ) {
         this.environment = environment;
         this.maxBolts = maxBolts;
         this.boltMaxDuration = boltMaxDuration;
         this.boltSpeed = boltSpeed;
         this.boltCollisionRadius = boltCollisionRadius;
+
+        this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
+        this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
+
+        this.gameLoopUseLinkedList = gameLoopUseLinkedList;
+        this.gameLoopMaxSizeExponent = gameLoopMaxSizeExponent;
     }
 
     public void startup(@Observes @Initialized(ApplicationScoped.class) Object env) {
@@ -74,6 +106,10 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
+        LOGGER.info("bbop.config.service.client.broadcast.eventqueue.linkedlist=" + isClientBroadcastUseLinkedList());
+        LOGGER.info("bbop.config.service.client.broadcast.eventqueue.exponent=" + getClientBroadcastMaxSizeExponent());
+        LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
+        LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
         Config.get().setEnv(getEnvironment());
         Config.get().setMaxBolts(getMaxBolts());
@@ -101,5 +137,21 @@ public class ConfigurationService {
 
     public float getBoltCollisionRadius() {
         return boltCollisionRadius;
+    }
+
+    public boolean isClientBroadcastUseLinkedList() {
+        return clientBroadcastUseLinkedList;
+    }
+
+    public int getClientBroadcastMaxSizeExponent() {
+        return clientBroadcastMaxSizeExponent;
+    }
+
+    public boolean isGameLoopUseLinkedList() {
+        return gameLoopUseLinkedList;
+    }
+
+    public int getGameLoopMaxSizeExponent() {
+        return gameLoopMaxSizeExponent;
     }
 }

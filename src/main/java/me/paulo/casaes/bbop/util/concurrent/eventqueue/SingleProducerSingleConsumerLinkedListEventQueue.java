@@ -11,7 +11,7 @@ package me.paulo.casaes.bbop.util.concurrent.eventqueue;
  *
  * @param <T>
  */
-class SingleProducerSingleConsumerEventQueue<T> implements EventQueue<T> {
+class SingleProducerSingleConsumerLinkedListEventQueue<T> implements EventQueue<T> {
 
     private Entry<T> tail;
     private Entry<T> prev;

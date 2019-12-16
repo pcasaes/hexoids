@@ -17,20 +17,26 @@ public class ClientBroadcastService {
 
     private static final Logger LOGGER = Logger.getLogger(ClientBroadcastService.class.getName());
 
-    private final EventQueue<Dto> eventQueue = EventQueue.Factory.createSingleProducerSingleConsumerEventQueue();
+    private EventQueue<Dto> eventQueue;
 
     private final SessionService sessionService;
     private final DtoProcessorService dtoProcessorService;
+    private final ConfigurationService configurationService;
 
     ClientBroadcastService() {
         this.sessionService = null;
         this.dtoProcessorService = null;
+        this.configurationService = null;
+        this.eventQueue = null;
     }
 
     @Inject
-    public ClientBroadcastService(SessionService sessionService, DtoProcessorService dtoProcessorService) {
+    public ClientBroadcastService(SessionService sessionService,
+                                  DtoProcessorService dtoProcessorService,
+                                  ConfigurationService configurationService) {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
+        this.configurationService = configurationService;
     }
 
     private Thread thread;
@@ -42,6 +48,9 @@ public class ClientBroadcastService {
 
     @PostConstruct
     public void start() {
+        this.eventQueue = EventQueue.Factory.createSingleProducerSingleConsumerEventQueue(
+                configurationService.isClientBroadcastUseLinkedList(),
+                configurationService.getClientBroadcastMaxSizeExponent());
         thread = new Thread(this::run);
         thread.setName(GameLoopService.class.getSimpleName());
         thread.setDaemon(true);

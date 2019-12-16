@@ -1,9 +1,9 @@
 package me.paulo.casaes.bbop.service;
 
-import me.paulo.casaes.bbop.model.Clock;
-import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
 import me.paulo.casaes.bbop.dto.Dto;
+import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.model.Game;
+import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -21,17 +21,21 @@ public class GameLoopService {
 
     private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
 
-    private final EventQueue<Supplier<List<? extends Dto>>> eventQueue = EventQueue.Factory.createMultipleProducerSingleConsumerEventQueue();
+    private EventQueue<Supplier<List<? extends Dto>>> eventQueue;
 
     private final ClientBroadcastService clientBroadcastService;
 
+    private final ConfigurationService configurationService;
+
     GameLoopService() {
         this.clientBroadcastService = null;
+        this.configurationService = null;
     }
 
     @Inject
-    public GameLoopService(ClientBroadcastService clientBroadcastService) {
+    public GameLoopService(ClientBroadcastService clientBroadcastService, ConfigurationService configurationService) {
         this.clientBroadcastService = clientBroadcastService;
+        this.configurationService = configurationService;
     }
 
     private Thread thread;
@@ -43,6 +47,10 @@ public class GameLoopService {
 
     @PostConstruct
     public void start() {
+        this.eventQueue = EventQueue.Factory.createMultipleProducerSingleConsumerEventQueue(
+                configurationService.isGameLoopUseLinkedList(),
+                configurationService.getGameLoopMaxSizeExponent());
+
         thread = new Thread(this::run);
         thread.setName(GameLoopService.class.getSimpleName());
         thread.setDaemon(true);

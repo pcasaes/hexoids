@@ -9,12 +9,14 @@ public interface EventQueue<T> {
 
     /**
      * Produces an event
+     *
      * @param value
      */
     void produce(T value);
 
     /**
      * Consumes an event
+     *
      * @return
      */
     T consume();
@@ -30,19 +32,21 @@ public interface EventQueue<T> {
         }
 
         /**
-         * See {@link SingleProducerSingleConsumerEventQueue}
+         * See {@link SingleProducerSingleConsumerLinkedListEventQueue}
+         *
          * @return
          */
-        public static EventQueue createSingleProducerSingleConsumerEventQueue() {
-            return new SingleProducerSingleConsumerEventQueue<>();
+        public static EventQueue createSingleProducerSingleConsumerEventQueue(boolean useLinkedList, int maxSizeExponent) {
+            return useLinkedList ? new SingleProducerSingleConsumerLinkedListEventQueue<>() : new SingleProducerSingleConsumerFixedArrayEventQueue<>(maxSizeExponent);
         }
 
         /**
-         * See {@link MultipleProducerSingleConsumerEventQueue}
+         * See {@link MultipleProducerSingleConsumerLinkedListEventQueue}
+         *
          * @return
          */
-        public static EventQueue createMultipleProducerSingleConsumerEventQueue() {
-            return new MultipleProducerSingleConsumerEventQueue<>();
+        public static EventQueue createMultipleProducerSingleConsumerEventQueue(boolean useLinkedList, int maxSizeExponent) {
+            return useLinkedList ? new MultipleProducerSingleConsumerLinkedListEventQueue<>() : new MultipleProducerSingleConsumerFixedArrayEventQueue(maxSizeExponent);
         }
     }
 }
