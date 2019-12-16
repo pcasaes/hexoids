@@ -1,8 +1,6 @@
 package me.paulo.casaes.bbop;
 
 import me.paulo.casaes.bbop.dto.CommandType;
-import me.paulo.casaes.bbop.dto.DirectedCommandDto;
-import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.MoveCommandDto;
 import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
@@ -18,9 +16,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.logging.Logger;
 
 @ServerEndpoint("/game/{userId}")
@@ -53,27 +48,21 @@ public class GameSocket {
     @OnOpen
     public void onOpen(Session session, @PathParam("userId") String userId) {
         this.sessionService.add(userId, session);
-        this.gameLoopService.enqueue(() -> {
-                    List<Dto> dtos = new ArrayList<>(2);
-                    dtos.add(DirectedCommandDto.of(userId, Players.get().requestListOfPlayers()));
-                    dtos.add(Players.get().createOrGet(userId).join());
-                    return dtos;
-                }
-        );
+        this.gameLoopService.enqueue(() -> Players.get().createOrGet(userId).join());
 
     }
 
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Collections.singletonList(Players.get().createOrGet(userId).leave()));
+            gameLoopService.enqueue(() -> Players.get().createOrGet(userId).leave());
         }
     }
 
     @OnError
     public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Collections.singletonList(Players.get().createOrGet(userId).leave()));
+            gameLoopService.enqueue(() -> Players.get().createOrGet(userId).leave());
         }
     }
 
@@ -86,16 +75,12 @@ public class GameSocket {
                 this.gameLoopService.enqueue(() -> Players.get()
                         .createOrGet(userId)
                         .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY(), moveCommandDto.getAngle())
-                        .map(Collections::singletonList)
-                        .orElse(Collections.emptyList())
                 );
             } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
-                this.gameLoopService.enqueue(() -> {
-                            Players.get()
-                                    .createOrGet(userId)
-                                    .fire();
-                            return Collections.emptyList();
-                        }
+                this.gameLoopService.enqueue(() -> Players.get()
+                        .createOrGet(userId)
+                        .fire()
+
                 );
             }
         } catch (RuntimeException ex) {

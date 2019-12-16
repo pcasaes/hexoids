@@ -2,17 +2,20 @@ package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.BoltExhaustedEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
+import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.EventType;
-import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,9 +35,10 @@ class BoltTest {
 
     @BeforeEach
     public void setup() {
-        Bolt.reset();
-
         MockitoAnnotations.initMocks(this);
+        GameEvents.get().setConsumer(null);
+
+        Bolt.reset();
 
         doReturn(0L).when(clock).getTime();
 
@@ -50,6 +54,9 @@ class BoltTest {
 
     @Test
     void testFireMoveAndExhaust() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, 0f, 0f);
 
@@ -68,8 +75,8 @@ class BoltTest {
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -79,8 +86,8 @@ class BoltTest {
 
         doReturn(2_000L).when(clock).getTime();
 
-        BoltExhaustedEventDto exhaustedEvent = (BoltExhaustedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltExhaustedEventDto exhaustedEvent = (BoltExhaustedEventDto) eventReference.get();
 
         assertNotNull(exhaustedEvent);
         assertTrue(bolt.is(UUID.fromString(exhaustedEvent.getBoltId())));
@@ -95,14 +102,17 @@ class BoltTest {
 
     @Test
     void testMoveRight() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, 0f, 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -114,14 +124,17 @@ class BoltTest {
 
     @Test
     void testMoveRightDown() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 4f, 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -132,14 +145,17 @@ class BoltTest {
 
     @Test
     void testMoveDown() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 2f, 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -150,14 +166,17 @@ class BoltTest {
 
     @Test
     void testMoveLeftDown() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) (3 * Math.PI / 4f), 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -168,14 +187,17 @@ class BoltTest {
 
     @Test
     void testMoveLeft() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) Math.PI, 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -186,14 +208,17 @@ class BoltTest {
 
     @Test
     void testMoveLefUp() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (5 * Math.PI / 4), 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -204,14 +229,17 @@ class BoltTest {
 
     @Test
     void testMoveUp() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (3 * Math.PI / 2), 0f);
 
 
         doReturn(1_000L).when(clock).getTime();
 
-        BoltMovedEventDto movedEvent = (BoltMovedEventDto) Bolt.update(clock.getTime())
-                .get(0);
+        Bolt.fixedUpdate(clock.getTime());
+        BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
@@ -229,10 +257,6 @@ class BoltTest {
                 .when(player)
                 .collision(0.5f, 0.5f, 0.51f, 0.5f, Config.get().getBoltCollisionRadius());
 
-        doReturn(Collections.singletonList(PlayerDestroyedEventDto.of("2", "1")))
-                .when(player)
-                .destroyedBy("1");
-
         List<Player> playersList = Collections.singletonList(player);
         doReturn(playersList).when(this.players).iterable();
 
@@ -241,7 +265,15 @@ class BoltTest {
 
         doReturn(1_000L).when(clock).getTime();
 
-        List<EventDto> events = Bolt.update(clock.getTime());
+        List<Dto> dtos = new ArrayList<>();
+        GameEvents.get().setConsumer(dtos::add);
+
+        Bolt.fixedUpdate(clock.getTime());
+
+        List<EventDto> events = dtos
+                .stream()
+                .map(ev -> (EventDto) ev)
+                .collect(Collectors.toList());
 
         BoltMovedEventDto boltMovedEventDto = (BoltMovedEventDto) events
                 .stream()
@@ -259,15 +291,6 @@ class BoltTest {
         assertNotNull(boltExhaustedEventDto);
         assertTrue(bolt.is(UUID.fromString(boltExhaustedEventDto.getBoltId())));
 
-        PlayerDestroyedEventDto playerDestroyedEventDto = (PlayerDestroyedEventDto) events
-                .stream()
-                .filter(ev -> ev.isEvent(EventType.PLAYER_DESTROYED))
-                .findFirst().orElse(null);
-
-        assertNotNull(playerDestroyedEventDto);
-        assertEquals("1", playerDestroyedEventDto.getDestroyedByPlayerId());
-        assertEquals("2", playerDestroyedEventDto.getPlayerId());
-
     }
 
     @Test
@@ -279,10 +302,6 @@ class BoltTest {
                 .when(player)
                 .collision(0.5f, 0.5f, 0.51f, 0.5f, Config.get().getBoltCollisionRadius());
 
-        doReturn(Collections.singletonList(PlayerDestroyedEventDto.of("2", "1")))
-                .when(player)
-                .destroyedBy("1");
-
         List<Player> playersList = Collections.singletonList(player);
         doReturn(playersList).when(this.players).iterable();
 
@@ -291,10 +310,14 @@ class BoltTest {
 
         doReturn(1_000L).when(clock).getTime();
 
-        List<EventDto> events = Bolt.update(clock.getTime());
+        List<Dto> events = new ArrayList<>();
+        GameEvents.get().setConsumer(events::add);
+
+        Bolt.fixedUpdate(clock.getTime());
 
         BoltMovedEventDto boltMovedEventDto = (BoltMovedEventDto) events
                 .stream()
+                .map(ev -> (EventDto) ev)
                 .filter(ev -> ev.isEvent(EventType.BOLT_MOVED))
                 .findFirst().orElse(null);
 

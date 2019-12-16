@@ -4,15 +4,11 @@ import me.paulo.casaes.bbop.dto.BoltExhaustedEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.EventDto;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class Bolt {
 
@@ -56,7 +52,7 @@ public class Bolt {
         return this.id.equals(id);
     }
 
-    private Optional<EventDto> move(long timestamp) {
+    private void move(long timestamp) {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
         this.timestamp = timestamp;
 
@@ -85,7 +81,9 @@ public class Bolt {
             }
         }
 
-        return Optional.ofNullable(event);
+        if (event != null) {
+            GameEvents.get().register(event);
+        }
     }
 
     boolean isExhausted() {
@@ -105,28 +103,22 @@ public class Bolt {
         return !isExhausted();
     }
 
-    private List<EventDto> hits() {
-        return StreamSupport
-                .stream(Players.get().iterable().spliterator(), false)
-                .map(this::hit)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+    private void hits() {
+        for (Player player : Players.get().iterable()) {
+            hit(player);
+        }
     }
 
-    private List<EventDto> hit(Player player) {
+    private void hit(Player player) {
         boolean isHit = !player.is(ownerPlayerId) && player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
-            List<EventDto> events = new ArrayList<>(2);
-            events.addAll(player.destroyedBy(this.ownerPlayerId));
+            player.destroyedBy(this.ownerPlayerId);
             if (!this.exhausted) {
                 this.exhausted = true;
-                events.add(BoltExhaustedEventDto.of(this.idString));
+                GameEvents.get().register(BoltExhaustedEventDto.of(this.idString));
             }
-            return events;
         }
-
-        return Collections.emptyList();
     }
 
     EventDto toEvent() {
@@ -135,26 +127,16 @@ public class Bolt {
                 BoltMovedEventDto.of(this.idString, this.ownerPlayerId, this.x, this.y, this.angle);
     }
 
-    public static List<EventDto> update(final long timestamp) {
-        List<EventDto> events = new ArrayList<>();
+    public static void fixedUpdate(final long timestamp) {
+        ACTIVE_BOLTS
+                .values()
+                .forEach(b -> b.move(timestamp));
 
         ACTIVE_BOLTS
                 .values()
-                .stream()
-                .map(b -> b.move(timestamp))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(events::add);
-
-        ACTIVE_BOLTS
-                .values()
-                .stream()
-                .map(Bolt::hits)
-                .flatMap(List::stream)
-                .forEach(events::add);
+                .forEach(Bolt::hits);
 
         cleanup();
-        return events;
     }
 
     public static Iterable<Bolt> iterable() {

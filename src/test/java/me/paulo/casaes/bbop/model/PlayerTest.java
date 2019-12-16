@@ -2,6 +2,7 @@ package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.CommandType;
+import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.EventType;
 import me.paulo.casaes.bbop.dto.PlayerDto;
@@ -14,18 +15,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 
@@ -37,6 +38,7 @@ class PlayerTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
+        GameEvents.get().setConsumer(null);
 
         doReturn(0L).when(clock).getTime();
 
@@ -60,8 +62,11 @@ class PlayerTest {
 
     @Test
     void testJoin() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
 
-        PlayerJoinedEventDto event = Players.get().createOrGet("1").join();
+        Players.get().createOrGet("1").join();
+        PlayerJoinedEventDto event = (PlayerJoinedEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(EventType.PLAYER_JOINED, event.getEvent());
@@ -73,8 +78,12 @@ class PlayerTest {
 
     @Test
     void testLeave() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Player player = Players.get().createOrGet("1");
-        PlayerLeftEventDto event = player.leave();
+        player.leave();
+        PlayerLeftEventDto event = (PlayerLeftEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(EventType.PLAYER_LEFT, event.getEvent());
@@ -107,55 +116,55 @@ class PlayerTest {
 
     @Test
     void testMove() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Player player = Players.get().createOrGet("1");
         player.join();
-        Optional<PlayerMovedEventDto> event = player.move(0.1f, 0.2f, (float) Math.PI)
-                .map(ev -> (PlayerMovedEventDto) ev);
+        player.move(0.1f, 0.2f, (float) Math.PI);
+
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
-        assertTrue(event.isPresent());
-        event
-                .ifPresent(ev -> {
-                    assertEquals(0.1f, ev.getX());
-                    assertEquals(0.2f, ev.getY());
-                    assertEquals((float) Math.PI, ev.getAngle());
-                });
+        assertEquals(0.1f, event.getX());
+        assertEquals(0.2f, event.getY());
+        assertEquals((float) Math.PI, event.getAngle());
 
     }
 
     @Test
     void testBoundedMove() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Player player = Players.get().createOrGet("1");
         player.join();
-        Optional<PlayerMovedEventDto> event = player.move(-1f, 2f, null)
-                .map(ev -> (PlayerMovedEventDto) ev);
+        player.move(-1f, 2f, null);
+
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
-        assertTrue(event.isPresent());
-        event
-                .ifPresent(ev -> {
-                    assertEquals(0f, ev.getX());
-                    assertEquals(1f, ev.getY());
-                    assertEquals(0f, ev.getAngle());
-                });
+        assertEquals(0f, event.getX());
+        assertEquals(1f, event.getY());
+        assertEquals(0f, event.getAngle());
 
     }
 
     @Test
     void testOnlyAngleMove() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
+
         Player player = Players.get().createOrGet("1");
         player.join();
-        Optional<PlayerMovedEventDto> event = player.move(0f, 0f, (float) Math.PI)
-                .map(ev -> (PlayerMovedEventDto) ev);
+        player.move(0f, 0f, (float) Math.PI);
+
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
-        assertTrue(event.isPresent());
-        event
-                .ifPresent(ev -> {
-                    assertEquals(0f, ev.getX());
-                    assertEquals(0f, ev.getY());
-                    assertEquals((float) Math.PI, ev.getAngle());
-                });
+        assertEquals(0f, event.getX());
+        assertEquals(0f, event.getY());
+        assertEquals((float) Math.PI, event.getAngle());
 
     }
 
@@ -163,12 +172,13 @@ class PlayerTest {
     void testNoMove() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        Optional<PlayerMovedEventDto> event = player.move(0f, 0f, null)
-                .map(ev -> (PlayerMovedEventDto) ev);
 
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.get().setConsumer(eventReference::set);
 
-        assertNotNull(event);
-        assertFalse(event.isPresent());
+        player.move(0f, 0f, null);
+
+        assertNull(eventReference.get());
     }
 
     @Test
@@ -271,7 +281,16 @@ class PlayerTest {
 
         player1.move(0.5f, 0.5f, 1f);
 
-        List<EventDto> events = player1.destroyedBy("2");
+        List<Dto> dtos = new ArrayList<>();
+        GameEvents.get().setConsumer(dtos::add);
+
+        player1.destroyedBy("2");
+
+        List<EventDto> events = dtos
+                .stream()
+                .map(ev -> (EventDto) ev)
+                .collect(Collectors.toList());
+
 
         assertEquals(2, events.size());
         assertEquals(EventType.PLAYER_DESTROYED, events.get(0).getEvent());

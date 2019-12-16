@@ -1,13 +1,16 @@
 package me.paulo.casaes.bbop.service;
 
-import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
+import me.paulo.casaes.bbop.model.GameEvents;
+import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,13 +40,19 @@ public class ClientBroadcastService {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
+
+        GameEvents.get().setConsumer(this::broadcast);
     }
 
     private Thread thread;
     private boolean running = true;
 
-    void broadcast(Dto event) {
+    private void broadcast(Dto event) {
         eventQueue.produce(event);
+    }
+
+    public void startup(@Observes @Initialized(ApplicationScoped.class) Object event) {
+        LOGGER.info("Eager load " + ClientBroadcastService.class.getName());
     }
 
     @PostConstruct

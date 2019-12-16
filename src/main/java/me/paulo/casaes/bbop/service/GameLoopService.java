@@ -1,6 +1,5 @@
 package me.paulo.casaes.bbop.service;
 
-import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.util.concurrent.eventqueue.EventQueue;
@@ -9,8 +8,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.List;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,27 +18,23 @@ public class GameLoopService {
 
     private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
 
-    private EventQueue<Supplier<List<? extends Dto>>> eventQueue;
-
-    private final ClientBroadcastService clientBroadcastService;
+    private EventQueue<Runnable> eventQueue;
 
     private final ConfigurationService configurationService;
 
     GameLoopService() {
-        this.clientBroadcastService = null;
         this.configurationService = null;
     }
 
     @Inject
-    public GameLoopService(ClientBroadcastService clientBroadcastService, ConfigurationService configurationService) {
-        this.clientBroadcastService = clientBroadcastService;
+    public GameLoopService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
     private Thread thread;
     private boolean running = true;
 
-    public void enqueue(Supplier<List<? extends Dto>> runnable) {
+    public void enqueue(Runnable runnable) {
         eventQueue.produce(runnable);
     }
 
@@ -72,8 +65,7 @@ public class GameLoopService {
         long timestamp = Clock.get().getTime();
         if (timestamp - lastTimestamp > UPDATE_DELTA) {
             Game.get()
-                    .fixedUpdate(timestamp)
-                    .forEach(clientBroadcastService::broadcast);
+                    .fixedUpdate(timestamp);
 
             return timestamp;
         }
@@ -85,12 +77,10 @@ public class GameLoopService {
         while (running) {
             lastTimestamp = fixedUpdate(lastTimestamp);
 
-            Supplier<List<? extends Dto>> runnable;
+            Runnable runnable;
             while ((runnable = eventQueue.consume()) != null) {
                 try {
-                    runnable
-                            .get()
-                            .forEach(clientBroadcastService::broadcast);
+                    runnable.run();
                 } catch (RuntimeException ex) {
                     LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
                 }

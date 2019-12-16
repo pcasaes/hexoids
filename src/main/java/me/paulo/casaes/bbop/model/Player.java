@@ -1,6 +1,5 @@
 package me.paulo.casaes.bbop.model;
 
-import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
@@ -9,8 +8,6 @@ import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -28,15 +25,15 @@ public interface Player {
 
     PlayerDto toDto();
 
-    PlayerJoinedEventDto join();
+    void join();
 
-    Optional<EventDto> move(float moveX, float moveY, Float angle);
+    void move(float moveX, float moveY, Float angle);
 
-    PlayerLeftEventDto leave();
+    void leave();
 
     boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
 
-    List<EventDto> destroyedBy(String playerId);
+    void destroyedBy(String playerId);
 
     class Implementation implements Player {
 
@@ -100,13 +97,13 @@ public interface Player {
         }
 
         @Override
-        public PlayerJoinedEventDto join() {
+        public void join() {
             resetPosition();
-            return PlayerJoinedEventDto.of(id, ship, x, y, angle);
+            GameEvents.get().register(PlayerJoinedEventDto.of(id, ship, x, y, angle));
         }
 
         @Override
-        public Optional<EventDto> move(float moveX, float moveY, Float angle) {
+        public void move(float moveX, float moveY, Float angle) {
 
             float minMove = Config.get().getMinMove();
             if (Math.abs(moveX) <= minMove &&
@@ -114,7 +111,7 @@ public interface Player {
             ) {
                 this.currentSpeed = 0f;
                 if (angle == null) {
-                    return Optional.empty();
+                    return;
                 }
             }
 
@@ -130,13 +127,13 @@ public interface Player {
             this.x = Math.max(0f, Math.min(1f, nx));
             this.y = Math.max(0f, Math.min(1f, ny));
 
-            return Optional.of(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
+            GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
         }
 
         @Override
-        public PlayerLeftEventDto leave() {
+        public void leave() {
             Players.get().remove(this.id);
-            return PlayerLeftEventDto.of(this.id);
+            GameEvents.get().register(PlayerLeftEventDto.of(this.id));
         }
 
         @Override
@@ -160,14 +157,11 @@ public interface Player {
         }
 
         @Override
-        public List<EventDto> destroyedBy(String playerId) {
+        public void destroyedBy(String playerId) {
             resetPosition();
 
-            List<EventDto> events = new ArrayList<>(2);
-            events.add(PlayerDestroyedEventDto.of(this.id, playerId));
-            events.add(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
-
-            return events;
+            GameEvents.get().register(PlayerDestroyedEventDto.of(this.id, playerId));
+            GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
         }
     }
 }
