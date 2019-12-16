@@ -84,6 +84,22 @@ public class GameLoopService {
                 } catch (RuntimeException ex) {
                     LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
                 }
+                lastTimestamp = fixedUpdate(lastTimestamp);
+            }
+
+            sleep(lastTimestamp);
+        }
+    }
+
+    private void sleep(long lastTimestamp) {
+        long timeSinceFixedUpdate = Clock.get().getTime();
+        long sleepTime = (timeSinceFixedUpdate - lastTimestamp) % UPDATE_DELTA;
+        if (sleepTime > 0) {
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.WARNING, e.getMessage(), e);
+                Thread.currentThread().interrupt();
             }
         }
     }
