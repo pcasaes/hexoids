@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.model;
 
+import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 
 import java.util.HashMap;
@@ -24,7 +25,12 @@ public class Players {
     }
 
     public Player createOrGet(String id) {
-        return playerMap.computeIfAbsent(id, Player::create);
+        return playerMap.computeIfAbsent(id, this::create);
+    }
+
+    private Player create(String id) {
+        GameEvents.get().register(DirectedCommandDto.of(id, Players.get().requestListOfPlayers()));
+        return Player.create(id);
     }
 
     public PlayersListCommandDto requestListOfPlayers() {

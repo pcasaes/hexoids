@@ -1,9 +1,5 @@
 package me.paulo.casaes.bbop.model;
 
-import me.paulo.casaes.bbop.dto.EventDto;
-
-import java.util.List;
-
 public class Game {
 
     private static final Game GAME = new Game();
@@ -15,7 +11,7 @@ public class Game {
         return GAME;
     }
 
-    public List<EventDto> fixedUpdate(long timestamp) {
-        return Bolt.update(timestamp);
+    public void fixedUpdate(long timestamp) {
+        Bolt.fixedUpdate(timestamp);
     }
 }
