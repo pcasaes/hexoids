@@ -93,6 +93,16 @@ public class ClientBroadcastService {
                     LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
                 }
             }
+            sleep();
+        }
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(20L);
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 }
