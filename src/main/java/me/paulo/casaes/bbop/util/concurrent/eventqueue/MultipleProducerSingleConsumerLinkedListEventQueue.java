@@ -12,7 +12,7 @@ package me.paulo.casaes.bbop.util.concurrent.eventqueue;
  *
  * @param <T>
  */
-class MultipleProducerSingleConsumerEventQueue<T> extends SingleProducerSingleConsumerEventQueue<T> {
+class MultipleProducerSingleConsumerLinkedListEventQueue<T> extends SingleProducerSingleConsumerLinkedListEventQueue<T> {
 
     /**
      * Pushes a value to the end of the queue.
