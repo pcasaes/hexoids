@@ -115,6 +115,10 @@ public interface Player {
                 }
             }
 
+            float maxMove = Config.get().getPlayerMaxMove();
+            moveX = Math.max(-maxMove, Math.min(moveX, maxMove));
+            moveY = Math.max(-maxMove, Math.min(moveY, maxMove));
+
             float nx = this.x + moveX;
             float ny = this.y + moveY;
             if (angle != null) {
