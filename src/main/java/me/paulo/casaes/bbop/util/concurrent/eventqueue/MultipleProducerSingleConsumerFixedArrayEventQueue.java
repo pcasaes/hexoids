@@ -1,5 +1,7 @@
 package me.paulo.casaes.bbop.util.concurrent.eventqueue;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Simple unbounded FIFO event queue that is thread safe only if there's
  * a single thread consuming. Many threads can produce including the
@@ -14,20 +16,19 @@ package me.paulo.casaes.bbop.util.concurrent.eventqueue;
  */
 class MultipleProducerSingleConsumerFixedArrayEventQueue<T> extends SingleProducerSingleConsumerFixedArrayEventQueue<T> {
 
+    private final AtomicInteger atomicTail = new AtomicInteger(-1);
 
     MultipleProducerSingleConsumerFixedArrayEventQueue(int maxSizeExponent) {
         super(maxSizeExponent);
     }
 
-    /**
-     * Pushes a value to the end of the queue.
-     * This method does block and is thread safe.
-     *
-     * @param value
-     * @throws IllegalStateException if the queue is full
-     */
     @Override
-    public synchronized void produce(T value) { //NOSONAR: false positive. This method blocks
-        super.produce(value);
+    protected int getNextTail(int tail) {
+        int nextUnwrapped = atomicTail.incrementAndGet();
+        int next = super.wrapAround(nextUnwrapped);
+        if (next != nextUnwrapped) {
+            atomicTail.updateAndGet(this::wrapAround);
+        }
+        return next;
     }
 }

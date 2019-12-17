@@ -19,7 +19,7 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
     private int tail = -1;
     private int prev = -1;
 
-    private final int maxSizeMinusOne;
+    protected final int maxSizeMinusOne;
 
     private final List<T> table;
 
@@ -32,8 +32,16 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
         }
     }
 
-    private int getNextPosition(int from) {
-        return (from + 1) & (maxSizeMinusOne);
+    protected int wrapAround(int i) {
+        return i & maxSizeMinusOne;
+    }
+
+    protected int getNextPosition(int from) {
+        return wrapAround(from + 1);
+    }
+
+    protected int getNextTail(int tail) {
+        return getNextPosition(tail);
     }
 
     /**
@@ -45,13 +53,13 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
      */
     @Override
     public void produce(T value) {
-        int next = getNextPosition(tail);
+        int next;
+        tail = next = getNextTail(tail);
         int current = getNextPosition(prev);
         if (next == current && table.get(current) != null) {
             throw new IllegalStateException("Event queue out of space!!! Must be increased");
         }
         table.set(next, value);
-        tail = next;
     }
 
     public boolean isEmpty() {
