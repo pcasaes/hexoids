@@ -62,7 +62,7 @@ public class GameLoopService {
     }
 
     private long fixedUpdate(long lastTimestamp) {
-        long timestamp = Clock.get().getTime();
+        long timestamp = Clock.Factory.get().getTime();
         if (timestamp - lastTimestamp > UPDATE_DELTA) {
             Game.get()
                     .fixedUpdate(timestamp);
@@ -73,7 +73,7 @@ public class GameLoopService {
     }
 
     private void run() {
-        long lastTimestamp = Clock.get().getTime();
+        long lastTimestamp = Clock.Factory.get().getTime();
         while (running) {
             lastTimestamp = fixedUpdate(lastTimestamp);
 
@@ -92,7 +92,7 @@ public class GameLoopService {
     }
 
     private void sleep(long lastTimestamp) {
-        long timeSinceFixedUpdate = Clock.get().getTime();
+        long timeSinceFixedUpdate = Clock.Factory.get().getTime();
         long sleepTime = (timeSinceFixedUpdate - lastTimestamp) % UPDATE_DELTA;
         if (sleepTime > 0) {
             try {

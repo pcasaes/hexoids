@@ -5,6 +5,7 @@ import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.EventType;
+import mockit.MockUp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -36,6 +37,21 @@ class BoltTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
+
+        new MockUp<Clock.Factory>() {
+            @mockit.Mock
+            public Clock get() {
+                return clock;
+            }
+        };
+
+        new MockUp<Players>() {
+            @mockit.Mock
+            public Players get() {
+                return players;
+            }
+        };
+
         GameEvents.get().setConsumer(null);
 
         Bolt.reset();
@@ -43,8 +59,6 @@ class BoltTest {
         doReturn(0L).when(clock).getTime();
 
         Config.get().setEnv(Config.Environment.DEV.name());
-        SingletonProvider.setClock(() -> this.clock);
-        SingletonProvider.setPlayers(() -> this.players);
         Config.get().setBoltMaxDuration(10_000L);
         Config.get().setBoltSpeed(0.01f);
         Config.get().setBoltCollisionRadius(0.001f);

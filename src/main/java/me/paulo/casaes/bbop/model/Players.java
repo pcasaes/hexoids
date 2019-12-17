@@ -14,11 +14,7 @@ public class Players {
     private final Map<String, Player> playerMap = new HashMap<>();
 
     public static Players get() {
-        return SingletonProvider.getPlayers();
-    }
-
-    static {
-        SingletonProvider.setPlayers(() -> INSTANCE);
+        return INSTANCE;
     }
 
     private Players() {

@@ -1,26 +1,27 @@
 package me.paulo.casaes.bbop.model;
 
-public abstract class Clock {
+public interface Clock {
 
-    public abstract long getTime();
+    long getTime();
 
-    public static Clock get() {
-        return SingletonProvider.getClock();
+    class Factory {
+
+        private Factory() {
+        }
+
+        public static Clock get() {
+            return Implementation.INSTANCE;
+        }
     }
 
-    static {
-        SingletonProvider.setClock(() -> IMPLEMENTATION.INSTANCE);
-    }
+    class Implementation implements Clock {
 
-    static class IMPLEMENTATION extends Clock {
-
-        public static final Clock INSTANCE = new IMPLEMENTATION();
-
+        public static final Clock INSTANCE = new Implementation();
 
 
         private final long adjustment;
 
-        private IMPLEMENTATION() {
+        private Implementation() {
             long cpuTimeMillis = System.nanoTime() / 1_000_000;
             long systemTimeMillis = System.currentTimeMillis();
             this.adjustment = systemTimeMillis - cpuTimeMillis;
