@@ -2,6 +2,7 @@ package me.paulo.casaes.bbop;
 
 import me.paulo.casaes.bbop.dto.CommandType;
 import me.paulo.casaes.bbop.dto.MoveCommandDto;
+import me.paulo.casaes.bbop.model.Player;
 import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.GameLoopService;
@@ -55,14 +56,14 @@ public class GameSocket {
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().createOrGet(userId).leave());
+            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
         }
     }
 
     @OnError
     public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().createOrGet(userId).leave());
+            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
         }
     }
 

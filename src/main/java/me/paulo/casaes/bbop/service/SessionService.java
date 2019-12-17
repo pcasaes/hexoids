@@ -2,6 +2,7 @@ package me.paulo.casaes.bbop.service;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.Session;
+import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,16 +29,19 @@ public class SessionService {
 
     public void direct(String id, String message) {
         get(id)
-                .ifPresent(s -> asyncSend(s, message));
+                .ifPresent(s -> asyncSend(id, s, message));
     }
 
     public void broadcast(String message) {
-        sessions.values().forEach(s -> asyncSend(s, message));
+        sessions.entrySet().forEach(s -> asyncSend(s.getKey(), s.getValue(), message));
     }
 
-    private void asyncSend(Session session, String message) {
+    private void asyncSend(String userId, Session session, String message) {
         session.getAsyncRemote().sendObject(message, result -> {
-            if (result.getException() != null) {
+            if (result.getException() instanceof ClosedChannelException) {
+                LOGGER.warning("Session closed: " + result.getException());
+                sessions.remove(userId);
+            } else if (result.getException() != null) {
                 LOGGER.warning("Unable to send message: " + result.getException());
             }
         });
