@@ -10,6 +10,7 @@ import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
+import mockit.MockUp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -35,18 +36,24 @@ class PlayerTest {
     @Mock
     private Clock clock;
 
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
         GameEvents.get().setConsumer(null);
+
+        new MockUp<Clock.Factory>() {
+            @mockit.Mock
+            public Clock get() {
+                return clock;
+            }
+        };
 
         doReturn(0L).when(clock).getTime();
 
         Config.get().setEnv(Config.Environment.DEV.name());
         Config.get().setPlayerMaxMove(1f);
         Config.get().setPlayerMinMove(0.000000001f);
-        SingletonProvider.setClock(() -> clock);
-        SingletonProvider.setPlayers(() -> Players.INSTANCE);
 
         Players.get().reset();
     }

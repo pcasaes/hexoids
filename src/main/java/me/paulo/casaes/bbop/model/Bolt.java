@@ -37,7 +37,7 @@ public class Bolt {
         this.prevY = y;
         this.angle = angle;
         this.speed = speed;
-        this.timestamp = Clock.get().getTime();
+        this.timestamp = Clock.Factory.get().getTime();
         this.startTimestamp = this.timestamp;
         this.exhausted = false;
     }
