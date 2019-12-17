@@ -5,6 +5,7 @@ import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Players {
@@ -22,6 +23,10 @@ public class Players {
 
     public Player createOrGet(String id) {
         return playerMap.computeIfAbsent(id, this::create);
+    }
+
+    public Optional<Player> get(String id) {
+        return Optional.ofNullable(playerMap.get(id));
     }
 
     private Player create(String id) {
