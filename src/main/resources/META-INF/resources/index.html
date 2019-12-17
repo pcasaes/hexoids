@@ -51,7 +51,7 @@
         const color = getColorFromShip(p.ship);
         sprite.setTint(color | 0x555555, color, color | 0x555555, color);
         sprite.setBounce(0, 0);
-        sprite.setScale(0.5);
+        sprite.setScale(0.75);
         sprite.setCollideWorldBounds(true);
 
         players[p.playerId] = {
@@ -168,8 +168,8 @@
 
     const config = {
         type: Phaser.AUTO,
-        width: 800,
-        height: 600,
+        width: window.innerWidth - 20,
+        height: window.innerHeight - 20,
         physics: {
             default: 'arcade',
             arcade: {
