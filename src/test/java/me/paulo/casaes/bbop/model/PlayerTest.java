@@ -30,11 +30,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class PlayerTest {
 
     @Mock
     private Clock clock;
+
+    @Mock
+    private ScoreBoard scoreBoard;
 
 
     @BeforeEach
@@ -46,6 +51,13 @@ class PlayerTest {
             @mockit.Mock
             public Clock get() {
                 return clock;
+            }
+        };
+
+        new MockUp<ScoreBoard.Factory>() {
+            @mockit.Mock
+            public ScoreBoard get() {
+                return scoreBoard;
             }
         };
 
@@ -297,6 +309,7 @@ class PlayerTest {
 
         List<EventDto> events = dtos
                 .stream()
+                .filter(ev -> ev instanceof EventDto)
                 .map(ev -> (EventDto) ev)
                 .collect(Collectors.toList());
 
@@ -310,6 +323,8 @@ class PlayerTest {
         assertEquals(0f, playerMovedEventDto.getX());
         assertEquals(0f, playerMovedEventDto.getY());
         assertEquals(0f, playerMovedEventDto.getAngle());
+
+        verify(scoreBoard, times(1)).updateScore("2", 1L);
 
     }
 }
