@@ -166,6 +166,7 @@ public interface Player {
 
             GameEvents.get().register(PlayerDestroyedEventDto.of(this.id, playerId));
             GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
+            ScoreBoard.Factory.get().updateScore(playerId, 1L);
         }
     }
 }
