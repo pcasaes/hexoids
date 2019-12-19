@@ -12,13 +12,34 @@
 
     const DEADZONE_SIZE = 100;
 
+    const HUD_ALPHA = 0.6;
+    const HUD_BG = 'black';
+
+    function getCookie(cname) {
+        var name = cname + "=";
+        var decodedCookie = decodeURIComponent(document.cookie);
+        var ca = decodedCookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+    }
+
     function uuidv4() {
         return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
             (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         );
     }
 
-    const USER_ID = uuidv4();
+    let userIdFromCookie = getCookie("user_id");
+    const USER_ID = !userIdFromCookie ? uuidv4() : userIdFromCookie;
+    document.cookie = "user_id=" + USER_ID;
     console.log(USER_ID);
 
     const players = {};
@@ -56,10 +77,17 @@
         sprite.setScale(0.75);
         sprite.setCollideWorldBounds(true);
 
+        let str = color.toString(16);
+        while (str.length < 6) {
+            str = '0' + str;
+        }
+        str = '#' + str;
+
         players[p.playerId] = {
             "playerId": p.playerId,
             "color": color,
-            "sprite": sprite
+            "sprite": sprite,
+            "colorStyle": str,
         }
     }
 
@@ -123,6 +151,77 @@
         }
     }, 50);
 
+    function updateScore(resp) {
+        if (!players[USER_ID].scoreView) {
+            const text = gameScene().add.text(0, 0, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
+            text.setScrollFactor(0);
+            text.setAlpha(HUD_ALPHA);
+            text.setBackgroundColor(HUD_BG);
+            text.setColor(players[USER_ID].colorStyle);
+
+            players[USER_ID].scoreView = text;
+        }
+
+        players[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
+        players[USER_ID].scoreView.x = gameScene().game.config.width - (players[USER_ID].scoreView.displayWidth + 5);
+    }
+
+    const COMMANDS = {
+        'LIST_PLAYERS': resp => {
+            resp.players.forEach(createShip);
+        },
+
+        'PLAYER_SCORE_UPDATE': updateScore,
+
+    };
+
+    const EVENTS = {
+
+        'PLAYER_JOINED': resp => {
+            createShip(resp);
+
+            if (USER_ID === resp.playerId) {
+                gameScene().cameras.main.startFollow(players[resp.playerId].sprite, true);
+            }
+        },
+
+        'PLAYER_MOVED': resp => {
+            if (players[resp.playerId]) {
+                const sprite = players[resp.playerId].sprite;
+                const move = transform.view(resp.x, resp.y);
+
+                sprite.x = move.x;
+                sprite.y = move.y;
+
+                sprite.setRotation(resp.angle);
+            }
+        },
+
+        'PLAYER_LEFT': resp => {
+            if (players[resp.playerId]) {
+                const sprite = players[resp.playerId].sprite;
+                sprite.destroy();
+                delete players[resp.playerId];
+            }
+        },
+
+        'BOLT_MOVED': resp => {
+            boltMove(resp)
+        },
+
+        'BOLT_EXHAUSTED': resp => {
+            if (bolts[resp.boltId]) {
+                bolts[resp.boltId].sprite.destroy();
+                delete bolts[resp.boltId];
+            }
+        },
+
+        'LEADERBOARD_UPDATED': resp => {
+            LEADERBOARD.process(resp);
+        },
+
+    };
+
     function setupSocket() {
         socket = new WebSocket("ws://" + location.host + "/game/" + USER_ID);
         socket.onopen = function () {
@@ -131,32 +230,15 @@
         socket.onmessage = function (m) {
             console.log("Got message: " + m.data);
             const resp = JSON.parse(m.data);
-            if (resp.command === 'LIST_PLAYERS') {
-                resp.players.forEach(createShip);
-            } else if (resp.event === 'PLAYER_JOINED') {
-                createShip(resp);
 
-                if (USER_ID === resp.playerId) {
-                    gameScene().cameras.main.startFollow(players[resp.playerId].sprite, true);
-                }
-            } else if (players[resp.playerId] && resp.event === 'PLAYER_MOVED') {
-                const sprite = players[resp.playerId].sprite;
-                const move = transform.view(resp.x, resp.y);
+            const event = EVENTS[resp.event];
+            if (event) {
+                event(resp);
+            }
 
-                sprite.x = move.x;
-                sprite.y = move.y;
-
-                sprite.setRotation(resp.angle);
-
-            } else if (players[resp.playerId] && resp.event === 'PLAYER_LEFT') {
-                const sprite = players[resp.playerId].sprite;
-                sprite.destroy();
-                delete players[resp.playerId];
-            } else if (resp.event === 'BOLT_MOVED') {
-                boltMove(resp);
-            } else if (resp.event === 'BOLT_EXHAUSTED' && bolts[resp.boltId]) {
-                bolts[resp.boltId].sprite.destroy();
-                delete bolts[resp.boltId];
+            const command = COMMANDS[resp.command];
+            if (command) {
+                command(resp);
             }
         };
     }
@@ -229,6 +311,43 @@
         },
     };
 
+    class Leaderboard {
+        constructor(scene, width, height, x, y) {
+            this.scene = scene;
+            this.width = width;
+            this.height = height;
+            this.x = x;
+            this.y = y;
+            this.entries = [];
+
+
+        }
+
+        process(leaderboardUpdatedEvent) {
+            leaderboardUpdatedEvent.scores.forEach((entry, i) => {
+                if (i >= this.entries.length) {
+                    let y = 0;
+                    if (i > 0) {
+                        y = this.entries[0].displayHeight;
+                    }
+                    const entry = this.scene.add.text(this.x + 5, this.y + i * y + 2, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
+                    entry.setScrollFactor(0);
+                    entry.setAlpha(HUD_ALPHA);
+                    entry.setBackgroundColor(HUD_BG);
+                    this.entries.push(entry);
+                }
+                this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
+                if (players[entry.playerId]) {
+                    this.entries[i].setColor(players[entry.playerId].colorStyle);
+                } else {
+                    this.entries[i].setColor("#ffffff");
+                }
+            });
+        }
+    }
+
+    let LEADERBOARD;
+
     function create() {
 
         this.cameras.main.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
@@ -241,6 +360,8 @@
 
 
         this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
+
+        LEADERBOARD = new Leaderboard(this, 200, 300, 0, 0);
 
         setupSocket();
 

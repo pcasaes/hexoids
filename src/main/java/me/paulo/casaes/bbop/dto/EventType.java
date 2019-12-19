@@ -7,5 +7,7 @@ public enum EventType {
     PLAYER_DESTROYED,
 
     BOLT_MOVED,
-    BOLT_EXHAUSTED
+    BOLT_EXHAUSTED,
+
+    LEADERBOARD_UPDATED
 }
