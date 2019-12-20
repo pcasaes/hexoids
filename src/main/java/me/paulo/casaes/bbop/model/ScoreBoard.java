@@ -1,7 +1,7 @@
 package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
-import me.paulo.casaes.bbop.dto.LeaderBoardUpdatedEventDto;
+import me.paulo.casaes.bbop.dto.ScoreBoardUpdatedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerScoreUpdateDto;
 
 import java.util.ArrayList;
@@ -14,7 +14,9 @@ import java.util.stream.IntStream;
 
 public interface ScoreBoard {
 
-    void updateScore(String playerId, long deltaScore);
+    void updateScore(String playerId, int deltaScore);
+
+    void resetScore(String playerId);
 
     void fixedUpdate(long timestamp);
 
@@ -35,22 +37,29 @@ public interface ScoreBoard {
 
         private static final long FIXED_UPDATE_DELTA = 1_000L;
 
-        static final int LEADER_BOARD_SIZE = 10;
+        static final int SCORE_BOARD_SIZE = 10;
 
         private static final ScoreBoard INSTANCE = new Implementation();
 
-        private final Map<String, Long> scores = new HashMap<>();
-        private final Map<String, Long> updatedScores = new HashMap<>();
-        private final List<Entry> rankedLeaderBoard = new ArrayList<>();
+        private final Map<String, Integer> scores = new HashMap<>();
+        private final Map<String, Integer> updatedScores = new HashMap<>();
+        private final List<Entry> rankedScoreBoard = new ArrayList<>();
 
         private long lastFixedUpdateTimestamp = 0L;
 
         @Override
-        public void updateScore(String playerId, long deltaScore) {
-            long score = this.scores.getOrDefault(playerId, Long.valueOf(0)) + deltaScore;
+        public void updateScore(String playerId, int deltaScore) {
+            int score = this.scores.getOrDefault(playerId, 0) + deltaScore;
             this.scores.put(playerId, score);
             this.updatedScores.put(playerId, score);
             GameEvents.get().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(score)));
+        }
+
+        @Override
+        public void resetScore(String playerId) {
+            this.scores.put(playerId, 0);
+            this.updatedScores.put(playerId, 0);
+            GameEvents.get().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(0)));
         }
 
         @Override
@@ -60,20 +69,20 @@ public interface ScoreBoard {
 
                 updatedScores
                         .entrySet()
-                        .forEach(this::tryAddLeaderBoard);
+                        .forEach(this::tryAddToScoreBoard);
 
 
                 updatedScores.clear();
-                if (!rankedLeaderBoard.isEmpty()) {
-                    rankedLeaderBoard.sort(Entry::compare);
+                if (!rankedScoreBoard.isEmpty()) {
+                    rankedScoreBoard.sort(Entry::compare);
 
-                    LeaderBoardUpdatedEventDto event = LeaderBoardUpdatedEventDto.newInstance();
+                    ScoreBoardUpdatedEventDto event = ScoreBoardUpdatedEventDto.newInstance();
 
-                    while (rankedLeaderBoard.size() > LEADER_BOARD_SIZE) {
-                        rankedLeaderBoard.remove(rankedLeaderBoard.size() - 1);
+                    while (rankedScoreBoard.size() > SCORE_BOARD_SIZE) {
+                        rankedScoreBoard.remove(rankedScoreBoard.size() - 1);
                     }
 
-                    rankedLeaderBoard
+                    rankedScoreBoard
                             .forEach(entry -> event.add(entry.getPlayerId(), entry.getScore()));
 
 
@@ -82,22 +91,22 @@ public interface ScoreBoard {
             }
         }
 
-        private void tryAddLeaderBoard(Map.Entry<String, Long> mapEntry) {
+        private void tryAddToScoreBoard(Map.Entry<String, Integer> mapEntry) {
             OptionalInt index = IntStream
-                    .range(0, rankedLeaderBoard.size())
-                    .filter(i -> rankedLeaderBoard.get(i).getPlayerId().equals(mapEntry.getKey()))
+                    .range(0, rankedScoreBoard.size())
+                    .filter(i -> rankedScoreBoard.get(i).getPlayerId().equals(mapEntry.getKey()))
                     .findFirst();
             if (index.isPresent()) {
-                rankedLeaderBoard.get(index.getAsInt()).setScore(mapEntry.getValue());
+                rankedScoreBoard.get(index.getAsInt()).setScore(mapEntry.getValue());
             } else {
-                rankedLeaderBoard.add(new Entry(mapEntry.getKey()).setScore(mapEntry.getValue()));
+                rankedScoreBoard.add(new Entry(mapEntry.getKey()).setScore(mapEntry.getValue()));
             }
         }
 
         @Override
         public void reset() {
             scores.clear();
-            rankedLeaderBoard.clear();
+            rankedScoreBoard.clear();
             updatedScores.clear();
             this.lastFixedUpdateTimestamp = 0L;
         }
