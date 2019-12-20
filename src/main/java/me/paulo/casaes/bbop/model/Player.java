@@ -167,7 +167,7 @@ public interface Player {
             }
 
             //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-            float distance = Math.abs((y2 - y1) * this.x - (x2 - x1) * this.y + x2 * y1 - y2 * x1) / (float) Math.sqrt(Math.pow(y2 - y1, 2.) + Math.pow(x2 - x1, 2.));
+            float distance = TrigUtil.calculateShortestDistanceFromPointToLine(x1, y1, x2, y2, this.x, this.y);
             return distance <= collisionRadius;
 
         }
@@ -178,7 +178,8 @@ public interface Player {
 
             GameEvents.get().register(PlayerDestroyedEventDto.of(this.id, playerId));
             GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
-            ScoreBoard.Factory.get().updateScore(playerId, 1L);
+            ScoreBoard.Factory.get().updateScore(playerId, 1);
+            ScoreBoard.Factory.get().resetScore(this.id);
         }
     }
 }

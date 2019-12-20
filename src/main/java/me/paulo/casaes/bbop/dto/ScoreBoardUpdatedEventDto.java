@@ -3,15 +3,15 @@ package me.paulo.casaes.bbop.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LeaderBoardUpdatedEventDto implements EventDto {
+public class ScoreBoardUpdatedEventDto implements EventDto {
 
     private final List<Entry> scores = new ArrayList<>();
 
-    private LeaderBoardUpdatedEventDto() {
+    private ScoreBoardUpdatedEventDto() {
     }
 
-    public static LeaderBoardUpdatedEventDto newInstance() {
-        return new LeaderBoardUpdatedEventDto();
+    public static ScoreBoardUpdatedEventDto newInstance() {
+        return new ScoreBoardUpdatedEventDto();
     }
 
     public List<Entry> getScores() {
@@ -24,7 +24,7 @@ public class LeaderBoardUpdatedEventDto implements EventDto {
 
     @Override
     public EventType getEvent() {
-        return EventType.LEADERBOARD_UPDATED;
+        return EventType.SCOREBOARD_UPDATED;
     }
 
     public static class Entry {

@@ -9,5 +9,5 @@ public enum EventType {
     BOLT_MOVED,
     BOLT_EXHAUSTED,
 
-    LEADERBOARD_UPDATED
+    SCOREBOARD_UPDATED
 }
