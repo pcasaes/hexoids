@@ -5,6 +5,7 @@ import me.paulo.casaes.bbop.dto.PlayerDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
+import me.paulo.casaes.bbop.util.TrigUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -122,7 +123,18 @@ public interface Player {
             float nx = this.x + moveX;
             float ny = this.y + moveY;
             if (angle != null) {
-                this.angle = angle;
+
+                final float maxAngle = Config.get().getPlayerMaxAngle();
+                float aDiff1 = TrigUtil.calculateAngleDistance(angle, this.angle);
+                if (aDiff1 > maxAngle) {
+                    aDiff1 = maxAngle;
+                    this.angle += aDiff1;
+                } else if (aDiff1 < -maxAngle) {
+                    aDiff1 = -maxAngle;
+                    this.angle += aDiff1;
+                } else {
+                    this.angle = angle;
+                }
             }
 
             this.currentSpeed = (float) Math.sqrt(Math.pow(Math.abs(moveX), 2) + Math.pow(Math.abs(moveY), 2));

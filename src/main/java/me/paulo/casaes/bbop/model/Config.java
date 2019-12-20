@@ -1,8 +1,8 @@
 package me.paulo.casaes.bbop.model;
 
-public class Config {
+import me.paulo.casaes.bbop.util.TrigUtil;
 
-    private static final float MIN_MOVE = 0.000000001f;
+public class Config {
 
     public enum Environment {
         PRODUCTION,
@@ -10,8 +10,9 @@ public class Config {
     }
 
     private Environment env;
-    private float playerMinMove;
+    private float minMove;
     private float playerMaxMove;
+    private float playerMaxAngle;
     private int maxBolts;
     private long boltMaxDuration;
     private float boltSpeed;
@@ -38,16 +39,24 @@ public class Config {
         return maxBolts;
     }
 
-    public float getPlayerMinMove() {
-        return playerMinMove;
+    public float getMinMove() {
+        return minMove;
     }
 
-    public void setPlayerMinMove(float playerMinMove) {
-        this.playerMinMove = playerMinMove;
+    public void setMinMove(float minMove) {
+        this.minMove = minMove;
     }
 
     public float getPlayerMaxMove() {
         return playerMaxMove;
+    }
+
+    public float getPlayerMaxAngle() {
+        return playerMaxAngle;
+    }
+
+    public void setPlayerMaxAngleDivisor(float playerMaxAngleDivisor) {
+        this.playerMaxAngle = TrigUtil.PI / playerMaxAngleDivisor;
     }
 
     public void setPlayerMaxMove(float playerMaxMove) {
@@ -82,7 +91,4 @@ public class Config {
         this.boltCollisionRadius = boltCollisionRadius;
     }
 
-    public float getMinMove() {
-        return MIN_MOVE;
-    }
 }

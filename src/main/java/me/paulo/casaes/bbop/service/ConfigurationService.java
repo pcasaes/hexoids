@@ -19,8 +19,9 @@ public class ConfigurationService {
     private String environment;
     private int maxBolts;
     private long boltMaxDuration;
-    private float playerMinMove;
+    private float minMove;
     private float playerMaxMove;
+    private float playerMaxAngleDivisor;
     private float boltSpeed;
     private float boltCollisionRadius;
 
@@ -50,14 +51,19 @@ public class ConfigurationService {
             ) int maxBolts,
 
             @ConfigProperty(
-                    name = "bbop.config.player.min.move",
-                    defaultValue = "10"
-            ) float playerMinMove,
+                    name = "bbop.config.min.move",
+                    defaultValue = "0.000000001"
+            ) float minMove,
 
             @ConfigProperty(
                     name = "bbop.config.player.max.move",
                     defaultValue = "10"
             ) float playerMaxMove,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.max.angle.divisor",
+                    defaultValue = "4"
+            ) float playerMaxAngleDivisor,
 
             @ConfigProperty(
                     name = "bbop.config.bolt.max.duration",
@@ -96,7 +102,8 @@ public class ConfigurationService {
     ) {
         this.environment = environment;
         this.playerMaxMove = playerMaxMove;
-        this.playerMinMove = playerMinMove;
+        this.minMove = minMove;
+        this.playerMaxAngleDivisor = playerMaxAngleDivisor;
         this.maxBolts = maxBolts;
         this.boltMaxDuration = boltMaxDuration;
         this.boltSpeed = boltSpeed;
@@ -116,9 +123,10 @@ public class ConfigurationService {
     @PostConstruct
     public void start() {
         LOGGER.info("bbop.config.environment=" + getEnvironment());
-        LOGGER.info("bbop.config.player.min.min=" + getPlayerMinMove());
+        LOGGER.info("bbop.config.min.min=" + getMinMove());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
+        LOGGER.info("bbop.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
         LOGGER.info("bbop.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
@@ -129,8 +137,9 @@ public class ConfigurationService {
 
         Config.get().setEnv(getEnvironment());
         Config.get().setMaxBolts(getMaxBolts());
-        Config.get().setPlayerMinMove(getPlayerMinMove());
+        Config.get().setMinMove(getMinMove());
         Config.get().setPlayerMaxMove(getPlayerMaxMove());
+        Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor());
         Config.get().setBoltMaxDuration(getBoltMaxDuration());
         Config.get().setBoltSpeed(getBoltSpeed());
         Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
@@ -141,12 +150,16 @@ public class ConfigurationService {
         return environment;
     }
 
-    public float getPlayerMinMove() {
-        return playerMinMove;
+    public float getMinMove() {
+        return minMove;
     }
 
     public float getPlayerMaxMove() {
         return playerMaxMove;
+    }
+
+    public float getPlayerMaxAngleDivisor() {
+        return playerMaxAngleDivisor;
     }
 
     public int getMaxBolts() {

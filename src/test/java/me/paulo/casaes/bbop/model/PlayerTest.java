@@ -65,7 +65,8 @@ class PlayerTest {
 
         Config.get().setEnv(Config.Environment.DEV.name());
         Config.get().setPlayerMaxMove(1f);
-        Config.get().setPlayerMinMove(0.000000001f);
+        Config.get().setMinMove(0.000000001f);
+        Config.get().setPlayerMaxAngleDivisor(0.5f);
 
         Players.get().reset();
     }
