@@ -28,6 +28,9 @@ public class ConfigurationService {
     private boolean clientBroadcastUseLinkedList;
     private int clientBroadcastMaxSizeExponent;
 
+    private boolean domainEventUseLinkedList;
+    private int domainEventMaxSizeExponent;
+
     private boolean gameLoopUseLinkedList;
     private int gameLoopMaxSizeExponent;
 
@@ -81,6 +84,16 @@ public class ConfigurationService {
             ) float boltCollisionRadius,
 
             @ConfigProperty(
+                    name = "bbop.config.service.domain.event.eventqueue.linkedlist",
+                    defaultValue = "false"
+            ) boolean domainEventUseLinkedList,
+
+            @ConfigProperty(
+                    name = "bbop.config.service.domain.event.eventqueue.exponent",
+                    defaultValue = "17"
+            ) int domainEventMaxSizeExponent,
+
+            @ConfigProperty(
                     name = "bbop.config.service.client.broadcast.eventqueue.linkedlist",
                     defaultValue = "false"
             ) boolean clientBroadcastUseLinkedList,
@@ -112,6 +125,9 @@ public class ConfigurationService {
         this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
         this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
 
+        this.domainEventUseLinkedList = domainEventUseLinkedList;
+        this.domainEventMaxSizeExponent = domainEventMaxSizeExponent;
+
         this.gameLoopUseLinkedList = gameLoopUseLinkedList;
         this.gameLoopMaxSizeExponent = gameLoopMaxSizeExponent;
     }
@@ -132,6 +148,8 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.linkedlist=" + isClientBroadcastUseLinkedList());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.exponent=" + getClientBroadcastMaxSizeExponent());
+        LOGGER.info("bbop.config.service.domain.event.eventqueue.linkedlist=" + isDomainEventUseLinkedList());
+        LOGGER.info("bbop.config.service.domain.event.eventqueue.exponent=" + getDomainEventMaxSizeExponent());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
@@ -184,6 +202,14 @@ public class ConfigurationService {
 
     public int getClientBroadcastMaxSizeExponent() {
         return clientBroadcastMaxSizeExponent;
+    }
+
+    public boolean isDomainEventUseLinkedList() {
+        return domainEventUseLinkedList;
+    }
+
+    public int getDomainEventMaxSizeExponent() {
+        return domainEventMaxSizeExponent;
     }
 
     public boolean isGameLoopUseLinkedList() {
