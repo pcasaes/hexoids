@@ -5,8 +5,9 @@ import me.paulo.casaes.bbop.dto.MoveCommandDto;
 import me.paulo.casaes.bbop.model.Player;
 import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
-import me.paulo.casaes.bbop.service.GameLoopService;
 import me.paulo.casaes.bbop.service.SessionService;
+import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
+import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -29,7 +30,7 @@ public class GameSocket {
 
     private final DtoProcessorService dtoProcessorService;
 
-    private final GameLoopService gameLoopService;
+    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     public GameSocket() {
         this.sessionService = null;
@@ -40,7 +41,7 @@ public class GameSocket {
     @Inject
     public GameSocket(SessionService sessionService,
                       DtoProcessorService dtoProcessorService,
-                      GameLoopService gameLoopService) {
+                      EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
