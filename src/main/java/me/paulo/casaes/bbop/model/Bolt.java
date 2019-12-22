@@ -82,7 +82,7 @@ public class Bolt {
         }
 
         if (event != null) {
-            GameEvents.get().register(event);
+            GameEvents.getClientEvents().register(event);
         }
     }
 
@@ -116,7 +116,7 @@ public class Bolt {
             player.destroyedBy(this.ownerPlayerId);
             if (!this.exhausted) {
                 this.exhausted = true;
-                GameEvents.get().register(BoltExhaustedEventDto.of(this.idString));
+                GameEvents.getClientEvents().register(BoltExhaustedEventDto.of(this.idString));
             }
         }
     }

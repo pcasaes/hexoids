@@ -4,25 +4,31 @@ import me.paulo.casaes.bbop.dto.Dto;
 
 import java.util.function.Consumer;
 
-public class GameEvents {
+public class GameEvents<T> {
 
-    private static final GameEvents INSTANCE = new GameEvents();
+    private static final GameEvents<Dto> CLIENT_INSTANCE = new GameEvents<>();
 
-    private Consumer<Dto> consumer;
+    private static final GameEvents<DomainEvent> DOMAIN_EVENT_INSTANCE = new GameEvents<>();
+
+    private Consumer<T> consumer;
 
     private GameEvents() {
     }
 
-    public static GameEvents get() {
-        return INSTANCE;
+    public static GameEvents<Dto> getClientEvents() {
+        return CLIENT_INSTANCE;
     }
 
-    public void setConsumer(Consumer<Dto> consumer) {
+    public static GameEvents<DomainEvent> getDomainEvents() {
+        return DOMAIN_EVENT_INSTANCE;
+    }
+
+    public void setConsumer(Consumer<T> consumer) {
         this.consumer = consumer;
     }
 
 
-    void register(Dto event) {
+    void register(T event) {
         if (consumer != null) {
             consumer.accept(event);
         }

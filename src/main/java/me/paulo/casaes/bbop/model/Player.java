@@ -28,9 +28,15 @@ public interface Player {
 
     void join();
 
+    void joined(PlayerJoinedEventDto event);
+
     void move(float moveX, float moveY, Float angle);
 
+    void moved(PlayerMovedEventDto event);
+
     void leave();
+
+    void left();
 
     boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
 
@@ -42,7 +48,7 @@ public interface Player {
 
         private final String id;
 
-        private final int ship;
+        private int ship;
 
         private float x = 0f;
 
@@ -51,6 +57,8 @@ public interface Player {
         private float angle = 0f;
 
         private float currentSpeed = 0f;
+
+        private long movedTimestamp;
 
         private Collection<Bolt> firedBolts = new ArrayList<>();
 
@@ -100,7 +108,21 @@ public interface Player {
         @Override
         public void join() {
             resetPosition();
-            GameEvents.get().register(PlayerJoinedEventDto.of(id, ship, x, y, angle));
+            GameEvents.getDomainEvents().register(
+                    DomainEvent
+                            .create(Topics.JoinGameTopic.name(),
+                                    this.id,
+                                    PlayerJoinedEventDto.of(id, ship, x, y, angle))
+            );
+        }
+
+        @Override
+        public void joined(PlayerJoinedEventDto event) {
+            this.x = event.getX();
+            this.y = event.getY();
+            this.angle = event.getAngle();
+            this.ship = event.getShip();
+            GameEvents.getClientEvents().register(PlayerJoinedEventDto.of(id, ship, x, y, angle));
         }
 
         @Override
@@ -143,13 +165,43 @@ public interface Player {
             this.x = Math.max(0f, Math.min(1f, nx));
             this.y = Math.max(0f, Math.min(1f, ny));
 
-            GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
+            fireMoveDomainEvent();
+        }
+
+        @Override
+        public void moved(PlayerMovedEventDto event) {
+            if (event.getTimestamp() > this.movedTimestamp) {
+                this.x = event.getX();
+                this.y = event.getY();
+                this.angle = event.getAngle();
+                this.movedTimestamp = event.getTimestamp();
+            }
+            GameEvents.getClientEvents().register(event);
+        }
+
+        private void fireMoveDomainEvent() {
+            this.movedTimestamp = Clock.Factory.get().getTime();
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.create(Topics.PlayerActionTopic.name(),
+                            this.id,
+                            PlayerMovedEventDto.of(
+                                    this.id,
+                                    this.x,
+                                    this.y,
+                                    this.angle,
+                                    this.currentSpeed,
+                                    this.movedTimestamp)));
         }
 
         @Override
         public void leave() {
-            Players.get().remove(this.id);
-            GameEvents.get().register(PlayerLeftEventDto.of(this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.id));
+        }
+
+        @Override
+        public void left() {
+            GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.id));
         }
 
         @Override
@@ -176,8 +228,13 @@ public interface Player {
         public void destroyedBy(String playerId) {
             resetPosition();
 
-            GameEvents.get().register(PlayerDestroyedEventDto.of(this.id, playerId));
-            GameEvents.get().register(PlayerMovedEventDto.of(this.id, this.x, this.y, this.angle));
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.create(
+                            Topics.PlayerActionTopic.name(),
+                            this.id,
+                            PlayerDestroyedEventDto.of(this.id, playerId))
+            );
+            fireMoveDomainEvent();
             ScoreBoard.Factory.get().updateScore(playerId, 1);
             ScoreBoard.Factory.get().resetScore(this.id);
         }

@@ -41,7 +41,7 @@ public class ClientBroadcastService {
         this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
 
-        GameEvents.get().setConsumer(this::broadcast);
+        GameEvents.getClientEvents().setConsumer(this::broadcast);
     }
 
     private Thread thread;
@@ -61,7 +61,7 @@ public class ClientBroadcastService {
                 configurationService.isClientBroadcastUseLinkedList(),
                 configurationService.getClientBroadcastMaxSizeExponent());
         thread = new Thread(this::run);
-        thread.setName(GameLoopService.class.getSimpleName());
+        thread.setName(ClientBroadcastService.class.getSimpleName());
         thread.setDaemon(true);
         thread.start();
     }
