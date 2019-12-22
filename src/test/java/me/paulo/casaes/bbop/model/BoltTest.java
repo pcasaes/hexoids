@@ -52,7 +52,7 @@ class BoltTest {
             }
         };
 
-        GameEvents.get().setConsumer(null);
+        GameEvents.getClientEvents().setConsumer(null);
 
         Bolt.reset();
 
@@ -69,7 +69,7 @@ class BoltTest {
     @Test
     void testFireMoveAndExhaust() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, 0f, 0f);
@@ -117,7 +117,7 @@ class BoltTest {
     @Test
     void testMoveRight() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, 0f, 0f);
@@ -139,7 +139,7 @@ class BoltTest {
     @Test
     void testMoveRightDown() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 4f, 0f);
@@ -160,7 +160,7 @@ class BoltTest {
     @Test
     void testMoveDown() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 2f, 0f);
@@ -181,7 +181,7 @@ class BoltTest {
     @Test
     void testMoveLeftDown() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) (3 * Math.PI / 4f), 0f);
@@ -202,7 +202,7 @@ class BoltTest {
     @Test
     void testMoveLeft() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) Math.PI, 0f);
@@ -223,7 +223,7 @@ class BoltTest {
     @Test
     void testMoveLefUp() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (5 * Math.PI / 4), 0f);
@@ -244,7 +244,7 @@ class BoltTest {
     @Test
     void testMoveUp() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (3 * Math.PI / 2), 0f);
@@ -280,7 +280,7 @@ class BoltTest {
         doReturn(1_000L).when(clock).getTime();
 
         List<Dto> dtos = new ArrayList<>();
-        GameEvents.get().setConsumer(dtos::add);
+        GameEvents.getClientEvents().setConsumer(dtos::add);
 
         Bolt.fixedUpdate(clock.getTime());
 
@@ -325,7 +325,7 @@ class BoltTest {
         doReturn(1_000L).when(clock).getTime();
 
         List<Dto> events = new ArrayList<>();
-        GameEvents.get().setConsumer(events::add);
+        GameEvents.getClientEvents().setConsumer(events::add);
 
         Bolt.fixedUpdate(clock.getTime());
 

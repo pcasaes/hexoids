@@ -1,0 +1,38 @@
+version: '3.5'
+services:
+  bbop-zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - service-network
+  bbop-kafka:
+    image: 'wurstmeister/kafka:2.12-2.2.1'
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: bbop-kafka
+      KAFKA_ZOOKEEPER_CONNECT: bbop-zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - bbop-zookeeper
+    networks:
+      - service-network
+#  bbop-kafka-manager:
+#    container_name: kafka-manager
+#    hostname: kafka-manager
+#    image: solsson/kafka-manager:latest
+#    restart: always
+#    environment:
+#      - ZK_HOSTS=bbop-zookeeper:2181
+#    ports:
+#      - "9000:9000"
+#    depends_on:
+#      - bbop-zookeeper
+#      - bbop-kafka
+#    networks:
+#      - service-network
+networks:
+  service-network:
+    name: bbop-mmo-arcade-network

@@ -1,6 +1,9 @@
 package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
+import me.paulo.casaes.bbop.dto.EventType;
+import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
+import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 
 import java.util.HashMap;
@@ -30,7 +33,7 @@ public class Players {
     }
 
     private Player create(String id) {
-        GameEvents.get().register(DirectedCommandDto.of(id, Players.get().requestListOfPlayers()));
+        GameEvents.getClientEvents().register(DirectedCommandDto.of(id, Players.get().requestListOfPlayers()));
         return Player.create(id);
     }
 
@@ -42,14 +45,35 @@ public class Players {
                 .collect(Collectors.toList()));
     }
 
-    void remove(String id) {
-        playerMap.remove(id);
-    }
-
     public Iterable<Player> iterable() {
         return playerMap.values();
     }
 
+    void joined(PlayerJoinedEventDto event) {
+        Player player = createOrGet(event.getPlayerId());
+        player.joined(event);
+    }
+
+    void left(String playerId) {
+        Player player = createOrGet(playerId);
+        playerMap.remove(playerId);
+        player.left();
+    }
+
+    public void consumeFromJoinTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() == null) {
+            left(domainEvent.getKey());
+        } else if (domainEvent.getEvent().isEvent(EventType.PLAYER_JOINED)) {
+            joined((PlayerJoinedEventDto) domainEvent.getEvent());
+        }
+    }
+
+    public void consumeFromMoveTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_MOVED)) {
+            get(domainEvent.getKey())
+                    .ifPresent(p -> p.moved((PlayerMovedEventDto) domainEvent.getEvent()));
+        }
+    }
 
     void reset() {
         playerMap.clear();

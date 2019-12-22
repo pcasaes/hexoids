@@ -16,7 +16,7 @@ class ScoreBoardTest {
 
     @BeforeEach
     void setup() {
-        GameEvents.get().setConsumer(null);
+        GameEvents.getClientEvents().setConsumer(null);
 
         ScoreBoard.Factory.get().reset();
 
@@ -25,7 +25,7 @@ class ScoreBoardTest {
     @Test
     void testNotEnoughTime() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         ScoreBoard.Factory.get().fixedUpdate(500L);
 
@@ -35,7 +35,7 @@ class ScoreBoardTest {
     @Test
     void testEmptyLeaderBoard() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         ScoreBoard.Factory.get().fixedUpdate(1000L);
 
@@ -45,7 +45,7 @@ class ScoreBoardTest {
     @Test
     void testSimpleReset() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         ScoreBoard.Factory.get().updateScore("1", 100);
 
@@ -68,7 +68,7 @@ class ScoreBoardTest {
     @Test
     void testSimpleFull() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
             ScoreBoard.Factory.get().updateScore(String.valueOf(i), SCORE_BOARD_SIZE - i);
@@ -91,7 +91,7 @@ class ScoreBoardTest {
     @Test
     void testSimplePastFull() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
-        GameEvents.get().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
             ScoreBoard.Factory.get().updateScore(String.valueOf(i), SCORE_BOARD_SIZE - i);

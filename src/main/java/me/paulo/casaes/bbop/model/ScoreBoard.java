@@ -52,14 +52,14 @@ public interface ScoreBoard {
             int score = this.scores.getOrDefault(playerId, 0) + deltaScore;
             this.scores.put(playerId, score);
             this.updatedScores.put(playerId, score);
-            GameEvents.get().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(score)));
+            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(score)));
         }
 
         @Override
         public void resetScore(String playerId) {
             this.scores.put(playerId, 0);
             this.updatedScores.put(playerId, 0);
-            GameEvents.get().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(0)));
+            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(0)));
         }
 
         @Override
@@ -86,7 +86,7 @@ public interface ScoreBoard {
                             .forEach(entry -> event.add(entry.getPlayerId(), entry.getScore()));
 
 
-                    GameEvents.get().register(event);
+                    GameEvents.getClientEvents().register(event);
                 }
             }
         }
