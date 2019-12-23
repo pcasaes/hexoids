@@ -1,6 +1,9 @@
 package me.paulo.casaes.bbop.service.kafka;
 
+import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Topics;
+import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
+import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
@@ -20,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -36,14 +40,19 @@ public class KafkaInitService {
     private Instance<KafkaConsumerService> kafkaConsumerServiceFactory;
     private Map<Topics, KafkaConsumerService> kafkaConsumerServiceMap = new ConcurrentHashMap<>();
 
+    private EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+
     private KafkaAdmin kafkaAdmin;
 
 
     @Inject
-    public KafkaInitService(Instance<BTopic> topicsFactory, KafkaAdmin kafkaAdmin, Instance<KafkaConsumerService> kafkaConsumerServiceFactory) {
+    public KafkaInitService(Instance<BTopic> topicsFactory, KafkaAdmin kafkaAdmin,
+                            Instance<KafkaConsumerService> kafkaConsumerServiceFactory,
+                            EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
         this.topicsFactory = topicsFactory;
         this.kafkaAdmin = kafkaAdmin;
         this.kafkaConsumerServiceFactory = kafkaConsumerServiceFactory;
+        this.gameLoopService = gameLoopService;
     }
 
     public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) {
@@ -62,9 +71,13 @@ public class KafkaInitService {
                 .forEach(topic -> {
                     KafkaConsumerService service = kafkaConsumerServiceFactory.get();
                     kafkaConsumerServiceMap.put(topic, service);
-                    service.start(topic.name(), topic::consume);
+                    service.start(topic.name(), runInGameLoop(topic));
                 });
 
+    }
+
+    private Consumer<DomainEvent> runInGameLoop(Topics topic) {
+        return domainEvent -> gameLoopService.enqueue(() -> topic.consume(domainEvent));
     }
 
     @PreDestroy
