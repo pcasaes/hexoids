@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class BoltTest {
 
@@ -53,15 +54,17 @@ class BoltTest {
         };
 
         GameEvents.getClientEvents().setConsumer(null);
+        GameEvents.getDomainEvents().setConsumer(null);
 
         Bolt.reset();
 
-        doReturn(0L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(0L);
 
         Config.get().setEnv(Config.Environment.DEV.name());
         Config.get().setBoltMaxDuration(10_000L);
         Config.get().setBoltSpeed(0.01f);
         Config.get().setBoltCollisionRadius(0.001f);
+        Config.get().setMinMove(0.000000001f);
 
         doReturn(Collections.emptyList()).when(players).iterable();
     }
@@ -87,7 +90,7 @@ class BoltTest {
         assertFalse(bolt.isExhausted());
         assertTrue(bolt.isActive());
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -98,7 +101,7 @@ class BoltTest {
         assertFalse(bolt.isExhausted());
         assertTrue(bolt.isActive());
 
-        doReturn(2_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(2_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltExhaustedEventDto exhaustedEvent = (BoltExhaustedEventDto) eventReference.get();
@@ -123,7 +126,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 0f, 0f, 0f, 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -145,7 +148,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 4f, 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -166,7 +169,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 0f, 0f, (float) Math.PI / 2f, 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -187,7 +190,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) (3 * Math.PI / 4f), 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -208,7 +211,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 1f, 0f, (float) Math.PI, 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -229,7 +232,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (5 * Math.PI / 4), 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();
@@ -250,7 +253,7 @@ class BoltTest {
         final Bolt bolt = Bolt.fire("1", 1f, 1f, (float) (3 * Math.PI / 2), 0f);
 
 
-        doReturn(1_000L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(1_000L);
 
         Bolt.fixedUpdate(clock.getTime());
         BoltMovedEventDto movedEvent = (BoltMovedEventDto) eventReference.get();

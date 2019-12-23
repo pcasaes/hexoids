@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class PlayerTest {
 
@@ -46,6 +46,7 @@ class PlayerTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         GameEvents.getClientEvents().setConsumer(null);
+        GameEvents.getDomainEvents().setConsumer(null);
 
         new MockUp<Clock.Factory>() {
             @mockit.Mock
@@ -61,7 +62,7 @@ class PlayerTest {
             }
         };
 
-        doReturn(0L).when(clock).getTime();
+        when(clock.getTime()).thenReturn(0L);
 
         Config.get().setEnv(Config.Environment.DEV.name());
         Config.get().setPlayerMaxMove(1f);
