@@ -1,5 +1,8 @@
 package me.paulo.casaes.bbop.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PlayerDestroyedEventDto implements EventDto {
 
     private final String playerId;
@@ -10,7 +13,10 @@ public class PlayerDestroyedEventDto implements EventDto {
         this.destroyedByPlayerId = destroyedByPlayerId;
     }
 
-    public static PlayerDestroyedEventDto of(String playerId, String destroyedByPlayerId) {
+    @JsonCreator
+    public static PlayerDestroyedEventDto of(
+            @JsonProperty("playerId") String playerId,
+            @JsonProperty("destroyedByPlayerId") String destroyedByPlayerId) {
         return new PlayerDestroyedEventDto(playerId, destroyedByPlayerId);
     }
 
