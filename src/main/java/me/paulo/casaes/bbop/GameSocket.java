@@ -76,7 +76,11 @@ public class GameSocket {
 
                 this.gameLoopService.enqueue(() -> Players.get()
                         .createOrGet(userId)
-                        .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY(), moveCommandDto.getAngle())
+                        .move(moveCommandDto.getMoveX(),
+                                moveCommandDto.getMoveY(),
+                                moveCommandDto.getAngle(),
+                                moveCommandDto.getThrustAngle()
+                        )
                 );
             } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
                 this.gameLoopService.enqueue(() -> Players.get()

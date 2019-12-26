@@ -188,7 +188,7 @@ class PlayerTest {
 
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.1f, 0.2f, (float) Math.PI);
+        player.move(0.1f, 0.2f, (float) Math.PI, (float) Math.PI);
 
         DomainEvent domainEvent = eventReference.get();
         assertNotNull(domainEvent);
@@ -209,7 +209,7 @@ class PlayerTest {
 
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(-1f, 2f, null);
+        player.move(-1f, 2f, null, null);
 
         DomainEvent domainEvent = eventReference.get();
         assertNotNull(domainEvent);
@@ -230,7 +230,7 @@ class PlayerTest {
 
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.moved(PlayerMovedEventDto.of("1", 0f, 1f, 3f, 4f, 1000L));
+        player.moved(PlayerMovedEventDto.of("1", 0f, 1f, 3f, 3f, 4f, 1000L));
 
         PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
@@ -249,7 +249,7 @@ class PlayerTest {
 
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0f, 0f, (float) Math.PI);
+        player.move(0f, 0f, (float) Math.PI, (float) Math.PI);
 
         DomainEvent domainEvent = eventReference.get();
         assertNotNull(domainEvent);
@@ -271,7 +271,7 @@ class PlayerTest {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        player.move(0f, 0f, null);
+        player.move(0f, 0f, null, null);
 
         assertNull(eventReference.get());
     }
@@ -307,7 +307,7 @@ class PlayerTest {
 
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.5f, 0.5f, (float) Math.PI);
+        player.move(0.5f, 0.5f, (float) Math.PI, (float) Math.PI);
 
         player.fire();
 
@@ -326,7 +326,7 @@ class PlayerTest {
     void testCollisionHitBullseye() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.5f, 0.5f, null);
+        player.move(0.5f, 0.5f, null, null);
 
         assertTrue(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
     }
@@ -335,7 +335,7 @@ class PlayerTest {
     void testCollisionHitWithinRadius() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.54f, 0.54f, null);
+        player.move(0.54f, 0.54f, null, null);
 
         assertTrue(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
     }
@@ -344,7 +344,7 @@ class PlayerTest {
     void testCollisionNoHitInsideSquare() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.4f, 0.6f, null);
+        player.move(0.4f, 0.6f, null, null);
 
         assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
     }
@@ -353,7 +353,7 @@ class PlayerTest {
     void testCollisionNoHitOutsideSquareX() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.2f, 0.2f, null);
+        player.move(0.2f, 0.2f, null, null);
 
         assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
     }
@@ -362,7 +362,7 @@ class PlayerTest {
     void testCollisionNoHitOutsideSquareY() {
         Player player = Players.get().createOrGet("1");
         player.join();
-        player.move(0.5f, 0.2f, null);
+        player.move(0.5f, 0.2f, null, null);
 
         assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
     }
@@ -374,7 +374,7 @@ class PlayerTest {
         Player player2 = Players.get().createOrGet("2");
         player2.join();
 
-        player1.move(0.5f, 0.5f, 1f);
+        player1.move(0.5f, 0.5f, 1f, 1f);
 
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(domainEvents::add);

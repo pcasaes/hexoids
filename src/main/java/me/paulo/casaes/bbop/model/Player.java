@@ -30,7 +30,7 @@ public interface Player {
 
     void joined(PlayerJoinedEventDto event);
 
-    void move(float moveX, float moveY, Float angle);
+    void move(float moveX, float moveY, Float angle, Float thrustAngle);
 
     void moved(PlayerMovedEventDto event);
 
@@ -55,6 +55,8 @@ public interface Player {
         private float y = 0f;
 
         private float angle = 0f;
+
+        private float thrustAngle = 0f;
 
         private float currentSpeed = 0f;
 
@@ -126,7 +128,7 @@ public interface Player {
         }
 
         @Override
-        public void move(float moveX, float moveY, Float angle) {
+        public void move(float moveX, float moveY, Float angle, Float thrustAngle) {
 
             float minMove = Config.get().getMinMove();
             if (Math.abs(moveX) <= minMove &&
@@ -165,6 +167,10 @@ public interface Player {
             this.x = Math.max(0f, Math.min(1f, nx));
             this.y = Math.max(0f, Math.min(1f, ny));
 
+            if (thrustAngle != null) {
+                this.thrustAngle = thrustAngle;
+            }
+
             fireMoveDomainEvent();
         }
 
@@ -189,6 +195,7 @@ public interface Player {
                                     this.x,
                                     this.y,
                                     this.angle,
+                                    this.thrustAngle,
                                     this.currentSpeed,
                                     this.movedTimestamp)));
         }
