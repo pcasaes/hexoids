@@ -51,21 +51,20 @@
 
     let socket;
 
+    const SHIP_COLOR = [
+        0xdd0055,
+        0x00aa88,
+        0x3333ff,
+        0xcc9900,
+        0x00a0bb,
+        0xaa00ff,
+    ];
+
     function getColorFromShip(ship) {
-        switch (ship) {
-            case 0:
-                return 0xff0000;
-            case 1:
-                return 0x00ff00;
-            case 2:
-                return 0x0000ff;
-            case 3:
-                return 0xffff00;
-            case 4:
-                return 0x00ffff;
-            default:
-                return 0xff00ff;
+        if (ship < 0 || ship >= SHIP_COLOR.length) {
+            return SHIP_COLOR[SHIP_COLOR.length - 1];
         }
+        return SHIP_COLOR[ship];
     }
 
     function createShip(p) {
@@ -74,7 +73,7 @@
         const color = getColorFromShip(p.ship);
         sprite.setTint(color | 0x555555, color, color | 0x555555, color);
         sprite.setBounce(0, 0);
-        //sprite.setScale(0.75);
+        sprite.setScale(0.3);
         sprite.setCollideWorldBounds(true);
 
 
@@ -116,6 +115,22 @@
         sprite.anims.play("ship-rest");
 
 
+        const wake = gameScene().add.particles('wake');
+
+        const emitter = wake.createEmitter({
+            speed: 100,
+            scale: { start: 1, end: 0 },
+            blendMode: 'ADD',
+            tint: color,
+            alpha: 0.5
+        });
+
+        wake.setDepth(-2);
+
+        emitter.startFollow(sprite);
+        emitter.stop();
+
+
         let str = color.toString(16);
         while (str.length < 6) {
             str = '0' + str;
@@ -127,6 +142,7 @@
             "color": color,
             "sprite": sprite,
             "colorStyle": str,
+            "emitter": emitter
         }
     }
 
@@ -138,17 +154,26 @@
         const move = transform.view(b.x, b.y);
         if (!bolts[b.boltId]) {
             const sprite = gameScene().physics.add.image(move.x, move.y, 'bolt');
+            const spritebg = gameScene().physics.add.image(move.x, move.y, 'bolt');
 
             const owner = players[b.ownerPlayerId];
             if (owner) {
                 sprite.setTint(owner.color, owner.color, owner.color, owner.color);
+                spritebg.setTint(owner.color, owner.color, owner.color, owner.color);
             }
             sprite.setBounce(0, 0);
             sprite.setScale(0.15);
             sprite.setCollideWorldBounds(true);
 
+            spritebg.setBounce(0, 0);
+            spritebg.setScale(1);
+            spritebg.setCollideWorldBounds(true);
+            spritebg.setDepth(-2);
+            spritebg.setAlpha(0.7);
+
             bolts[b.boltId] = {
                 "sprite": sprite,
+                "bg": spritebg,
                 "color": owner.color,
                 "pulsePos": 0
             };
@@ -156,6 +181,8 @@
             let bolt = bolts[b.boltId];
             bolt.sprite.x = move.x;
             bolt.sprite.y = move.y;
+            bolt.bg.x = move.x;
+            bolt.bg.y = move.y;
             bolt.sprite.setTint(
                 bolt.color | PULSE[bolt.pulsePos],
                 bolt.color | PULSE[(bolt.pulsePos + 1) % 4],
@@ -232,20 +259,49 @@
 
 
                 if (Math.abs(resp.thrustAngle) <= Math.PI / 4) {
-                    sprite.anims.play("ship-fw");
+                    setShipThrustAnim(sprite, 'ship-fw');
                 } else if (Math.abs(resp.thrustAngle - Math.PI / 2) <= Math.PI / 4) {
-                    sprite.anims.play("ship-left");
+                    setShipThrustAnim(sprite, 'ship-left');
                 } else if (Math.abs(resp.thrustAngle - Math.PI) <= Math.PI / 4) {
-                    sprite.anims.play("ship-back");
+                    setShipThrustAnim(sprite, 'ship-back');
                 } else if (Math.abs(resp.thrustAngle + Math.PI / 2) <= Math.PI / 4) {
-                    sprite.anims.play("ship-right");
+                    setShipThrustAnim(sprite, 'ship-right');
                 }
-                sprite.anims.chain("ship-rest");
+
+                players[resp.playerId].emitter.start();
+                setTimeout(() => players[resp.playerId].emitter.stop(), 18);
 
                 sprite.x = move.x;
                 sprite.y = move.y;
 
                 sprite.setRotation(resp.angle);
+            }
+        },
+
+        'PLAYER_DESTROYED': resp => {
+            if (players[resp.playerId]) {
+                const sprite = players[resp.playerId].sprite;
+
+                const explosion = gameScene().add.particles('wake');
+
+                const emitter = explosion.createEmitter({
+                    speed: 1000,
+                    scale: { start: 2, end: 0 },
+                    blendMode: 'ADD',
+                    alpha: 1
+                });
+
+                explosion.setDepth(-2);
+
+                emitter.startFollow(sprite);
+                emitter.setPosition(sprite.x, sprite.y);
+                emitter.start();
+
+                setTimeout(() => {
+                    emitter.stop();
+
+                    setTimeout(() => explosion.destroy(), 1000);
+                }, 100);
             }
         },
 
@@ -264,6 +320,7 @@
         'BOLT_EXHAUSTED': resp => {
             if (bolts[resp.boltId]) {
                 bolts[resp.boltId].sprite.destroy();
+                bolts[resp.boltId].bg.destroy();
                 delete bolts[resp.boltId];
             }
         },
@@ -273,6 +330,14 @@
         },
 
     };
+
+    function setShipThrustAnim(sprite, toplay) {
+        const p = sprite.anims.getProgress();
+        if (Number.isNaN(p) || p > 0.9) {
+            sprite.anims.play(toplay);
+            sprite.anims.chain("ship-rest");
+        }
+    }
 
     function setupSocket() {
         socket = new WebSocket("ws://" + location.host + "/game/" + USER_ID);
@@ -323,12 +388,13 @@
     function preload() {
         //this.load.setBaseURL('http://labs.phaser.io');
 
-        this.load.spritesheet('ship', 'assets/ship2-Sheet.png', {frameWidth: 32, frameHeight: 32});
+        this.load.spritesheet('ship', 'assets/ship3-Sheet.png', {frameWidth: 128, frameHeight: 128});
 
         this.load.image('bolt', 'assets/white.png');
+        this.load.image('wake', 'assets/white.png');
 
-        //https://hubblesite.org/contents/media/images/2019/17/4493-Image.html
-        this.load.image('grid', 'assets/grid.png');
+        this.load.image('gridf', 'assets/gridf.png');
+        this.load.image('gridb', 'assets/gridb.png');
     }
 
     const BOUNDS = {
@@ -338,7 +404,7 @@
         },
         "max": {
             "x": 10000,
-            "y": 9235
+            "y": 10000
         }
     };
 
@@ -406,9 +472,15 @@
         this.physics.world.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
 
 
-        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'grid')
+        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridb')
             .setOrigin(0)
-            .setScale(1);
+            .setScale(1)
+            .setDepth(-3);
+
+        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridf')
+            .setOrigin(0)
+            .setScale(1)
+            .setDepth(-1);
 
 
         this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);

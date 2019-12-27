@@ -2,6 +2,7 @@ package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.EventType;
+import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
@@ -68,10 +69,14 @@ public class Players {
         }
     }
 
-    public void consumeFromMoveTopic(DomainEvent domainEvent) {
+    public void consumeFromPlayerActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_MOVED)) {
             get(domainEvent.getKey())
                     .ifPresent(p -> p.moved((PlayerMovedEventDto) domainEvent.getEvent()));
+        }
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_DESTROYED)) {
+            get(domainEvent.getKey())
+                    .ifPresent(p -> p.destroyed((PlayerDestroyedEventDto) domainEvent.getEvent()));
         }
     }
 
