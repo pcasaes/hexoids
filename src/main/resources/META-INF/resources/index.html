@@ -115,20 +115,35 @@
         sprite.anims.play("ship-rest");
 
 
-        const wake = gameScene().add.particles('wake');
+        const wake = {};
+        wake.particles = gameScene().add.particles('wake');
 
-        const emitter = wake.createEmitter({
+        wake.emitter = wake.particles.createEmitter({
             speed: 100,
-            scale: { start: 1, end: 0 },
-            blendMode: 'ADD',
+            scale: {start: 1, end: 0},
+            blendMode: 'NORMAL',
             tint: color,
-            alpha: 0.5
+            alpha: 0.9,
+            quantity: 1
         });
 
-        wake.setDepth(-2);
+        wake.particles.setDepth(-2);
 
-        emitter.startFollow(sprite);
-        emitter.stop();
+        wake.emitter.startFollow(sprite);
+        wake.emitter.stop();
+
+        const explosion = {};
+        explosion.particles = gameScene().add.particles('wake');
+
+        explosion.emitter = explosion.particles.createEmitter({
+            speed: 300,
+            scale: {start: 2, end: 0},
+            blendMode: 'NORMAL',
+            alpha: 1,
+        });
+
+        explosion.particles.setDepth(-2);
+        explosion.emitter.stop();
 
 
         let str = color.toString(16);
@@ -142,7 +157,8 @@
             "color": color,
             "sprite": sprite,
             "colorStyle": str,
-            "emitter": emitter
+            "wake": wake,
+            "explosion": explosion,
         }
     }
 
@@ -268,8 +284,7 @@
                     setShipThrustAnim(sprite, 'ship-right');
                 }
 
-                players[resp.playerId].emitter.start();
-                setTimeout(() => players[resp.playerId].emitter.stop(), 18);
+                players[resp.playerId].wake.emitter.explode(1, sprite.x, sprite.y);
 
                 sprite.x = move.x;
                 sprite.y = move.y;
@@ -281,34 +296,20 @@
         'PLAYER_DESTROYED': resp => {
             if (players[resp.playerId]) {
                 const sprite = players[resp.playerId].sprite;
+                const emitter = players[resp.playerId].explosion.emitter;
 
-                const explosion = gameScene().add.particles('wake');
-
-                const emitter = explosion.createEmitter({
-                    speed: 1000,
-                    scale: { start: 2, end: 0 },
-                    blendMode: 'ADD',
-                    alpha: 1
-                });
-
-                explosion.setDepth(-2);
-
-                emitter.startFollow(sprite);
-                emitter.setPosition(sprite.x, sprite.y);
-                emitter.start();
-
-                setTimeout(() => {
-                    emitter.stop();
-
-                    setTimeout(() => explosion.destroy(), 1000);
-                }, 100);
+                emitter.explode(10, sprite.x, sprite.y);
             }
         },
 
         'PLAYER_LEFT': resp => {
             if (players[resp.playerId]) {
                 const sprite = players[resp.playerId].sprite;
+                const wake = players[resp.playerId].wake;
+                const explosion = players[resp.playerId].explosion;
                 sprite.destroy();
+                wake.particles.destroy();
+                explosion.particles.destroy();
                 delete players[resp.playerId];
             }
         },
