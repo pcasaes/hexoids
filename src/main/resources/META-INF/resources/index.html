@@ -77,45 +77,10 @@
         sprite.setCollideWorldBounds(true);
 
 
-        gameScene().anims.create({
-            key: "ship-fw",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 0, end: 1}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-right",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 2, end: 3}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-back",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 4, end: 5}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-left",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 6, end: 7}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-rest",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 8, end: 8}),
-            frameRate: 5,
-            repeat: 0
-        });
-
         sprite.anims.play("ship-rest");
 
         const wake = {
-            _triedAt: - 1,
+            _triedAt: -1,
             firedAt: -1,
             sprites: [
                 gameScene().physics.add.sprite(-100, -100, 'thrust'),
@@ -140,7 +105,7 @@
                     wake.sprites[wake.nextSprite].x = sprite.x;
                     wake.sprites[wake.nextSprite].y = sprite.y;
                     wake.sprites[wake.nextSprite].anims.play("thrust");
-                    wake.nextSprite = (wake.nextSprite+1) & 7;
+                    wake.nextSprite = (wake.nextSprite + 1) & 7;
                 }
             }
         };
@@ -149,26 +114,75 @@
             s.setDepth(-2).setScale(1).setTint(color).setAlpha(0.7);
         });
 
-        gameScene().anims.create({
-            key: "thrust",
-            frames: gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8}),
-            frameRate: 30,
-            repeat: 0
+
+        const explosion = {
+            x: 0,
+            y: 0,
+            sprites: [
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+            ],
+            generate: () => {
+                explosion.x = sprite.x;
+                explosion.y = sprite.y;
+                explosion.sprites[0].x = explosion.x;
+                explosion.sprites[0].y = explosion.y;
+                explosion.sprites[0].anims.play("explosion1");
+
+
+                setTimeout(() => {
+                    explosion.sprites[1].x = explosion.x + 128;
+                    explosion.sprites[1].y = explosion.y;
+                    explosion.sprites[1].anims.play("explosion1");
+
+                    explosion.sprites[2].x = explosion.x;
+                    explosion.sprites[2].y = explosion.y + 128;
+                    explosion.sprites[2].anims.play("explosion1");
+
+                    explosion.sprites[3].x = explosion.x - 128;
+                    explosion.sprites[3].y = explosion.y;
+                    explosion.sprites[3].anims.play("explosion1");
+
+                    explosion.sprites[3].x = explosion.x;
+                    explosion.sprites[3].y = explosion.y - 128;
+                    explosion.sprites[3].anims.play("explosion1");
+
+                }, 125);
+
+                setTimeout(() => {
+                    explosion.sprites[4].x = explosion.x + (96 + Math.random() * 24 - 12);
+                    explosion.sprites[4].y = explosion.y + (96 + Math.random() * 24 - 12);
+                    explosion.sprites[4].anims.play("explosion2");
+
+                    explosion.sprites[5].x = explosion.x + (96 + Math.random() * 24 - 12);
+                    explosion.sprites[5].y = explosion.y - (96 + Math.random() * 24 - 12);
+                    explosion.sprites[5].anims.play("explosion2");
+
+                    explosion.sprites[6].x = explosion.x - (96 + Math.random() * 24 - 12);
+                    explosion.sprites[6].y = explosion.y - (96 + Math.random() * 24 - 12);
+                    explosion.sprites[6].anims.play("explosion2");
+
+                    explosion.sprites[7].x = explosion.x - (96 + Math.random() * 24 - 12);
+                    explosion.sprites[7].y = explosion.y + (96 + Math.random() * 24 - 12);
+                    explosion.sprites[7].anims.play("explosion2");
+
+                }, 250);
+            },
+
+            destroy: () => {
+                explosion.sprites.forEach(s => s.destroy());
+            },
+        };
+
+        explosion.sprites.forEach((s, i) => {
+            s.setDepth(-2).setTint(color).setScale(i === 0 ? 2.5 : 2).setAlpha(i < 4 ? 0.9 : 0.6);
         });
-
-
-        const explosion = {};
-        explosion.particles = gameScene().add.particles('wake');
-
-        explosion.emitter = explosion.particles.createEmitter({
-            speed: 300,
-            scale: {start: 2, end: 0},
-            blendMode: 'NORMAL',
-            alpha: 1,
-        });
-
-        explosion.particles.setDepth(-2);
-        explosion.emitter.stop();
 
 
         let str = color.toString(16);
@@ -320,10 +334,9 @@
 
         'PLAYER_DESTROYED': resp => {
             if (players[resp.playerId]) {
-                const sprite = players[resp.playerId].sprite;
-                const emitter = players[resp.playerId].explosion.emitter;
+                const explosion = players[resp.playerId].explosion;
 
-                emitter.explode(10, sprite.x, sprite.y);
+                explosion.generate();
             }
         },
 
@@ -334,7 +347,7 @@
                 const explosion = players[resp.playerId].explosion;
                 sprite.destroy();
                 wake.destroy();
-                explosion.particles.destroy();
+                explosion.destroy();
                 delete players[resp.playerId];
             }
         },
@@ -516,6 +529,65 @@
         SCOREBOARD = new Scoreboard(this, 200, 300, 0, 0);
 
         setupSocket();
+
+
+        gameScene().anims.create({
+            key: "ship-fw",
+            frames: gameScene().anims.generateFrameNumbers('ship', {start: 0, end: 1}),
+            frameRate: 5,
+            repeat: 1
+        });
+
+        gameScene().anims.create({
+            key: "ship-right",
+            frames: gameScene().anims.generateFrameNumbers('ship', {start: 2, end: 3}),
+            frameRate: 5,
+            repeat: 1
+        });
+
+        gameScene().anims.create({
+            key: "ship-back",
+            frames: gameScene().anims.generateFrameNumbers('ship', {start: 4, end: 5}),
+            frameRate: 5,
+            repeat: 1
+        });
+
+        gameScene().anims.create({
+            key: "ship-left",
+            frames: gameScene().anims.generateFrameNumbers('ship', {start: 6, end: 7}),
+            frameRate: 5,
+            repeat: 1
+        });
+
+        gameScene().anims.create({
+            key: "ship-rest",
+            frames: gameScene().anims.generateFrameNumbers('ship', {start: 8, end: 8}),
+            frameRate: 5,
+            repeat: 0
+        });
+
+        const thrustFrames = gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8});
+
+        gameScene().anims.create({
+            key: "thrust",
+            frames: thrustFrames,
+            frameRate: 30,
+            repeat: 0
+        });
+
+        gameScene().anims.create({
+            key: "explosion1",
+            frames: thrustFrames,
+            frameRate: 45,
+            repeat: 0
+        });
+
+        gameScene().anims.create({
+            key: "explosion2",
+            frames: thrustFrames,
+            frameRate: 15,
+            repeat: 0
+        });
 
 
         // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
