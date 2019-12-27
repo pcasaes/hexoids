@@ -114,23 +114,48 @@
 
         sprite.anims.play("ship-rest");
 
+        const wake = {
+            _triedAt: - 1,
+            firedAt: -1,
+            sprites: [
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+                gameScene().physics.add.sprite(-100, -100, 'thrust'),
+            ],
+            nextSprite: 0,
 
-        const wake = {};
-        wake.particles = gameScene().add.particles('wake');
+            destroy: () => {
+                wake.sprites.forEach(s => s.destroy());
+            },
 
-        wake.emitter = wake.particles.createEmitter({
-            speed: 100,
-            scale: {start: 1, end: 0},
-            blendMode: 'NORMAL',
-            tint: color,
-            alpha: 0.9,
-            quantity: 1
+            generate: () => {
+                wake._triedAt = Date.now();
+                if (wake._triedAt - wake.firedAt > 32) {
+                    wake.firedAt = wake._triedAt;
+                    wake.sprites[wake.nextSprite].x = sprite.x;
+                    wake.sprites[wake.nextSprite].y = sprite.y;
+                    wake.sprites[wake.nextSprite].anims.play("thrust");
+                    wake.nextSprite = (wake.nextSprite+1) & 7;
+                }
+            }
+        };
+
+        wake.sprites.forEach(s => {
+            s.setDepth(-2).setScale(1).setTint(color).setAlpha(0.7);
         });
 
-        wake.particles.setDepth(-2);
+        gameScene().anims.create({
+            key: "thrust",
+            frames: gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8}),
+            frameRate: 30,
+            repeat: 0
+        });
 
-        wake.emitter.startFollow(sprite);
-        wake.emitter.stop();
 
         const explosion = {};
         explosion.particles = gameScene().add.particles('wake');
@@ -284,7 +309,7 @@
                     setShipThrustAnim(sprite, 'ship-right');
                 }
 
-                players[resp.playerId].wake.emitter.explode(1, sprite.x, sprite.y);
+                players[resp.playerId].wake.generate();
 
                 sprite.x = move.x;
                 sprite.y = move.y;
@@ -308,7 +333,7 @@
                 const wake = players[resp.playerId].wake;
                 const explosion = players[resp.playerId].explosion;
                 sprite.destroy();
-                wake.particles.destroy();
+                wake.destroy();
                 explosion.particles.destroy();
                 delete players[resp.playerId];
             }
@@ -391,6 +416,7 @@
         //this.load.setBaseURL('http://labs.phaser.io');
 
         this.load.spritesheet('ship', 'assets/ship3-Sheet.png', {frameWidth: 128, frameHeight: 128});
+        this.load.spritesheet('thrust', 'assets/thrust3-Sheet.png', {frameWidth: 64, frameHeight: 64});
 
         this.load.image('bolt', 'assets/white.png');
         this.load.image('wake', 'assets/white.png');
