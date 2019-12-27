@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 public enum Topics {
     JoinGameTopic(Players.get()::consumeFromJoinTopic),
-    PlayerActionTopic(Players.get()::consumeFromMoveTopic);
+    PlayerActionTopic(Players.get()::consumeFromPlayerActionTopic);
 
     private final Consumer<DomainEvent> consumer;
 

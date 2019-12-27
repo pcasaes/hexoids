@@ -42,6 +42,8 @@ public interface Player {
 
     void destroyedBy(String playerId);
 
+    void destroyed(PlayerDestroyedEventDto event);
+
     class Implementation implements Player {
 
         private static final Random RNG = new Random();
@@ -244,6 +246,11 @@ public interface Player {
             fireMoveDomainEvent();
             ScoreBoard.Factory.get().updateScore(playerId, 1);
             ScoreBoard.Factory.get().resetScore(this.id);
+        }
+
+        @Override
+        public void destroyed(PlayerDestroyedEventDto event) {
+            GameEvents.getClientEvents().register(event);
         }
     }
 }
