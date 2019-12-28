@@ -222,17 +222,18 @@
 
     function updateScore(resp) {
         if (!players[USER_ID].scoreView) {
-            const text = gameScene().add.text(0, 0, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
+            const text = gameScene().add.bitmapText(0, 4, 'font', '', 16);
+            //const text = gameScene().add.text(0, 0, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
             text.setScrollFactor(0);
             text.setAlpha(HUD_ALPHA);
-            text.setBackgroundColor(HUD_BG);
-            text.setColor(players[USER_ID].colorStyle);
+            //text.setBackgroundColor(HUD_BG);
+            text.setTintFill(players[USER_ID].color);
 
             players[USER_ID].scoreView = text;
         }
 
         players[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
-        players[USER_ID].scoreView.x = gameScene().game.config.width - (players[USER_ID].scoreView.displayWidth + 5);
+        players[USER_ID].scoreView.x = gameScene().game.config.width - (players[USER_ID].scoreView.width + 5);
     }
 
     const COMMANDS = {
@@ -379,6 +380,10 @@
         this.load.spritesheet('thrust', 'assets/thrust3-Sheet.png', {frameWidth: 64, frameHeight: 64});
         this.load.spritesheet('shockwave', 'assets/shockwave1-Sheet.png', {frameWidth: 272, frameHeight: 272});
 
+        this.load.atlas('fontatlas', 'assets/font/font2.png', 'assets/font/font2.json');
+
+        this.load.xml('atariXML', 'assets/font/atari-sunset.xml');
+
         this.load.image('bolt', 'assets/white.png');
         this.load.image('wake', 'assets/white.png');
 
@@ -437,17 +442,19 @@
                     if (i > 0) {
                         y = this.entries[0].displayHeight;
                     }
-                    const entry = this.scene.add.text(this.x + 5, this.y + i * y + 2, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
+                    const entry = this.scene.add.bitmapText(this.x + 5, this.y + i * y + 4, 'font', '', 16);
+
+                    //const entry = this.scene.add.text(this.x + 5, this.y + i * y + 2, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
                     entry.setScrollFactor(0);
                     entry.setAlpha(HUD_ALPHA);
-                    entry.setBackgroundColor(HUD_BG);
+                    //entry.setBackgroundColor(HUD_BG);
                     this.entries.push(entry);
                 }
                 this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
                 if (players[entry.playerId]) {
-                    this.entries[i].setColor(players[entry.playerId].colorStyle);
+                    this.entries[i].setTintFill(players[entry.playerId].color);
                 } else {
-                    this.entries[i].setColor("#ffffff");
+                    this.entries[i].setTintFill(0xffffff);
                 }
             });
         }
@@ -477,6 +484,8 @@
         SCOREBOARD = new Scoreboard(this, 200, 300, 0, 0);
 
         setupSocket();
+
+        Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
 
 
         gameScene().anims.create({
