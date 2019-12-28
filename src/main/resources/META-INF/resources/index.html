@@ -116,73 +116,20 @@
 
 
         const explosion = {
-            x: 0,
-            y: 0,
-            sprites: [
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-            ],
+            sprite: gameScene().physics.add.sprite(-300, -300, 'shockwave'),
             generate: () => {
-                explosion.x = sprite.x;
-                explosion.y = sprite.y;
-                explosion.sprites[0].x = explosion.x;
-                explosion.sprites[0].y = explosion.y;
-                explosion.sprites[0].anims.play("explosion1");
+                explosion.sprite.x = sprite.x;
+                explosion.sprite.y = sprite.y;
+                explosion.sprite.anims.play("explosion");
 
-
-                setTimeout(() => {
-                    explosion.sprites[1].x = explosion.x + 128;
-                    explosion.sprites[1].y = explosion.y;
-                    explosion.sprites[1].anims.play("explosion1");
-
-                    explosion.sprites[2].x = explosion.x;
-                    explosion.sprites[2].y = explosion.y + 128;
-                    explosion.sprites[2].anims.play("explosion1");
-
-                    explosion.sprites[3].x = explosion.x - 128;
-                    explosion.sprites[3].y = explosion.y;
-                    explosion.sprites[3].anims.play("explosion1");
-
-                    explosion.sprites[3].x = explosion.x;
-                    explosion.sprites[3].y = explosion.y - 128;
-                    explosion.sprites[3].anims.play("explosion1");
-
-                }, 125);
-
-                setTimeout(() => {
-                    explosion.sprites[4].x = explosion.x + (96 + Math.random() * 24 - 12);
-                    explosion.sprites[4].y = explosion.y + (96 + Math.random() * 24 - 12);
-                    explosion.sprites[4].anims.play("explosion2");
-
-                    explosion.sprites[5].x = explosion.x + (96 + Math.random() * 24 - 12);
-                    explosion.sprites[5].y = explosion.y - (96 + Math.random() * 24 - 12);
-                    explosion.sprites[5].anims.play("explosion2");
-
-                    explosion.sprites[6].x = explosion.x - (96 + Math.random() * 24 - 12);
-                    explosion.sprites[6].y = explosion.y - (96 + Math.random() * 24 - 12);
-                    explosion.sprites[6].anims.play("explosion2");
-
-                    explosion.sprites[7].x = explosion.x - (96 + Math.random() * 24 - 12);
-                    explosion.sprites[7].y = explosion.y + (96 + Math.random() * 24 - 12);
-                    explosion.sprites[7].anims.play("explosion2");
-
-                }, 250);
             },
 
             destroy: () => {
-                explosion.sprites.forEach(s => s.destroy());
+                explosion.sprite.destroy();
             },
         };
 
-        explosion.sprites.forEach((s, i) => {
-            s.setDepth(-2).setTint(color).setScale(i === 0 ? 2.5 : 2).setAlpha(i < 4 ? 0.9 : 0.6);
-        });
+        explosion.sprite.setDepth(-2).setTintFill(color).setScale(1.5).setAlpha(0.9);
 
 
         let str = color.toString(16);
@@ -430,6 +377,7 @@
 
         this.load.spritesheet('ship', 'assets/ship3-Sheet.png', {frameWidth: 128, frameHeight: 128});
         this.load.spritesheet('thrust', 'assets/thrust3-Sheet.png', {frameWidth: 64, frameHeight: 64});
+        this.load.spritesheet('shockwave', 'assets/shockwave1-Sheet.png', {frameWidth: 272, frameHeight: 272});
 
         this.load.image('bolt', 'assets/white.png');
         this.load.image('wake', 'assets/white.png');
@@ -566,29 +514,19 @@
             repeat: 0
         });
 
-        const thrustFrames = gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8});
-
         gameScene().anims.create({
             key: "thrust",
-            frames: thrustFrames,
+            frames: gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8}),
             frameRate: 30,
             repeat: 0
         });
 
         gameScene().anims.create({
-            key: "explosion1",
-            frames: thrustFrames,
-            frameRate: 45,
+            key: "explosion",
+            frames: gameScene().anims.generateFrameNumbers('shockwave', {start: 0, end: 8}),
+            frameRate: 20,
             repeat: 0
         });
-
-        gameScene().anims.create({
-            key: "explosion2",
-            frames: thrustFrames,
-            frameRate: 15,
-            repeat: 0
-        });
-
 
         // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
         this.input.on('pointerdown', function (pointer) {
