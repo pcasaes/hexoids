@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.service.eventqueue;
 
+import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
@@ -20,6 +21,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
 
     private ConfigurationService configurationService;
 
+    private GameLoopService.SleepDto sleepDto = null;
 
     DomainEventProducerService() {
     }
@@ -36,8 +38,12 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     @Override
     public void accept(DomainEvent event) {
         if (event != null) {
-            String message = event.getEvent() == null ? null : dtoProcessorService.serializeToString(event.getEvent());
-            this.producerService.send(event.getTopic(), event.getKey(), message, false);
+            if (event.getEvent() != null && event.getEvent().getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
+                this.sleepDto = (GameLoopService.SleepDto) event.getEvent();
+            } else {
+                String message = event.getEvent() == null ? null : dtoProcessorService.serializeToString(event.getEvent());
+                this.producerService.send(event.getTopic(), event.getKey(), message, false);
+            }
         }
     }
 
@@ -48,7 +54,13 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
 
     @Override
     public long getWaitTime() {
-        return 20L;
+        if (this.sleepDto == null) {
+            return 0L;
+        }
+        long waitTime = sleepDto.getSleepUntil() - Clock.Factory.get().getTime();
+        this.sleepDto = null;
+
+        return waitTime;
     }
 
     @Override

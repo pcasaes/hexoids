@@ -3,6 +3,7 @@ package me.paulo.casaes.bbop.service.eventqueue;
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
+import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.SessionService;
@@ -19,6 +20,8 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     private final SessionService sessionService;
     private final DtoProcessorService dtoProcessorService;
     private final ConfigurationService configurationService;
+
+    private GameLoopService.SleepDto sleepDto = null;
 
     ClientBroadcastService() {
         this.sessionService = null;
@@ -39,11 +42,13 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     public void accept(ClientEvent event) {
         if (event != null) {
             Dto dto = event.getDto();
-            if (dto instanceof EventDto) {
+            if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
                 this.sessionService.broadcast(dtoProcessorService.serializeToString(dto));
-            } else if (dto != null) {
+            } else if (dto.getDtoType() == DirectedCommandDto.DtoType.DIRECTED_COMMAND_DTO) {
                 DirectedCommandDto command = (DirectedCommandDto) dto;
                 this.sessionService.direct(command.getPlayerId(), dtoProcessorService.serializeToString(command.getCommand()));
+            } else {
+                this.sleepDto = (GameLoopService.SleepDto) dto;
             }
         }
     }
@@ -55,7 +60,13 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
 
     @Override
     public long getWaitTime() {
-        return 20;
+        if (this.sleepDto == null) {
+            return 0L;
+        }
+        long waitTime = sleepDto.getSleepUntil() - Clock.Factory.get().getTime();
+        this.sleepDto = null;
+
+        return waitTime;
     }
 
     @Override

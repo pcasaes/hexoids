@@ -1,7 +1,12 @@
 package me.paulo.casaes.bbop.service.eventqueue;
 
+import me.paulo.casaes.bbop.dto.Dto;
+import me.paulo.casaes.bbop.dto.EventDto;
+import me.paulo.casaes.bbop.dto.EventType;
 import me.paulo.casaes.bbop.model.Clock;
+import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Game;
+import me.paulo.casaes.bbop.model.GameEvents;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 
 import javax.annotation.PostConstruct;
@@ -53,8 +58,8 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     @Override
     public long getWaitTime() {
-        long timeSinceFixedUpdate = Clock.Factory.get().getTime();
-        return (timeSinceFixedUpdate - lastTimestamp) % UPDATE_DELTA;
+        long timeSinceFixedUpdate = Clock.Factory.get().getTime() - lastTimestamp;
+        return timeSinceFixedUpdate % UPDATE_DELTA;
     }
 
     @Override
@@ -70,6 +75,10 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     @Override
     public void empty() {
         lastTimestamp = fixedUpdate(lastTimestamp);
+
+        SleepDto sleepDto = SleepDto.sleepUntil(Clock.Factory.get().getTime() + getWaitTime());
+        GameEvents.getDomainEvents().register(DomainEvent.of("", sleepDto));
+        GameEvents.getClientEvents().register(sleepDto);
     }
 
     @Override
@@ -98,6 +107,41 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     }
 
     public interface GameRunnable extends Runnable {
+
+    }
+
+    /**
+     * Special Dto that is not transmitted and instead is used to sleep dependent queues
+     */
+    static class SleepDto implements EventDto {
+
+        private final long sleepUntil;
+
+        public SleepDto(long sleepUntil) {
+            this.sleepUntil = sleepUntil;
+        }
+
+        public static SleepDto sleepUntil(long sleepUntil) {
+            return new SleepDto(sleepUntil);
+        }
+
+        public long getSleepUntil() {
+            return sleepUntil;
+        }
+
+        @Override
+        public EventType getEvent() {
+            return null;
+        }
+
+        @Override
+        public Type getDtoType() {
+            return DtoType.SLEEP_DTO;
+        }
+
+        enum DtoType implements Dto.Type {
+            SLEEP_DTO;
+        }
 
     }
 }
