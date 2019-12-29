@@ -49,7 +49,7 @@
     document.cookie = "user_id=" + USER_ID;
     console.log(USER_ID);
 
-    const players = {};
+    const PLAYERS = {};
 
     function gameScene() {
         return game.scene.scenes[0];
@@ -183,7 +183,7 @@
         }
         str = '#' + str;
 
-        players[p.playerId] = {
+        PLAYERS[p.playerId] = {
             "playerId": p.playerId,
             "color": color,
             "sprite": sprite,
@@ -216,7 +216,7 @@
             const sprite = gameScene().physics.add.image(move.x, move.y, 'bolt');
             const spritebg = gameScene().physics.add.image(move.x, move.y, 'bolt');
 
-            const owner = players[b.ownerPlayerId];
+            const owner = PLAYERS[b.ownerPlayerId];
             if (owner) {
                 sprite.setTint(owner.color, owner.color, owner.color, owner.color);
                 spritebg.setTint(owner.color, owner.color, owner.color, owner.color);
@@ -282,18 +282,18 @@
     }, 50);
 
     function updateScore(resp) {
-        if (!players[USER_ID].scoreView) {
+        if (!PLAYERS[USER_ID].scoreView) {
             const text = gameScene().add.bitmapText(0, 4, 'font', '', 16);
             text.setScrollFactor(0);
             text.setAlpha(HUD_ALPHA);
             text.setDepth(DEPTH_HUD);
-            text.setTintFill(players[USER_ID].color);
+            text.setTintFill(PLAYERS[USER_ID].color);
 
-            players[USER_ID].scoreView = text;
+            PLAYERS[USER_ID].scoreView = text;
         }
 
-        players[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
-        players[USER_ID].scoreView.x = gameScene().game.config.width - (players[USER_ID].scoreView.width + 5);
+        PLAYERS[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
+        PLAYERS[USER_ID].scoreView.x = gameScene().game.config.width - (PLAYERS[USER_ID].scoreView.width + 5);
     }
 
     const COMMANDS = {
@@ -311,13 +311,13 @@
             createShip(resp);
 
             if (USER_ID === resp.playerId) {
-                gameScene().cameras.main.startFollow(players[resp.playerId].sprite, true);
+                gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].sprite, true);
             }
         },
 
         'PLAYER_MOVED': resp => {
-            if (players[resp.playerId]) {
-                const sprite = players[resp.playerId].sprite;
+            if (PLAYERS[resp.playerId]) {
+                const sprite = PLAYERS[resp.playerId].sprite;
                 const move = transform.view(resp.x, resp.y);
 
 
@@ -331,24 +331,24 @@
                     setShipThrustAnim(sprite, 'ship-right');
                 }
 
-                players[resp.playerId].wake.generate();
+                PLAYERS[resp.playerId].wake.generate();
 
-                players[resp.playerId].moveTo(move.x, move.y, resp.angle);
+                PLAYERS[resp.playerId].moveTo(move.x, move.y, resp.angle);
             }
         },
 
         'PLAYER_DESTROYED': resp => {
-            if (players[resp.playerId]) {
-                const explosion = players[resp.playerId].explosion;
+            if (PLAYERS[resp.playerId]) {
+                const explosion = PLAYERS[resp.playerId].explosion;
 
                 explosion.generate();
             }
         },
 
         'PLAYER_LEFT': resp => {
-            if (players[resp.playerId]) {
-                players[resp.playerId].destroy();
-                delete players[resp.playerId];
+            if (PLAYERS[resp.playerId]) {
+                PLAYERS[resp.playerId].destroy();
+                delete PLAYERS[resp.playerId];
             }
         },
 
@@ -493,7 +493,7 @@
                 if (i >= this.entries.length) {
                     let y = 0;
                     if (i > 0) {
-                        y = this.entries[0].displayHeight;
+                        y = this.entries[0].height;
                     }
                     const entry = this.scene.add.bitmapText(this.x + 5, this.y + i * y + 4, 'font', '', 16);
 
@@ -503,8 +503,8 @@
                     this.entries.push(entry);
                 }
                 this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
-                if (players[entry.playerId]) {
-                    this.entries[i].setTintFill(players[entry.playerId].color);
+                if (PLAYERS[entry.playerId]) {
+                    this.entries[i].setTintFill(PLAYERS[entry.playerId].color);
                 } else {
                     this.entries[i].setTintFill(0xffffff);
                 }
@@ -610,7 +610,7 @@
 
             if (this.input.mouse.locked) {
                 const command = {};
-                const sprite = players[USER_ID].sprite;
+                const sprite = PLAYERS[USER_ID].sprite;
 
                 const moveX = pointer.movementX;
                 const moveY = pointer.movementY;
