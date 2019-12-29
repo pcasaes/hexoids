@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/phaser-arcade-physics.min.js"></script>
+    <script src="js/scoreboard.js"></script>
     <script src="js/ai.js"></script>
 </head>
 <body>
@@ -132,8 +133,8 @@
                 .setAlpha(1),
 
             generate: () => {
-              fireBolt.follow();
-              fireBolt.sprite.anims.play('fire-bolt');
+                fireBolt.follow();
+                fireBolt.sprite.anims.play('fire-bolt');
             },
 
             follow: () => {
@@ -476,41 +477,6 @@
         },
     };
 
-    class Scoreboard {
-        constructor(scene, width, height, x, y) {
-            this.scene = scene;
-            this.width = width;
-            this.height = height;
-            this.x = x;
-            this.y = y;
-            this.entries = [];
-
-
-        }
-
-        process(scoreboardUpdatedEvent) {
-            scoreboardUpdatedEvent.scores.forEach((entry, i) => {
-                if (i >= this.entries.length) {
-                    let y = 0;
-                    if (i > 0) {
-                        y = this.entries[0].height;
-                    }
-                    const entry = this.scene.add.bitmapText(this.x + 5, this.y + i * y + 4, 'font', '', 16);
-
-                    entry.setScrollFactor(0);
-                    entry.setAlpha(HUD_ALPHA);
-                    entry.setDepth(DEPTH_HUD);
-                    this.entries.push(entry);
-                }
-                this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
-                if (PLAYERS[entry.playerId]) {
-                    this.entries[i].setTintFill(PLAYERS[entry.playerId].color);
-                } else {
-                    this.entries[i].setTintFill(0xffffff);
-                }
-            });
-        }
-    }
 
     let SCOREBOARD;
 
@@ -533,7 +499,9 @@
 
         this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
 
-        SCOREBOARD = new Scoreboard(this, 200, 300, 0, 0);
+        SCOREBOARD = new Scoreboard(this, PLAYERS, 0, 0)
+            .setAlpha(HUD_ALPHA)
+            .setDepth(DEPTH_HUD);
 
         setupSocket();
 
