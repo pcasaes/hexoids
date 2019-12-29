@@ -28,7 +28,7 @@ public class GameEvents<T> {
     }
 
 
-    void register(T event) {
+    public void register(T event) {
         if (consumer != null) {
             consumer.accept(event);
         }

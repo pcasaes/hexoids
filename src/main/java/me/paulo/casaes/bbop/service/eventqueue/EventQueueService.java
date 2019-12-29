@@ -77,6 +77,9 @@ public class EventQueueService<T> {
         long time = this.eventQueueExecutorService.getWaitTime();
         if (time > 0L) {
             try {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("Sleeping " + time + " for event queue " + eventQueueExecutorService.getName());
+                }
                 Thread.sleep(time);
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, e.getMessage(), e);
