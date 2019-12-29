@@ -2,7 +2,10 @@ package me.paulo.casaes.bbop.service.kafka;
 
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.model.DomainEvent;
+import me.paulo.casaes.bbop.model.Topics;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
+import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
+import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,32 +38,49 @@ public class KafkaConsumerService {
 
     private final DtoProcessorService dtoProcessorService;
 
+    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+
     private List<KafkaThreadedConsumer> threads = Collections.synchronizedList(new ArrayList<>());
 
     @Inject
-    public KafkaConsumerService(KafkaConfiguration configuration, DtoProcessorService dtoProcessorService) {
+    public KafkaConsumerService(KafkaConfiguration configuration,
+                                DtoProcessorService dtoProcessorService,
+                                EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
         this.configuration = configuration;
         this.dtoProcessorService = dtoProcessorService;
+        this.gameLoopService = gameLoopService;
     }
 
 
-    public void start(String topic, java.util.function.Consumer<DomainEvent> processor) {
+    public void start(TopicInfo topicInfo) {
         Properties properties = new Properties();
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configuration.getConnectionUrl());
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-        try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
-            kafkaConsumer.partitionsFor(topic)
-                    .stream()
-                    .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
-                    .map(topicPartition -> KafkaThreadedConsumer
-                            .startWithoutSubscription(
-                                    properties,
-                                    topicPartition,
-                                    dtoProcessorService,
-                                    processor))
-                    .forEach(threads::add);
+        topicInfo.consumerConfig()
+                .ifPresent(properties::putAll);
+
+        if (topicInfo.useSubscription()) {
+            threads.add(KafkaThreadedConsumer.startWithSubscription(
+                    properties,
+                    topicInfo.topic().name(),
+                    dtoProcessorService,
+                    runInGameLoop(topicInfo.topic())
+            ));
+        } else {
+            try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
+                kafkaConsumer.partitionsFor(topicInfo.topic().name())
+                        .stream()
+                        .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
+                        .map(topicPartition -> KafkaThreadedConsumer
+                                .startWithoutSubscription(
+                                        properties,
+                                        topicPartition,
+                                        dtoProcessorService,
+                                        runInGameLoop(topicInfo.topic())))
+                        .forEach(threads::add);
+            }
         }
     }
 
@@ -70,6 +90,9 @@ public class KafkaConsumerService {
                 .forEach(KafkaThreadedConsumer::stop);
     }
 
+    private java.util.function.Consumer<DomainEvent> runInGameLoop(Topics topic) {
+        return domainEvent -> gameLoopService.enqueue(() -> topic.consume(domainEvent));
+    }
 
     private static class KafkaThreadedConsumer {
 
@@ -109,6 +132,27 @@ public class KafkaConsumerService {
                     kafkaConsumer);
 
             kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topicPartition.topic());
+            kafkaThreadedConsumer.thread.start();
+
+            return kafkaThreadedConsumer;
+        }
+
+        static KafkaThreadedConsumer startWithSubscription(Properties properties,
+                                                           String topic,
+                                                           DtoProcessorService dtoProcessorService,
+                                                           java.util.function.Consumer<DomainEvent> processor) {
+
+            Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties);
+
+            kafkaConsumer.subscribe(Collections.singletonList(topic));
+
+
+            KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
+                    dtoProcessorService,
+                    processor,
+                    kafkaConsumer);
+
+            kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topic);
             kafkaThreadedConsumer.thread.start();
 
             return kafkaThreadedConsumer;

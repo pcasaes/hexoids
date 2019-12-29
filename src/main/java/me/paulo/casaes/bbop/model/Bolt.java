@@ -4,15 +4,9 @@ import me.paulo.casaes.bbop.dto.BoltExhaustedEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.EventDto;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class Bolt {
-
-    private static final Map<UUID, Bolt> ACTIVE_BOLTS = new HashMap<>();
 
     private UUID id;
     private String idString;
@@ -27,8 +21,8 @@ public class Bolt {
     private long startTimestamp;
     private boolean exhausted;
 
-    private Bolt(String ownerPlayerId, float x, float y, float angle, float speed) {
-        this.id = UUID.randomUUID();
+    private Bolt(UUID boltId, String ownerPlayerId, float x, float y, float angle, float speed, long startTimestamp) {
+        this.id = boltId;
         this.idString = this.id.toString();
         this.ownerPlayerId = ownerPlayerId;
         this.x = x;
@@ -37,22 +31,37 @@ public class Bolt {
         this.prevY = y;
         this.angle = angle;
         this.speed = speed;
-        this.timestamp = Clock.Factory.get().getTime();
+        this.timestamp = startTimestamp;
         this.startTimestamp = this.timestamp;
         this.exhausted = false;
     }
 
-    static Bolt fire(String ownerPlayerId, float x, float y, float angle, float speedAdjustment) {
-        Bolt bolt = new Bolt(ownerPlayerId, x, y, angle, Config.get().getBoltSpeed() + speedAdjustment);
-        ACTIVE_BOLTS.put(bolt.id, bolt);
-        return bolt;
+    static Bolt create(UUID boltId,
+                       String ownerPlayerId,
+                       float x,
+                       float y,
+                       float angle,
+                       float speedAdjustment,
+                       long startTimestamp) {
+        return new Bolt(
+                boltId,
+                ownerPlayerId,
+                x,
+                y,
+                angle,
+                Config.get().getBoltSpeed() + speedAdjustment,
+                startTimestamp);
+    }
+
+    UUID getId() {
+        return id;
     }
 
     boolean is(UUID id) {
         return this.id.equals(id);
     }
 
-    private void move(long timestamp) {
+    void move(long timestamp) {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
         this.timestamp = timestamp;
 
@@ -82,7 +91,13 @@ public class Bolt {
         }
 
         if (event != null) {
-            GameEvents.getClientEvents().register(event);
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.create(
+                            Topics.BoltActionTopic.name(),
+                            this.idString,
+                            event
+                    )
+            );
         }
     }
 
@@ -103,10 +118,9 @@ public class Bolt {
         return !isExhausted();
     }
 
-    private void hits() {
-        for (Player player : Players.get().iterable()) {
-            hit(player);
-        }
+    void checkHits() {
+        Players.get()
+                .forEach(this::hit);
     }
 
     private void hit(Player player) {
@@ -116,53 +130,28 @@ public class Bolt {
             player.destroyedBy(this.ownerPlayerId);
             if (!this.exhausted) {
                 this.exhausted = true;
-                GameEvents.getClientEvents().register(BoltExhaustedEventDto.of(this.idString));
+
+                GameEvents.getDomainEvents().register(
+                        DomainEvent.create(
+                                Topics.BoltActionTopic.name(),
+                                this.idString,
+                                BoltExhaustedEventDto.of(this.idString, this.ownerPlayerId)
+                        )
+                );
             }
         }
     }
 
     EventDto toEvent() {
         return isExhausted() ?
-                BoltExhaustedEventDto.of(this.idString) :
+                BoltExhaustedEventDto.of(this.idString, this.ownerPlayerId) :
                 BoltMovedEventDto.of(this.idString, this.ownerPlayerId, this.x, this.y, this.angle);
     }
 
-    public static void fixedUpdate(final long timestamp) {
-        ACTIVE_BOLTS
-                .values()
-                .forEach(b -> b.move(timestamp));
-
-        ACTIVE_BOLTS
-                .values()
-                .forEach(Bolt::hits);
-
-        cleanup();
-    }
-
-    public static Iterable<Bolt> iterable() {
-        return ACTIVE_BOLTS
-                .values();
-    }
-
-    private static void cleanup() {
-        List<UUID> toRemove = ACTIVE_BOLTS
-                .entrySet()
-                .stream()
-                .filter(e -> e.getValue().isExhausted())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-
-        toRemove
-                .forEach(ACTIVE_BOLTS::remove);
-
-    }
 
     boolean isOwnedBy(String playerId) {
         return this.ownerPlayerId.equals(playerId);
     }
 
-    static void reset() {
-        ACTIVE_BOLTS.clear();
-    }
 
 }

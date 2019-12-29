@@ -1,5 +1,7 @@
 package me.paulo.casaes.bbop.model;
 
+import me.paulo.casaes.bbop.dto.BoltExhaustedEventDto;
+import me.paulo.casaes.bbop.dto.BoltFiredEventDto;
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.EventType;
 import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
@@ -8,11 +10,14 @@ import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-public class Players {
+public class Players implements Iterable<Player> {
 
     public static final Players INSTANCE = new Players();
 
@@ -46,8 +51,15 @@ public class Players {
                 .collect(Collectors.toList()));
     }
 
-    public Iterable<Player> iterable() {
-        return playerMap.values();
+    @Override
+    public Iterator<Player> iterator() {
+        return playerMap
+                .values()
+                .iterator();
+    }
+
+    public Stream<Player> stream() {
+        return StreamSupport.stream(spliterator(), false);
     }
 
     void joined(PlayerJoinedEventDto event) {
@@ -77,6 +89,21 @@ public class Players {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_DESTROYED)) {
             get(domainEvent.getKey())
                     .ifPresent(p -> p.destroyed((PlayerDestroyedEventDto) domainEvent.getEvent()));
+        }
+    }
+
+    public void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.BOLT_FIRED)) {
+            get(domainEvent.getKey())
+                    .ifPresent(p -> p.fired((BoltFiredEventDto) domainEvent.getEvent()));
+        }
+    }
+
+    public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.BOLT_EXHAUSTED)) {
+            BoltExhaustedEventDto event = (BoltExhaustedEventDto) domainEvent.getEvent();
+            get(event.getOwnerPlayerId())
+                    .ifPresent(Player::boltExhausted);
         }
     }
 

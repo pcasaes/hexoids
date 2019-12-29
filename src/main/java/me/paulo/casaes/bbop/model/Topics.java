@@ -1,20 +1,27 @@
 package me.paulo.casaes.bbop.model;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
 public enum Topics {
     JoinGameTopic(Players.get()::consumeFromJoinTopic),
-    PlayerActionTopic(Players.get()::consumeFromPlayerActionTopic);
+    PlayerActionTopic(Players.get()::consumeFromPlayerActionTopic),
+    BoltLifecycleTopic(Players.get()::consumeFromBoltFiredTopic),
+    BoltActionTopic(Bolts.get()::consumeFromBoltActionTopic, Players.get()::consumeFromBoltActionTopic),
+    ;
 
-    private final Consumer<DomainEvent> consumer;
+    private final List<Consumer<DomainEvent>> consumers;
 
 
-    Topics(Consumer<DomainEvent> consumer) {
-        this.consumer = consumer;
+    Topics(Consumer<DomainEvent>... consumers) {
+        this.consumers = Arrays.asList(consumers);
     }
 
     public void consume(DomainEvent domainEvent) {
-        this.consumer.accept(domainEvent);
+        for (Consumer<DomainEvent> consumer : consumers) {
+            consumer.accept(domainEvent);
+        }
     }
 
 }

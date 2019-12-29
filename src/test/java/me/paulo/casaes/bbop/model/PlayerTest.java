@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.model;
 
+import me.paulo.casaes.bbop.dto.BoltFiredEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.CommandType;
 import me.paulo.casaes.bbop.dto.Dto;
@@ -20,9 +21,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -76,7 +77,7 @@ class PlayerTest {
     void testCreate() {
         Player player = Players.get().createOrGet("1");
 
-        assertTrue(StreamSupport.stream(Players.get().iterable().spliterator(), false)
+        assertTrue(Players.get().stream()
                 .anyMatch(p -> p == player));
 
         assertTrue(player.is("1"));
@@ -156,7 +157,7 @@ class PlayerTest {
         assertEquals(EventType.PLAYER_LEFT, event.getEvent());
         assertEquals("1", event.getPlayerId());
 
-        assertFalse(StreamSupport.stream(Players.get().iterable().spliterator(), false)
+        assertFalse(Players.get().stream()
                 .anyMatch(p -> p == player));
 
     }
@@ -283,22 +284,28 @@ class PlayerTest {
         Player player = Players.get().createOrGet("1");
         player.join();
 
-        player.fire();
-        player.fire();
-        player.fire();
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), "1", 0, 0, 0f, 0, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), "1", 0, 0, 0f, 0, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), "1", 0, 0, 0f, 0, Clock.Factory.get().getTime()));
 
 
-        assertEquals(2, StreamSupport.stream(player.getActiveBolts()
-                        .spliterator(),
-                false)
-                .count());
+        assertEquals(2, player.getActiveBoltCount());
+    }
 
-        assertEquals(2, StreamSupport.stream(player.getActiveBolts()
-                        .spliterator(),
-                false)
-                .filter(b -> b.isOwnedBy("1"))
-                .count());
+    @Test
+    void testBoltExhaustion() {
+        Config.get().setMaxBolts(2);
 
+        Player player = Players.get().createOrGet("1");
+        player.join();
+
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), "1", 0, 0, 0f, 0, Clock.Factory.get().getTime()));
+
+        assertEquals(1, player.getActiveBoltCount());
+
+        player.boltExhausted();
+
+        assertEquals(0, player.getActiveBoltCount());
     }
 
     @Test
@@ -309,11 +316,19 @@ class PlayerTest {
         player.join();
         player.move(0.5f, 0.5f, (float) Math.PI, (float) Math.PI);
 
+        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
+        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+
         player.fire();
 
-        assertEquals(1, StreamSupport.stream(player.getActiveBolts()
-                        .spliterator(),
-                false)
+        DomainEvent event = eventReference.get();
+        assertNotNull(event);
+        assertEquals(EventType.BOLT_FIRED, event.getEvent().getEvent());
+
+        player.fired((BoltFiredEventDto) event.getEvent());
+
+        assertEquals(1, Bolts.get()
+                .stream()
                 .filter(b -> b.isOwnedBy("1"))
                 .map(Bolt::toEvent)
                 .map(b -> (BoltMovedEventDto) b)
@@ -323,7 +338,7 @@ class PlayerTest {
     }
 
     @Test
-    void testCollisionHitBullseye() {
+    void testCollisionHitBullsEye() {
         Player player = Players.get().createOrGet("1");
         player.join();
         player.move(0.5f, 0.5f, null, null);
