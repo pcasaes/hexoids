@@ -330,7 +330,8 @@ class PlayerTest {
         assertEquals(1, Bolts.get()
                 .stream()
                 .filter(b -> b.isOwnedBy("1"))
-                .map(Bolt::toEvent)
+                .map(Bolt::generateMovedEvent)
+                .map(DomainEvent::getEvent)
                 .map(b -> (BoltMovedEventDto) b)
                 .filter(b -> b.getAngle() == (float) Math.PI)
                 .count());
