@@ -13,18 +13,24 @@
     const DEADZONE_SIZE = 100;
 
     const HUD_ALPHA = 0.6;
-    const HUD_BG = 'black';
+
+    const DEPTH_BG_BEDROCK = -3;
+    const DEPTH_BG_EFFECTS = -2;
+    const DEPTH_BG = -1;
+    const DEPTH_SHIP = 100;
+    const DEPTH_SHIP_BOLT = 101;
+    const DEPTH_HUD = 200;
 
     function getCookie(cname) {
-        var name = cname + "=";
-        var decodedCookie = decodeURIComponent(document.cookie);
-        var ca = decodedCookie.split(';');
-        for (var i = 0; i < ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0) == ' ') {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') {
                 c = c.substring(1);
             }
-            if (c.indexOf(name) == 0) {
+            if (c.indexOf(name) === 0) {
                 return c.substring(name.length, c.length);
             }
         }
@@ -74,6 +80,7 @@
         sprite.setTint(color | 0x555555, color, color | 0x555555, color);
         sprite.setBounce(0, 0);
         sprite.setScale(0.3);
+        sprite.setDepth(DEPTH_SHIP);
         sprite.setCollideWorldBounds(true);
 
 
@@ -111,26 +118,63 @@
         };
 
         wake.sprites.forEach(s => {
-            s.setDepth(-2).setScale(1).setTint(color).setAlpha(0.7);
+            s.setDepth(DEPTH_BG_EFFECTS).setScale(1).setTint(color).setAlpha(0.7);
         });
 
 
-        const explosion = {
-            sprite: gameScene().physics.add.sprite(-300, -300, 'shockwave'),
-            generate: () => {
-                explosion.sprite.x = sprite.x;
-                explosion.sprite.y = sprite.y;
-                explosion.sprite.anims.play("explosion");
+        const fireBolt = {
+            sprite: gameScene().physics.add.sprite(sprite.x, sprite.y, 'fire-effect')
+                .setBounce(0, 0)
+                .setScale(0.3)
+                .setCollideWorldBounds(true)
+                .setDepth(DEPTH_SHIP - 1)
+                .setAlpha(1),
 
+            generate: () => {
+              fireBolt.follow();
+              fireBolt.sprite.anims.play('fire-bolt');
+            },
+
+            follow: () => {
+                fireBolt.sprite.x = sprite.x;
+                fireBolt.sprite.y = sprite.y;
+                fireBolt.sprite.setRotation(sprite.rotation);
             },
 
             destroy: () => {
-                explosion.sprite.destroy();
-            },
+                fireBolt.sprite.destroy();
+            }
         };
 
-        explosion.sprite.setDepth(-2).setTintFill(color).setScale(1.5).setAlpha(0.9);
+        const explosion = {
+            spriteBG: gameScene().physics.add.sprite(-300, -300, 'shockwave')
+                .setDepth(DEPTH_BG_EFFECTS)
+                .setTintFill(color)
+                .setScale(1.5)
+                .setAlpha(0.9),
+            spriteFG: gameScene().physics.add.sprite(-300, -300, 'fire-effect')
+                .setBounce(0, 0)
+                .setScale(0.3)
+                .setCollideWorldBounds(true)
+                .setDepth(DEPTH_SHIP - 1)
+                .setAlpha(1),
 
+            generate: () => {
+                explosion.spriteBG.x = sprite.x;
+                explosion.spriteBG.y = sprite.y;
+                explosion.spriteBG.anims.play("explosion");
+
+                explosion.spriteFG.x = sprite.x;
+                explosion.spriteFG.y = sprite.y;
+                explosion.spriteFG.setRotation(sprite.rotation);
+                explosion.spriteFG.anims.play("fire-bolt");
+            },
+
+            destroy: () => {
+                explosion.spriteBG.destroy();
+                explosion.spriteFG.destroy();
+            },
+        };
 
         let str = color.toString(16);
         while (str.length < 6) {
@@ -145,6 +189,19 @@
             "colorStyle": str,
             "wake": wake,
             "explosion": explosion,
+            "fireBolt": fireBolt,
+            "moveTo": (x, y, angle) => {
+                sprite.x = x;
+                sprite.y = y;
+                sprite.setRotation(angle);
+                fireBolt.follow();
+            },
+            "destroy": () => {
+                sprite.destroy();
+                fireBolt.destroy();
+                wake.destroy();
+                explosion.destroy();
+            }
         }
     }
 
@@ -162,16 +219,19 @@
             if (owner) {
                 sprite.setTint(owner.color, owner.color, owner.color, owner.color);
                 spritebg.setTint(owner.color, owner.color, owner.color, owner.color);
+                owner.fireBolt.generate();
             }
             sprite.setBounce(0, 0);
             sprite.setScale(0.15);
+            sprite.setDepth(DEPTH_SHIP_BOLT);
             sprite.setCollideWorldBounds(true);
 
             spritebg.setBounce(0, 0);
             spritebg.setScale(1);
             spritebg.setCollideWorldBounds(true);
-            spritebg.setDepth(-2);
+            spritebg.setDepth(DEPTH_BG_EFFECTS);
             spritebg.setAlpha(0.7);
+
 
             bolts[b.boltId] = {
                 "sprite": sprite,
@@ -223,10 +283,9 @@
     function updateScore(resp) {
         if (!players[USER_ID].scoreView) {
             const text = gameScene().add.bitmapText(0, 4, 'font', '', 16);
-            //const text = gameScene().add.text(0, 0, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
             text.setScrollFactor(0);
             text.setAlpha(HUD_ALPHA);
-            //text.setBackgroundColor(HUD_BG);
+            text.setDepth(DEPTH_HUD);
             text.setTintFill(players[USER_ID].color);
 
             players[USER_ID].scoreView = text;
@@ -273,10 +332,7 @@
 
                 players[resp.playerId].wake.generate();
 
-                sprite.x = move.x;
-                sprite.y = move.y;
-
-                sprite.setRotation(resp.angle);
+                players[resp.playerId].moveTo(move.x, move.y, resp.angle);
             }
         },
 
@@ -290,12 +346,7 @@
 
         'PLAYER_LEFT': resp => {
             if (players[resp.playerId]) {
-                const sprite = players[resp.playerId].sprite;
-                const wake = players[resp.playerId].wake;
-                const explosion = players[resp.playerId].explosion;
-                sprite.destroy();
-                wake.destroy();
-                explosion.destroy();
+                players[resp.playerId].destroy();
                 delete players[resp.playerId];
             }
         },
@@ -379,6 +430,7 @@
         this.load.spritesheet('ship', 'assets/ship3-Sheet.png', {frameWidth: 128, frameHeight: 128});
         this.load.spritesheet('thrust', 'assets/thrust3-Sheet.png', {frameWidth: 64, frameHeight: 64});
         this.load.spritesheet('shockwave', 'assets/shockwave1-Sheet.png', {frameWidth: 272, frameHeight: 272});
+        this.load.spritesheet('fire-effect', 'assets/fire-effect.png', {frameWidth: 128, frameHeight: 128});
 
         this.load.atlas('fontatlas', 'assets/font/font2.png', 'assets/font/font2.json');
 
@@ -444,10 +496,9 @@
                     }
                     const entry = this.scene.add.bitmapText(this.x + 5, this.y + i * y + 4, 'font', '', 16);
 
-                    //const entry = this.scene.add.text(this.x + 5, this.y + i * y + 2, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
                     entry.setScrollFactor(0);
                     entry.setAlpha(HUD_ALPHA);
-                    //entry.setBackgroundColor(HUD_BG);
+                    entry.setDepth(DEPTH_HUD);
                     this.entries.push(entry);
                 }
                 this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
@@ -471,12 +522,12 @@
         this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridb')
             .setOrigin(0)
             .setScale(1)
-            .setDepth(-3);
+            .setDepth(DEPTH_BG_BEDROCK);
 
         this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridf')
             .setOrigin(0)
             .setScale(1)
-            .setDepth(-1);
+            .setDepth(DEPTH_BG);
 
 
         this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
@@ -534,6 +585,13 @@
             key: "explosion",
             frames: gameScene().anims.generateFrameNumbers('shockwave', {start: 0, end: 8}),
             frameRate: 20,
+            repeat: 0
+        });
+
+        gameScene().anims.create({
+            key: "fire-bolt",
+            frames: gameScene().anims.generateFrameNumbers('fire-effect', {start: 0, end: 3}),
+            frameRate: 15,
             repeat: 0
         });
 
