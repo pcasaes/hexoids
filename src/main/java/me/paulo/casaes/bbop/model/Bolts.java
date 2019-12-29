@@ -43,10 +43,13 @@ public class Bolts implements Iterable<Bolt> {
     public void fixedUpdate(final long timestamp) {
         activeBolts
                 .values()
-                .forEach(b -> b.move(timestamp));
-
-        activeBolts
-                .values()
+                .stream()
+                .map(b -> b.updateTimestamp(timestamp))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(Bolt::tackleBoltExhaustion)
+                .filter(Bolt::isActive)
+                .map(Bolt::move)
                 .forEach(Bolt::checkHits);
 
         cleanup();
