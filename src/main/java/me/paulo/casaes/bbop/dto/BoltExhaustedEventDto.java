@@ -1,19 +1,31 @@
 package me.paulo.casaes.bbop.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BoltExhaustedEventDto implements EventDto {
 
     private final String boltId;
+    private final String ownerPlayerId;
 
-    private BoltExhaustedEventDto(String boltId) {
+    private BoltExhaustedEventDto(String boltId, String ownerPlayerId) {
         this.boltId = boltId;
+        this.ownerPlayerId = ownerPlayerId;
     }
 
-    public static BoltExhaustedEventDto of(String boltId) {
-        return new BoltExhaustedEventDto(boltId);
+    @JsonCreator
+    public static BoltExhaustedEventDto of(
+            @JsonProperty("boltId") String boltId,
+            @JsonProperty("ownerPlayerId") String ownerPlayerId) {
+        return new BoltExhaustedEventDto(boltId, ownerPlayerId);
     }
 
     public String getBoltId() {
         return boltId;
+    }
+
+    public String getOwnerPlayerId() {
+        return ownerPlayerId;
     }
 
     @Override

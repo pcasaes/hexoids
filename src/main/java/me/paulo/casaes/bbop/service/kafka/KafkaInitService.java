@@ -1,9 +1,6 @@
 package me.paulo.casaes.bbop.service.kafka;
 
-import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Topics;
-import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
-import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
@@ -16,14 +13,12 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,24 +30,20 @@ public class KafkaInitService {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaInitService.class.getName());
 
-    private Instance<BTopic> topicsFactory;
+    private Instance<TopicInfo> topicsFactory;
 
     private Instance<KafkaConsumerService> kafkaConsumerServiceFactory;
     private Map<Topics, KafkaConsumerService> kafkaConsumerServiceMap = new ConcurrentHashMap<>();
-
-    private EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     private KafkaAdmin kafkaAdmin;
 
 
     @Inject
-    public KafkaInitService(Instance<BTopic> topicsFactory, KafkaAdmin kafkaAdmin,
-                            Instance<KafkaConsumerService> kafkaConsumerServiceFactory,
-                            EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+    public KafkaInitService(Instance<TopicInfo> topicsFactory, KafkaAdmin kafkaAdmin,
+                            Instance<KafkaConsumerService> kafkaConsumerServiceFactory) {
         this.topicsFactory = topicsFactory;
         this.kafkaAdmin = kafkaAdmin;
         this.kafkaConsumerServiceFactory = kafkaConsumerServiceFactory;
-        this.gameLoopService = gameLoopService;
     }
 
     public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) {
@@ -67,17 +58,15 @@ public class KafkaInitService {
             LOGGER.log(Level.WARNING, "Error while initializing topics", ex);
         }
 
-        Arrays.stream(Topics.values())
+        this.topicsFactory
                 .forEach(topic -> {
                     KafkaConsumerService service = kafkaConsumerServiceFactory.get();
-                    kafkaConsumerServiceMap.put(topic, service);
-                    service.start(topic.name(), runInGameLoop(topic));
+                    kafkaConsumerServiceMap.put(topic.topic(), service);
+                    service.start(topic);
+
+                    this.topicsFactory.destroy(topic);
                 });
 
-    }
-
-    private Consumer<DomainEvent> runInGameLoop(Topics topic) {
-        return domainEvent -> gameLoopService.enqueue(() -> topic.consume(domainEvent));
     }
 
     @PreDestroy
@@ -107,9 +96,9 @@ public class KafkaInitService {
 
     }
 
-    private NewTopic getNewTopics(BTopic topic) {
+    private NewTopic getNewTopics(TopicInfo topic) {
         try {
-            return topic.get();
+            return topic.newTopic();
         } finally {
             this.topicsFactory.destroy(topic);
         }

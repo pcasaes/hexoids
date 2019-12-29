@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.model;
 
+import me.paulo.casaes.bbop.dto.BoltFiredEventDto;
 import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
@@ -7,10 +8,8 @@ import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.util.TrigUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 public interface Player {
 
@@ -20,7 +19,9 @@ public interface Player {
 
     void fire();
 
-    Iterable<Bolt> getActiveBolts();
+    void fired(BoltFiredEventDto event);
+
+    int getActiveBoltCount();
 
     boolean is(String playerId);
 
@@ -44,6 +45,8 @@ public interface Player {
 
     void destroyed(PlayerDestroyedEventDto event);
 
+    void boltExhausted();
+
     class Implementation implements Player {
 
         private static final Random RNG = new Random();
@@ -64,7 +67,7 @@ public interface Player {
 
         private long movedTimestamp;
 
-        private Collection<Bolt> firedBolts = new ArrayList<>();
+        private int liveBolts = 0;
 
         private Implementation(String id) {
             this.id = id;
@@ -74,18 +77,40 @@ public interface Player {
 
         @Override
         public void fire() {
-            firedBolts.removeIf(Bolt::isExhausted);
-            if (firedBolts.size() < Config.get().getMaxBolts()) {
-                firedBolts.add(Bolt.fire(this.id, this.x, this.y, this.angle, this.currentSpeed));
+            GameEvents.getDomainEvents()
+                    .register(DomainEvent.create(
+                            Topics.BoltLifecycleTopic.name(),
+                            this.id,
+                            BoltFiredEventDto.of(
+                                    UUID.randomUUID().toString(),
+                                    this.id,
+                                    this.x,
+                                    this.y,
+                                    this.angle,
+                                    this.currentSpeed,
+                                    Clock.Factory.get().getTime()
+                            )
+                    ));
+        }
+
+        public void fired(BoltFiredEventDto event) {
+            if (this.liveBolts < Config.get().getMaxBolts()) {
+                Bolts.get().fired(
+                        UUID.fromString(event.getBoltId()),
+                        this.id,
+                        event.getX(),
+                        event.getY(),
+                        event.getAngle(),
+                        event.getSpeedAdjustment(),
+                        event.getStartTimestamp())
+                        .ifPresent(b -> this.liveBolts++);
             }
         }
 
+
         @Override
-        public Iterable<Bolt> getActiveBolts() {
-            return this.firedBolts
-                    .stream()
-                    .filter(Bolt::isActive)
-                    .collect(Collectors.toList());
+        public int getActiveBoltCount() {
+            return this.liveBolts;
         }
 
         @Override
@@ -251,6 +276,11 @@ public interface Player {
         @Override
         public void destroyed(PlayerDestroyedEventDto event) {
             GameEvents.getClientEvents().register(event);
+        }
+
+        @Override
+        public void boltExhausted() {
+            this.liveBolts = Math.max(0, liveBolts - 1);
         }
     }
 }

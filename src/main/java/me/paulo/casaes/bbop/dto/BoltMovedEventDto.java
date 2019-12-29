@@ -1,5 +1,8 @@
 package me.paulo.casaes.bbop.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BoltMovedEventDto implements EventDto {
 
     private final String boltId;
@@ -16,7 +19,13 @@ public class BoltMovedEventDto implements EventDto {
         this.angle = angle;
     }
 
-    public static BoltMovedEventDto of(String boltId, String ownerPlayerId, float x, float y, float angle) {
+    @JsonCreator
+    public static BoltMovedEventDto of(
+            @JsonProperty("boltId") String boltId,
+            @JsonProperty("ownerPlayerId") String ownerPlayerId,
+            @JsonProperty("x") float x,
+            @JsonProperty("y") float y,
+            @JsonProperty("angle") float angle) {
         return new BoltMovedEventDto(boltId, ownerPlayerId, x, y, angle);
     }
 

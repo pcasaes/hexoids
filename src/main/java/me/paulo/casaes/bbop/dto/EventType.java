@@ -6,10 +6,12 @@ public enum EventType {
     PLAYER_LEFT(PlayerLeftEventDto.class),
     PLAYER_DESTROYED(PlayerDestroyedEventDto.class),
 
-    BOLT_MOVED(PlayerMovedEventDto.class),
+    BOLT_FIRED(BoltFiredEventDto.class),
+    BOLT_MOVED(BoltMovedEventDto.class),
     BOLT_EXHAUSTED(BoltExhaustedEventDto.class),
 
-    SCOREBOARD_UPDATED(ScoreBoardUpdatedEventDto.class);
+    SCOREBOARD_UPDATED(ScoreBoardUpdatedEventDto.class),
+    ;
 
     private final Class<? extends EventDto> classType;
 
