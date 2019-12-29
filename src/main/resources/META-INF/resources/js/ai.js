@@ -10,7 +10,7 @@ const AI = (function () {
     ];
 
     function getDirection(dim) {
-        const sprite = players[USER_ID].sprite;
+        const sprite = PLAYERS[USER_ID].sprite;
 
         if (sprite[dim] < 20) {
             return Math.random() * 5;
@@ -46,7 +46,7 @@ const AI = (function () {
         ai.intervals.push(
             setInterval(() => {
                 const command = {};
-                const sprite = players[USER_ID].sprite;
+                const sprite = PLAYERS[USER_ID].sprite;
 
                 const moveX = ai.x;
                 const moveY = ai.y;
