@@ -19,20 +19,20 @@ services:
       - bbop-zookeeper
     networks:
       - service-network
-#  bbop-kafka-manager:
-#    container_name: kafka-manager
-#    hostname: kafka-manager
-#    image: solsson/kafka-manager:latest
-#    restart: always
-#    environment:
-#      - ZK_HOSTS=bbop-zookeeper:2181
-#    ports:
-#      - "9000:9000"
-#    depends_on:
-#      - bbop-zookeeper
-#      - bbop-kafka
-#    networks:
-#      - service-network
+  bbop-kafka-manager:
+    container_name: kafka-manager
+    hostname: kafka-manager
+    image: solsson/kafka-manager:latest
+    restart: always
+    environment:
+      - ZK_HOSTS=bbop-zookeeper:2181
+    ports:
+      - "9000:9000"
+    depends_on:
+      - bbop-zookeeper
+      - bbop-kafka
+    networks:
+      - service-network
 networks:
   service-network:
     name: bbop-mmo-arcade-network
