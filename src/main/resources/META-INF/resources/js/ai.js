@@ -1,7 +1,8 @@
 class AiBot {
-    constructor(userId, players) {
+    constructor(userId, players, gameConfig) {
         this.userId = userId;
         this.players = players;
+        this.gameConfig = gameConfig;
         this.intervals = [];
         this.x = 0;
         this.y = 0;
@@ -21,11 +22,11 @@ class AiBot {
 
             if (ship[dim] < 20) {
                 return Math.random() * 5;
-            } else if (ship[dim] > BOUNDS.max[dim] - 20) {
+            } else if (ship[dim] > this.gameConfig.world.max[dim] - 20) {
                 return Math.random() * -5;
             } else {
 
-                const d = (BOUNDS.max[dim] / 2 - ship[dim]) / BOUNDS.max[dim];
+                const d = (this.gameConfig.world.max[dim] / 2 - ship[dim]) / this.gameConfig.world.max[dim];
 
                 return ((Math.random() * (1 - d) + d) - 0.5) * 10;
             }

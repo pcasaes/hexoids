@@ -190,34 +190,17 @@
         this.load.image('gridb', 'assets/gridb.png');
     }
 
-    const BOUNDS = {
-        "min": {
-            "x": 0,
-            "y": 0,
-        },
-        "max": {
-            "x": 10000,
-            "y": 10000
-        }
-    };
-
-    BOUNDS["width"] = BOUNDS.max.x - BOUNDS.min.x;
-    BOUNDS["height"] = BOUNDS.max.y - BOUNDS.min.y;
-
-    BOUNDS["width_float"] = 1.0 * BOUNDS.width;
-    BOUNDS["height_float"] = 1.0 * BOUNDS.height;
-
     const transform = {
         "model": (x, y) => {
             return {
-                "x": x / BOUNDS.width_float,
-                "y": y / BOUNDS.height_float,
+                "x": x / GameConfig.get().world.width_float,
+                "y": y / GameConfig.get().world.height_float,
             }
         },
         "view": (x, y) => {
             return {
-                "x": x * BOUNDS.width_float, // + BOUNDS.min.x,
-                "y": y * BOUNDS.height_float// + BOUNDS.min.y,
+                "x": x * GameConfig.get().world.width_float,
+                "y": y * GameConfig.get().world.height_float
             }
         },
     };
@@ -225,16 +208,16 @@
 
     function create() {
 
-        this.cameras.main.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
-        this.physics.world.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
+        this.cameras.main.setBounds(GameConfig.get().world.min.x, GameConfig.get().world.min.y, GameConfig.get().world.width, GameConfig.get().world.height);
+        this.physics.world.setBounds(GameConfig.get().world.min.x, GameConfig.get().world.min.y, GameConfig.get().world.width, GameConfig.get().world.height);
 
 
-        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridb')
+        this.add.image(GameConfig.get().world.min.x, GameConfig.get().world.min.y, 'gridb')
             .setOrigin(0)
             .setScale(1)
             .setDepth(GameConfig.get().add('background.depth', -2));
 
-        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridf')
+        this.add.image(GameConfig.get().world.min.x, GameConfig.get().world.min.y, 'gridf')
             .setOrigin(0)
             .setScale(1)
             .setDepth(GameConfig.get().background.depth);
@@ -373,11 +356,10 @@
         }, this);
 
 
-
         const AI = (function () {
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
-                return new AiBot(USER.get(), getPlayers());
+                return new AiBot(USER.get(), getPlayers(), GameConfig.get());
             }
             return {
                 'start': () => {
@@ -387,7 +369,6 @@
         })();
         AI.start();
     }
-
 
 
 </script>
