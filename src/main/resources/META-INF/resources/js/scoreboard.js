@@ -50,8 +50,8 @@ const Scoreboard = (function () {
                     this.entries.push(text);
                 }
                 this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
-                if (this.players[entry.playerId]) {
-                    this.entries[i].setTintFill(this.players[entry.playerId].ship.color);
+                if (this.players.get(entry.playerId)) {
+                    this.entries[i].setTintFill(this.players.get(entry.playerId).ship.color);
                 } else {
                     this.entries[i].setTintFill(0xffffff);
                 }

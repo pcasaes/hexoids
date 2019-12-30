@@ -1,6 +1,7 @@
 class AiBot {
-    constructor(userId) {
+    constructor(userId, players) {
         this.userId = userId;
+        this.players = players;
         this.intervals = [];
         this.x = 0;
         this.y = 0;
@@ -16,7 +17,7 @@ class AiBot {
         ];
 
         const getDirection = (dim) => {
-            const ship = PLAYERS[this.userId].ship;
+            const ship = this.players.myPlayer.ship;
 
             if (ship[dim] < 20) {
                 return Math.random() * 5;
@@ -32,7 +33,7 @@ class AiBot {
 
         this.intervals.push(
             setInterval(() => {
-                if (!PLAYERS[this.userId]) {
+                if (!this.players.myPlayer) {
                     return;
                 }
 
@@ -55,12 +56,12 @@ class AiBot {
 
         this.intervals.push(
             setInterval(() => {
-                if (!PLAYERS[this.userId]) {
+                if (!this.players.myPlayer) {
                     return;
                 }
 
                 const command = {};
-                const ship = PLAYERS[this.userId].ship;
+                const ship = this.players.myPlayer.ship;
 
                 const moveX = this.x;
                 const moveY = this.y;

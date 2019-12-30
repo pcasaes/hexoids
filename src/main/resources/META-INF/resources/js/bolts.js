@@ -25,7 +25,7 @@ const Bolts = (function () {
                 this.bg = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
             }
 
-            this.owner = this.data.players[b.ownerPlayerId];
+            this.owner = this.data.players.get(b.ownerPlayerId);
             if (this.owner) {
                 this.sprite.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
                 this.bg.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);

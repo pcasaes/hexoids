@@ -22,8 +22,6 @@
 
     const USER = new UserId(getCookie, uuid).start();
 
-    const PLAYERS = {};
-
     function gameScene() {
         return game.scene.scenes[0];
     }
@@ -31,9 +29,12 @@
 
     let socket;
 
+    function getPlayers() {
+        return Players.get(gameScene(), GameConfig.get(), USER.get(), transform);
+    }
 
     function getBolts() {
-        return Bolts.get(gameScene(), PLAYERS, GameConfig.get(), transform);
+        return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform);
     }
 
     function boltMove(b) {
@@ -66,28 +67,30 @@
     }, 50);
 
     function updateScore(resp) {
-        PLAYERS[USER.get()].updateScore(resp);
+        getPlayers().myPlayer.updateScore(resp);
     }
 
     const COMMAND_Q = new EventQueue('command')
         .add('LIST_PLAYERS', resp => {
-            resp.players.forEach(r => PLAYERS[r.playerId] = Player.create(gameScene(), GameConfig.get(), transform, r));
+            resp.players.forEach(r => getPlayers().create(r));
         })
         .add('PLAYER_SCORE_UPDATE', updateScore);
 
 
     const EVENT_Q = new EventQueue('event')
         .add('PLAYER_JOINED', resp => {
-            PLAYERS[resp.playerId] = Player.create(gameScene(), GameConfig.get(), transform, resp);
+            getPlayers().create(resp);
 
             if (USER.get() === resp.playerId) {
-                PLAYERS[resp.playerId].setMoveQueue(moveQueue);
-                gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].ship.sprite, true);
+                gameScene().cameras.main.startFollow(
+                    getPlayers()
+                        .get(resp.playerId)
+                        .setMoveQueue(moveQueue).ship.sprite, true);
             }
         })
         .add('PLAYER_MOVED', resp => {
-            if (PLAYERS[resp.playerId]) {
-                const sprite = PLAYERS[resp.playerId].ship.sprite;
+            if (getPlayers().get(resp.playerId)) {
+                const sprite = getPlayers().get(resp.playerId).ship.sprite;
                 const move = transform.view(resp.x, resp.y);
 
 
@@ -101,21 +104,18 @@
                     setShipThrustAnim(sprite, 'ship-right');
                 }
 
-                PLAYERS[resp.playerId].ship.wake.generate();
+                getPlayers().get(resp.playerId).ship.wake.generate();
 
-                PLAYERS[resp.playerId].ship.moveTo(move.x, move.y, resp.angle);
+                getPlayers().get(resp.playerId).ship.moveTo(move.x, move.y, resp.angle);
             }
         })
         .add('PLAYER_DESTROYED', resp => {
-            if (PLAYERS[resp.playerId]) {
-                PLAYERS[resp.playerId].ship.explosion.generate();
+            if (getPlayers().get(resp.playerId)) {
+                getPlayers().get(resp.playerId).ship.explosion.generate();
             }
         })
         .add('PLAYER_LEFT', resp => {
-            if (PLAYERS[resp.playerId]) {
-                PLAYERS[resp.playerId].destroy();
-                delete PLAYERS[resp.playerId];
-            }
+            getPlayers().get(resp.playerId).destroyById(resp.playerId);
         })
         .add('BOLT_MOVED', resp => {
             boltMove(resp)
@@ -242,7 +242,7 @@
 
         this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
-        Scoreboard.get(this, PLAYERS, 0, 0)
+        Scoreboard.get(this, getPlayers(), 0, 0)
             .setAlpha(GameConfig.get().hud.alpha)
             .setupEventQueue(EVENT_Q)
             .setDepth(GameConfig.get().hud.depth);
@@ -321,9 +321,8 @@
         this.input.on('pointermove', function (pointer) {
 
             if (this.input.mouse.locked) {
-                const player = PLAYERS[USER.get()];
-                if (player) {
-                    player.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR)
+                if (getPlayers().myPlayer) {
+                    getPlayers().myPlayer.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR)
                 }
             }
         }, this);
@@ -374,20 +373,22 @@
         }, this);
 
 
+
+        const AI = (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if ('true' === urlParams.get('ai')) {
+                return new AiBot(USER.get(), getPlayers());
+            }
+            return {
+                'start': () => {
+                }, 'stop': () => {
+                }
+            };
+        })();
+        AI.start();
     }
 
-    const AI = (function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        if ('true' === urlParams.get('ai')) {
-            return new AiBot(USER.get());
-        }
-        return {
-            'start': () => {
-            }, 'stop': () => {
-            }
-        };
-    })();
-    AI.start();
+
 
 </script>
 

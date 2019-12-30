@@ -1,4 +1,4 @@
-const Player = (function () {
+const Players = (function () {
 
     const CONV_RADIANS_TO_DEGREE = 180 / Math.PI;
 
@@ -250,9 +250,55 @@ const Player = (function () {
         }
     }
 
+    class PlayersClass {
+        constructor(scene, gameConfig, userId, transform) {
+            this.scene = scene;
+            this.gameConfig = gameConfig;
+            this.userId = userId;
+            this.transform = transform;
+
+            this.players = {};
+            this.myPlayer = null;
+        }
+
+        create(p) {
+            const player = new PlayerClass(
+                this.scene,
+                this.gameConfig,
+                this.transform
+            ).create(p);
+
+            this.players[p.playerId] = player;
+
+            if (this.userId === p.playerId) {
+                this.myPlayer = player;
+            }
+
+            return player;
+        }
+
+        get(id) {
+            return this.players[id];
+        }
+
+        destroyById(id) {
+            if (this.get(resp.playerId)) {
+                this.destroy();
+                delete this.players[id];
+            }
+        }
+
+    }
+
+    let instance;
 
     return {
-        'create': (scene, gameConfig, transform, playerData) => new PlayerClass(scene, gameConfig, transform).create(playerData)
+        'get': (scene, gameConfig, userId, transform) => {
+            if (!instance) {
+                instance = new PlayersClass(scene, gameConfig, userId, transform);
+            }
+            return instance;
+        }
     };
 })();
 
