@@ -1,13 +1,24 @@
 class Scoreboard {
-    constructor(scene, players, x, y) {
+    constructor(scene,
+                players,
+                x,
+                y) {
         this.scene = scene;
+        this.players = players;
         this.x = x;
         this.y = y;
-        this.players = players;
+
         this.entries = [];
         this.alpha = 1;
         this.depth = 1;
 
+    }
+
+    setupEventQueue(eventQueue) {
+        eventQueue.add('SCOREBOARD_UPDATED', resp => {
+            this.process(resp);
+        });
+        return this;
     }
 
     setAlpha(alpha) {
