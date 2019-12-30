@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/phaser-arcade-physics.min.js"></script>
+    <script src="js/uuid.js"></script>
     <script src="js/scoreboard.js"></script>
     <script src="js/event-queue.js"></script>
     <script src="js/ai.js"></script>
@@ -40,14 +41,9 @@
         return "";
     }
 
-    function uuidv4() {
-        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        );
-    }
 
     let userIdFromCookie = getCookie("user_id");
-    const USER_ID = !userIdFromCookie ? uuidv4() : userIdFromCookie;
+    const USER_ID = !userIdFromCookie ? uuid() : userIdFromCookie;
     document.cookie = "user_id=" + USER_ID;
     console.log(USER_ID);
 
