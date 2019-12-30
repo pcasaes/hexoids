@@ -37,40 +37,10 @@
         return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform, QUEUES);
     }
 
-    const moveQueue = [];
-    setInterval(() => {
-        const m = {
-            "command": "MOVE_PLAYER",
-            "moveX": 0,
-            "moveY": 0,
-        };
-
-        let hasAngle = false;
-        for (let evt = moveQueue.shift(); !!evt; evt = moveQueue.shift()) {
-            if (evt.move) {
-                m.moveX += evt.move.x;
-                m.moveY += evt.move.y;
-            }
-            if (evt.angle) {
-                m.angle = evt.angle.value;
-                hasAngle = true;
-            }
-            m.thrustAngle = evt.thrustAngle;
-        }
-        if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
-            sendMessage(m);
-        }
-    }, 50);
-
-    const COMMAND_Q = new EventQueue('command');
-
-
-    const EVENT_Q = new EventQueue('event');
-
     const QUEUES = {
-        'event': EVENT_Q,
-        'command': COMMAND_Q,
-        'move': moveQueue
+        'event': new QueueConsumer('event'),
+        'command': new QueueConsumer('command'),
+        'move': new QueueProducer(sendMessage).start(),
     };
 
 
@@ -82,8 +52,8 @@
         socket.onmessage = function (m) {
             console.log("Got message: " + m.data);
             const resp = JSON.parse(m.data);
-            EVENT_Q.consume(resp);
-            COMMAND_Q.consume(resp);
+            QUEUES.event.consume(resp);
+            QUEUES.command.consume(resp);
         };
     }
 
@@ -169,7 +139,7 @@
 
         Scoreboard.get(this, getPlayers(), 0, 0)
             .setAlpha(GameConfig.get().hud.alpha)
-            .setupEventQueue(EVENT_Q)
+            .setupEventQueue(QUEUES.event)
             .setDepth(GameConfig.get().hud.depth);
 
         getPlayers();
