@@ -30,15 +30,11 @@
     let socket;
 
     function getPlayers() {
-        return Players.get(gameScene(), GameConfig.get(), USER.get(), transform);
+        return Players.get(gameScene(), GameConfig.get(), USER.get(), transform, QUEUES);
     }
 
     function getBolts() {
-        return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform);
-    }
-
-    function boltMove(b) {
-        getBolts().move(b);
+        return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform, QUEUES);
     }
 
     const moveQueue = [];
@@ -66,49 +62,16 @@
         }
     }, 50);
 
-    function updateScore(resp) {
-        getPlayers().myPlayer.updateScore(resp);
-    }
-
-    const COMMAND_Q = new EventQueue('command')
-        .add('LIST_PLAYERS', resp => {
-            resp.players.forEach(r => getPlayers().create(r));
-        })
-        .add('PLAYER_SCORE_UPDATE', updateScore);
+    const COMMAND_Q = new EventQueue('command');
 
 
-    const EVENT_Q = new EventQueue('event')
-        .add('PLAYER_JOINED', resp => {
-            getPlayers().create(resp);
+    const EVENT_Q = new EventQueue('event');
 
-            if (USER.get() === resp.playerId) {
-                gameScene().cameras.main.startFollow(
-                    getPlayers()
-                        .get(resp.playerId)
-                        .setMoveQueue(moveQueue).ship.sprite, true);
-            }
-        })
-        .add('PLAYER_MOVED', resp => {
-            if (getPlayers().get(resp.playerId)) {
-                const move = transform.view(resp.x, resp.y);
-
-                getPlayers().get(resp.playerId).ship.moveTo(move.x, move.y, resp.angle, resp.thrustAngle);
-            }
-        })
-        .add('PLAYER_DESTROYED', resp => {
-            if (getPlayers().get(resp.playerId)) {
-                getPlayers().get(resp.playerId).ship.explosion.generate();
-            }
-        })
-        .add('PLAYER_LEFT', resp => {
-            getPlayers().get(resp.playerId).destroyById(resp.playerId);
-        })
-        .add('BOLT_MOVED', resp => {
-            boltMove(resp)
-        })
-        .add('BOLT_EXHAUSTED', resp => {
-            getBolts().destroyById(resp.boltId);
-        });
+    const QUEUES = {
+        'event': EVENT_Q,
+        'command': COMMAND_Q,
+        'move': moveQueue
+    };
 
 
     function setupSocket() {
@@ -209,6 +172,9 @@
             .setupEventQueue(EVENT_Q)
             .setDepth(GameConfig.get().hud.depth);
 
+        getPlayers();
+        getBolts();
+
         setupSocket();
 
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
@@ -269,6 +235,7 @@
             frameRate: 15,
             repeat: 0
         });
+
 
         // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
         this.input.on('pointerdown', function (pointer) {
