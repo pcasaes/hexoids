@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/phaser-arcade-physics.min.js"></script>
+    <script src="js/user-id.js"></script>
     <script src="js/uuid.js"></script>
+    <script src="js/get-cookie.js"></script>
     <script src="js/scoreboard.js"></script>
     <script src="js/event-queue.js"></script>
     <script src="js/ai.js"></script>
@@ -25,27 +27,8 @@
     const DEPTH_SHIP_BOLT = 101;
     const DEPTH_HUD = 200;
 
-    function getCookie(cname) {
-        let name = cname + "=";
-        let decodedCookie = decodeURIComponent(document.cookie);
-        let ca = decodedCookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) === 0) {
-                return c.substring(name.length, c.length);
-            }
-        }
-        return "";
-    }
 
-
-    let userIdFromCookie = getCookie("user_id");
-    const USER_ID = !userIdFromCookie ? uuid() : userIdFromCookie;
-    document.cookie = "user_id=" + USER_ID;
-    console.log(USER_ID);
+    const USER = new UserId(getCookie, uuid).start();
 
     const PLAYERS = {};
 
@@ -280,18 +263,18 @@
     }, 50);
 
     function updateScore(resp) {
-        if (!PLAYERS[USER_ID].scoreView) {
+        if (!PLAYERS[USER.get()].scoreView) {
             const text = gameScene().add.bitmapText(0, 4, 'font', '', 16);
             text.setScrollFactor(0);
             text.setAlpha(HUD_ALPHA);
             text.setDepth(DEPTH_HUD);
-            text.setTintFill(PLAYERS[USER_ID].color);
+            text.setTintFill(PLAYERS[USER.get()].color);
 
-            PLAYERS[USER_ID].scoreView = text;
+            PLAYERS[USER.get()].scoreView = text;
         }
 
-        PLAYERS[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
-        PLAYERS[USER_ID].scoreView.x = gameScene().game.config.width - (PLAYERS[USER_ID].scoreView.width + 5);
+        PLAYERS[USER.get()].scoreView.setText(USER.get().substr(0, 7) + ': ' + resp.score);
+        PLAYERS[USER.get()].scoreView.x = gameScene().game.config.width - (PLAYERS[USER.get()].scoreView.width + 5);
     }
 
     const COMMAND_Q = new EventQueue('command')
@@ -305,7 +288,7 @@
         .add('PLAYER_JOINED', resp => {
             createShip(resp);
 
-            if (USER_ID === resp.playerId) {
+            if (USER.get() === resp.playerId) {
                 gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].sprite, true);
             }
         })
@@ -363,7 +346,7 @@
     }
 
     function setupSocket() {
-        socket = new WebSocket("ws://" + location.host + "/game/" + USER_ID);
+        socket = new WebSocket("ws://" + location.host + "/game/" + USER.get());
         socket.onopen = function () {
             console.log("Connected to the web socket");
         };
@@ -554,7 +537,7 @@
 
             if (this.input.mouse.locked) {
                 const command = {};
-                const sprite = PLAYERS[USER_ID].sprite;
+                const sprite = PLAYERS[USER.get()].sprite;
 
                 const moveX = pointer.movementX;
                 const moveY = pointer.movementY;
@@ -628,6 +611,20 @@
 
 
     }
+
+    const AI = (function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if ('true' === urlParams.get('ai')) {
+            return new AiBot(USER.get());
+        }
+        return {
+            'start': () => {
+            }, 'stop': () => {
+            }
+        };
+    })();
+    AI.start();
+
 </script>
 
 </body>
