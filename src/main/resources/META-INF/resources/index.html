@@ -8,6 +8,7 @@
     <script src="js/user-id.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
+    <script src="js/player.js"></script>
     <script src="js/scoreboard.js"></script>
     <script src="js/event-queue.js"></script>
     <script src="js/ai.js"></script>
@@ -23,9 +24,19 @@
     const DEPTH_BG_BEDROCK = -3;
     const DEPTH_BG_EFFECTS = -2;
     const DEPTH_BG = -1;
-    const DEPTH_SHIP = 100;
     const DEPTH_SHIP_BOLT = 101;
     const DEPTH_HUD = 200;
+
+    const IMAGE_CONFIG = {
+        'ship': {
+            'depth': 100,
+            'effectsDepth': DEPTH_BG_EFFECTS,
+        },
+        'hud': {
+            'alpha': HUD_ALPHA,
+            'depth': DEPTH_HUD,
+        },
+    };
 
 
     const USER = new UserId(getCookie, uuid).start();
@@ -39,153 +50,6 @@
 
     let socket;
 
-    const SHIP_COLOR = [
-        0xdd0055,
-        0x00aa88,
-        0x3333ff,
-        0xcc9900,
-        0x00a0bb,
-        0xaa00ff,
-    ];
-
-    function getColorFromShip(ship) {
-        if (ship < 0 || ship >= SHIP_COLOR.length) {
-            return SHIP_COLOR[SHIP_COLOR.length - 1];
-        }
-        return SHIP_COLOR[ship];
-    }
-
-    function createShip(p) {
-        const move = transform.view(p.x, p.y);
-        const sprite = gameScene().physics.add.sprite(move.x, move.y, 'ship');
-        const color = getColorFromShip(p.ship);
-        sprite.setTint(color | 0x555555, color, color | 0x555555, color);
-        sprite.setBounce(0, 0);
-        sprite.setScale(0.3);
-        sprite.setDepth(DEPTH_SHIP);
-        sprite.setCollideWorldBounds(true);
-
-
-        sprite.anims.play("ship-rest");
-
-        const wake = {
-            _triedAt: -1,
-            firedAt: -1,
-            sprites: [
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-                gameScene().physics.add.sprite(-100, -100, 'thrust'),
-            ],
-            nextSprite: 0,
-
-            destroy: () => {
-                wake.sprites.forEach(s => s.destroy());
-            },
-
-            generate: () => {
-                wake._triedAt = Date.now();
-                if (wake._triedAt - wake.firedAt > 32) {
-                    wake.firedAt = wake._triedAt;
-                    wake.sprites[wake.nextSprite].x = sprite.x;
-                    wake.sprites[wake.nextSprite].y = sprite.y;
-                    wake.sprites[wake.nextSprite].anims.play("thrust");
-                    wake.nextSprite = (wake.nextSprite + 1) & 7;
-                }
-            }
-        };
-
-        wake.sprites.forEach(s => {
-            s.setDepth(DEPTH_BG_EFFECTS).setScale(1).setTint(color).setAlpha(0.7);
-        });
-
-
-        const fireBolt = {
-            sprite: gameScene().physics.add.sprite(sprite.x, sprite.y, 'fire-effect')
-                .setBounce(0, 0)
-                .setScale(0.3)
-                .setCollideWorldBounds(true)
-                .setDepth(DEPTH_SHIP - 1)
-                .setAlpha(1),
-
-            generate: () => {
-                fireBolt.follow();
-                fireBolt.sprite.anims.play('fire-bolt');
-            },
-
-            follow: () => {
-                fireBolt.sprite.x = sprite.x;
-                fireBolt.sprite.y = sprite.y;
-                fireBolt.sprite.setRotation(sprite.rotation);
-            },
-
-            destroy: () => {
-                fireBolt.sprite.destroy();
-            }
-        };
-
-        const explosion = {
-            spriteBG: gameScene().physics.add.sprite(-300, -300, 'shockwave')
-                .setDepth(DEPTH_BG_EFFECTS)
-                .setTintFill(color)
-                .setScale(1.5)
-                .setAlpha(0.9),
-            spriteFG: gameScene().physics.add.sprite(-300, -300, 'fire-effect')
-                .setBounce(0, 0)
-                .setScale(0.3)
-                .setCollideWorldBounds(true)
-                .setDepth(DEPTH_SHIP - 1)
-                .setAlpha(1),
-
-            generate: () => {
-                explosion.spriteBG.x = sprite.x;
-                explosion.spriteBG.y = sprite.y;
-                explosion.spriteBG.anims.play("explosion");
-
-                explosion.spriteFG.x = sprite.x;
-                explosion.spriteFG.y = sprite.y;
-                explosion.spriteFG.setRotation(sprite.rotation);
-                explosion.spriteFG.anims.play("fire-bolt");
-            },
-
-            destroy: () => {
-                explosion.spriteBG.destroy();
-                explosion.spriteFG.destroy();
-            },
-        };
-
-        let str = color.toString(16);
-        while (str.length < 6) {
-            str = '0' + str;
-        }
-        str = '#' + str;
-
-        PLAYERS[p.playerId] = {
-            "playerId": p.playerId,
-            "color": color,
-            "sprite": sprite,
-            "colorStyle": str,
-            "wake": wake,
-            "explosion": explosion,
-            "fireBolt": fireBolt,
-            "moveTo": (x, y, angle) => {
-                sprite.x = x;
-                sprite.y = y;
-                sprite.setRotation(angle);
-                fireBolt.follow();
-            },
-            "destroy": () => {
-                sprite.destroy();
-                fireBolt.destroy();
-                wake.destroy();
-                explosion.destroy();
-            }
-        }
-    }
 
     const bolts = {};
 
@@ -199,9 +63,9 @@
 
             const owner = PLAYERS[b.ownerPlayerId];
             if (owner) {
-                sprite.setTint(owner.color, owner.color, owner.color, owner.color);
-                spritebg.setTint(owner.color, owner.color, owner.color, owner.color);
-                owner.fireBolt.generate();
+                sprite.setTint(owner.ship.color, owner.ship.color, owner.ship.color, owner.ship.color);
+                spritebg.setTint(owner.ship.color, owner.ship.color, owner.ship.color, owner.ship.color);
+                owner.ship.fireBolt.generate();
             }
             sprite.setBounce(0, 0);
             sprite.setScale(0.15);
@@ -218,7 +82,7 @@
             bolts[b.boltId] = {
                 "sprite": sprite,
                 "bg": spritebg,
-                "color": owner.color,
+                "color": owner.ship.color,
                 "pulsePos": 0
             };
         } else {
@@ -263,38 +127,28 @@
     }, 50);
 
     function updateScore(resp) {
-        if (!PLAYERS[USER.get()].scoreView) {
-            const text = gameScene().add.bitmapText(0, 4, 'font', '', 16);
-            text.setScrollFactor(0);
-            text.setAlpha(HUD_ALPHA);
-            text.setDepth(DEPTH_HUD);
-            text.setTintFill(PLAYERS[USER.get()].color);
-
-            PLAYERS[USER.get()].scoreView = text;
-        }
-
-        PLAYERS[USER.get()].scoreView.setText(USER.get().substr(0, 7) + ': ' + resp.score);
-        PLAYERS[USER.get()].scoreView.x = gameScene().game.config.width - (PLAYERS[USER.get()].scoreView.width + 5);
+        PLAYERS[USER.get()].updateScore(resp);
     }
 
     const COMMAND_Q = new EventQueue('command')
         .add('LIST_PLAYERS', resp => {
-            resp.players.forEach(createShip);
+            resp.players.forEach(r => PLAYERS[r.playerId] = Player.create(gameScene(), IMAGE_CONFIG, transform, r));
         })
         .add('PLAYER_SCORE_UPDATE', updateScore);
 
 
     const EVENT_Q = new EventQueue('event')
         .add('PLAYER_JOINED', resp => {
-            createShip(resp);
+            PLAYERS[resp.playerId] = Player.create(gameScene(), IMAGE_CONFIG, transform, resp);
 
             if (USER.get() === resp.playerId) {
-                gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].sprite, true);
+                PLAYERS[resp.playerId].setMoveQueue(moveQueue);
+                gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].ship.sprite, true);
             }
         })
         .add('PLAYER_MOVED', resp => {
             if (PLAYERS[resp.playerId]) {
-                const sprite = PLAYERS[resp.playerId].sprite;
+                const sprite = PLAYERS[resp.playerId].ship.sprite;
                 const move = transform.view(resp.x, resp.y);
 
 
@@ -308,16 +162,14 @@
                     setShipThrustAnim(sprite, 'ship-right');
                 }
 
-                PLAYERS[resp.playerId].wake.generate();
+                PLAYERS[resp.playerId].ship.wake.generate();
 
-                PLAYERS[resp.playerId].moveTo(move.x, move.y, resp.angle);
+                PLAYERS[resp.playerId].ship.moveTo(move.x, move.y, resp.angle);
             }
         })
         .add('PLAYER_DESTROYED', resp => {
             if (PLAYERS[resp.playerId]) {
-                const explosion = PLAYERS[resp.playerId].explosion;
-
-                explosion.generate();
+                PLAYERS[resp.playerId].ship.explosion.generate();
             }
         })
         .add('PLAYER_LEFT', resp => {
@@ -436,8 +288,6 @@
     };
 
 
-    let SCOREBOARD;
-
     function create() {
 
         this.cameras.main.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
@@ -457,7 +307,7 @@
 
         this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
 
-        SCOREBOARD = new Scoreboard(this, PLAYERS, 0, 0)
+        Scoreboard.get(this, PLAYERS, 0, 0)
             .setAlpha(HUD_ALPHA)
             .setupEventQueue(EVENT_Q)
             .setDepth(DEPTH_HUD);
@@ -536,31 +386,10 @@
         this.input.on('pointermove', function (pointer) {
 
             if (this.input.mouse.locked) {
-                const command = {};
-                const sprite = PLAYERS[USER.get()].sprite;
-
-                const moveX = pointer.movementX;
-                const moveY = pointer.movementY;
-
-                const x = sprite.x + moveX;
-                const y = sprite.y + moveY;
-
-                if (MOVE_CARTESIAN || MOVE_CARTESIAN === MOVE_RADIAL) {
-                    command.move = transform.model(pointer.movementX, pointer.movementY);
+                const player = PLAYERS[USER.get()];
+                if (player) {
+                    player.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR)
                 }
-                if (MOVE_RADIAL || MOVE_CARTESIAN === MOVE_RADIAL) {
-                    if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
-                        command.angle = {
-                            "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + FORWARD_DIR
-                        };
-                        command.thrustAngle = FORWARD_DIR;
-                    }
-                } else if (command.move) {
-                    const convDeg = 180 / Math.PI;
-                    command.thrustAngle = Phaser.Math.Angle.ShortestBetween(sprite.angle, Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) * convDeg) / -convDeg;
-                }
-                moveQueue.push(command);
-
             }
         }, this);
 

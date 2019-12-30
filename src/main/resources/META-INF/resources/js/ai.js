@@ -16,15 +16,15 @@ class AiBot {
         ];
 
         const getDirection = (dim) => {
-            const sprite = PLAYERS[this.userId].sprite;
+            const ship = PLAYERS[this.userId].ship;
 
-            if (sprite[dim] < 20) {
+            if (ship[dim] < 20) {
                 return Math.random() * 5;
-            } else if (sprite[dim] > BOUNDS.max[dim] - 20) {
+            } else if (ship[dim] > BOUNDS.max[dim] - 20) {
                 return Math.random() * -5;
             } else {
 
-                const d = (BOUNDS.max[dim] / 2 - sprite[dim]) / BOUNDS.max[dim];
+                const d = (BOUNDS.max[dim] / 2 - ship[dim]) / BOUNDS.max[dim];
 
                 return ((Math.random() * (1 - d) + d) - 0.5) * 10;
             }
@@ -60,18 +60,18 @@ class AiBot {
                 }
 
                 const command = {};
-                const sprite = PLAYERS[this.userId].sprite;
+                const ship = PLAYERS[this.userId].ship;
 
                 const moveX = this.x;
                 const moveY = this.y;
 
-                const x = sprite.x + moveX;
-                const y = sprite.y + moveY;
+                const x = ship.x + moveX;
+                const y = ship.y + moveY;
 
                 command.move = transform.model(moveX, moveY);
-                if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
+                if (Math.abs(ship.x - x) > 2 || Math.abs(ship.y - y) > 2) {
                     command.angle = {
-                        "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + this.forwardDir
+                        "value": Phaser.Math.Angle.Between(ship.x, ship.y, x, y) + this.forwardDir
                     };
                     command.thrustAngle = this.forwardDir;
                 }
