@@ -110,6 +110,19 @@ const Bolts = (function () {
             }
         }
 
+        setupQueues(queues) {
+
+            queues.event
+                .add('BOLT_MOVED', resp => {
+                    this.move(resp)
+                })
+                .add('BOLT_EXHAUSTED', resp => {
+                    this.destroyById(resp.boltId);
+                });
+
+            return this;
+        }
+
         destroyById(boltId) {
             if (this.bolts[boltId]) {
                 this.bolts[boltId].destroy();
@@ -121,9 +134,9 @@ const Bolts = (function () {
     let instance;
 
     return {
-        'get': (scene, players, gameConfig, transform) => {
+        'get': (scene, players, gameConfig, transform, queues) => {
             if (!instance) {
-                instance = new Bolts(scene, players, gameConfig, transform);
+                instance = new Bolts(scene, players, gameConfig, transform).setupQueues(queues);
             }
             return instance;
         }

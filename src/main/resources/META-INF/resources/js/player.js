@@ -165,7 +165,7 @@ const Players = (function () {
             } else if (Math.abs(thrustAngle + Math.PI / 2) <= Math.PI / 4) {
                 setShipThrustAnim(this.sprite, 'ship-right');
             }
-            
+
             this.sprite.x = x;
             this.sprite.y = y;
             this.sprite.setRotation(angle);
@@ -299,6 +299,44 @@ const Players = (function () {
             return player;
         }
 
+        setupQueues(queues) {
+
+            queues.command
+                .add('LIST_PLAYERS', resp => {
+                    resp.players.forEach(r => this.create(r));
+                })
+                .add('PLAYER_SCORE_UPDATE', r => this.myPlayer.updateScore(r));
+
+            queues.event
+                .add('PLAYER_JOINED', resp => {
+                    this.create(resp);
+
+                    if (this.userId === resp.playerId) {
+                        this.scene.cameras.main.startFollow(
+                            this
+                                .get(resp.playerId)
+                                .setMoveQueue(queues.move).ship.sprite, true);
+                    }
+                })
+                .add('PLAYER_MOVED', resp => {
+                    if (this.get(resp.playerId)) {
+                        const move = this.transform.view(resp.x, resp.y);
+
+                        this.get(resp.playerId).ship.moveTo(move.x, move.y, resp.angle, resp.thrustAngle);
+                    }
+                })
+                .add('PLAYER_DESTROYED', resp => {
+                    if (this.get(resp.playerId)) {
+                        this.get(resp.playerId).ship.explosion.generate();
+                    }
+                })
+                .add('PLAYER_LEFT', resp => {
+                    this.get(resp.playerId).destroyById(resp.playerId);
+                });
+
+            return this;
+        }
+
         get(id) {
             return this.players[id];
         }
@@ -315,9 +353,9 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, gameConfig, userId, transform) => {
+        'get': (scene, gameConfig, userId, transform, queues) => {
             if (!instance) {
-                instance = new PlayersClass(scene, gameConfig, userId, transform);
+                instance = new PlayersClass(scene, gameConfig, userId, transform).setupQueues(queues);
             }
             return instance;
         }
