@@ -19,6 +19,15 @@ const Players = (function () {
         return SHIP_COLOR[ship];
     }
 
+
+    function setShipThrustAnim(sprite, toplay) {
+        const p = sprite.anims.getProgress();
+        if (Number.isNaN(p) || p > 0.9) {
+            sprite.anims.play(toplay);
+            sprite.anims.chain("ship-rest");
+        }
+    }
+
     class Ship {
         constructor(scene, gameConfig, transform) {
             this.scene = scene;
@@ -143,7 +152,20 @@ const Players = (function () {
             return this;
         }
 
-        moveTo(x, y, angle) {
+        moveTo(x, y, angle, thrustAngle) {
+            this.wake.generate();
+
+
+            if (Math.abs(thrustAngle) <= Math.PI / 4) {
+                setShipThrustAnim(this.sprite, 'ship-fw');
+            } else if (Math.abs(thrustAngle - Math.PI / 2) <= Math.PI / 4) {
+                setShipThrustAnim(this.sprite, 'ship-left');
+            } else if (Math.abs(thrustAngle - Math.PI) <= Math.PI / 4) {
+                setShipThrustAnim(this.sprite, 'ship-back');
+            } else if (Math.abs(thrustAngle + Math.PI / 2) <= Math.PI / 4) {
+                setShipThrustAnim(this.sprite, 'ship-right');
+            }
+            
             this.sprite.x = x;
             this.sprite.y = y;
             this.sprite.setRotation(angle);
