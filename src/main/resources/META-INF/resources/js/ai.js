@@ -1,37 +1,47 @@
-const AI = (function () {
-
-    const ai = {intervals: []};
-
-    const DIRS = [
-        0,
-        Math.PI / 2,
-        Math.PI,
-        Math.PI / -2
-    ];
-
-    function getDirection(dim) {
-        const sprite = PLAYERS[USER_ID].sprite;
-
-        if (sprite[dim] < 20) {
-            return Math.random() * 5;
-        } else if (sprite[dim] > BOUNDS.max[dim] - 20) {
-            return Math.random() * -5;
-        } else {
-
-            const d = (BOUNDS.max[dim] / 2 - sprite[dim]) / BOUNDS.max[dim];
-
-            return ((Math.random() * (1 - d) + d) - 0.5) * 10;
-        }
+class AiBot {
+    constructor(userId) {
+        this.userId = userId;
+        this.intervals = [];
+        this.x = 0;
+        this.y = 0;
+        this.forwardDir = 0;
     }
 
-    function start() {
-        ai.intervals.push(
-            setInterval(() => {
-                if (Math.random() <= 0.2) {
-                    ai.x = getDirection('x');
-                    ai.y = getDirection('y');
+    start() {
+        const DIRS = [
+            0,
+            Math.PI / 2,
+            Math.PI,
+            Math.PI / -2
+        ];
 
-                    ai.forwardDir = DIRS[Math.floor(Math.random() * 4)];
+        const getDirection = (dim) => {
+            const sprite = PLAYERS[this.userId].sprite;
+
+            if (sprite[dim] < 20) {
+                return Math.random() * 5;
+            } else if (sprite[dim] > BOUNDS.max[dim] - 20) {
+                return Math.random() * -5;
+            } else {
+
+                const d = (BOUNDS.max[dim] / 2 - sprite[dim]) / BOUNDS.max[dim];
+
+                return ((Math.random() * (1 - d) + d) - 0.5) * 10;
+            }
+        };
+
+        this.intervals.push(
+            setInterval(() => {
+                if (!PLAYERS[this.userId]) {
+                    return;
+                }
+
+
+                if (Math.random() <= 0.2) {
+                    this.x = getDirection('x');
+                    this.y = getDirection('y');
+
+                    this.forwardDir = DIRS[Math.floor(Math.random() * 4)];
                 }
 
                 if (Math.random() <= 0.15) {
@@ -43,13 +53,17 @@ const AI = (function () {
             }, 100)
         );
 
-        ai.intervals.push(
+        this.intervals.push(
             setInterval(() => {
-                const command = {};
-                const sprite = PLAYERS[USER_ID].sprite;
+                if (!PLAYERS[this.userId]) {
+                    return;
+                }
 
-                const moveX = ai.x;
-                const moveY = ai.y;
+                const command = {};
+                const sprite = PLAYERS[this.userId].sprite;
+
+                const moveX = this.x;
+                const moveY = this.y;
 
                 const x = sprite.x + moveX;
                 const y = sprite.y + moveY;
@@ -57,9 +71,9 @@ const AI = (function () {
                 command.move = transform.model(moveX, moveY);
                 if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
                     command.angle = {
-                        "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + ai.forwardDir
+                        "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + this.forwardDir
                     };
-                    command.thrustAngle = ai.forwardDir;
+                    command.thrustAngle = this.forwardDir;
                 }
 
                 moveQueue.push(command);
@@ -67,13 +81,8 @@ const AI = (function () {
         );
     }
 
-    function stop() {
-        ai.intervals.forEach(v => clearTimeout(v));
-        ai.intervals = [];
+    stop() {
+        this.intervals.forEach(v => clearTimeout(v));
+        this.intervals = [];
     }
-
-    return {
-        'start': start,
-        'stop': stop
-    }
-})();
+}
