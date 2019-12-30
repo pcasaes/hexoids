@@ -264,7 +264,7 @@ const Players = (function () {
                     Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) * CONV_RADIANS_TO_DEGREE
                 ) / -CONV_RADIANS_TO_DEGREE;
             }
-            this.moveQueue.push(command);
+            this.moveQueue.produce(command);
         }
 
         destroy() {
