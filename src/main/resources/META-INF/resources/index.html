@@ -9,6 +9,7 @@
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
+    <script src="js/server.js"></script>
     <script src="js/player.js"></script>
     <script src="js/bolts.js"></script>
     <script src="js/scoreboard.js"></script>
@@ -22,12 +23,17 @@
 
     const USER = new UserId(getCookie, uuid).start();
 
+
+    const QUEUES = {
+        'event': new QueueConsumer('event'),
+        'command': new QueueConsumer('command'),
+        'move': new QueueProducer(sendMessage).start(),
+    };
+
     function gameScene() {
         return game.scene.scenes[0];
     }
 
-
-    let socket;
 
     function getPlayers() {
         return Players.get(gameScene(), GameConfig.get(), USER.get(), transform, QUEUES);
@@ -37,31 +43,13 @@
         return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform, QUEUES);
     }
 
-    const QUEUES = {
-        'event': new QueueConsumer('event'),
-        'command': new QueueConsumer('command'),
-        'move': new QueueProducer(sendMessage).start(),
-    };
-
-
-    function setupSocket() {
-        socket = new WebSocket("ws://" + location.host + "/game/" + USER.get());
-        socket.onopen = function () {
-            console.log("Connected to the web socket");
-        };
-        socket.onmessage = function (m) {
-            console.log("Got message: " + m.data);
-            const resp = JSON.parse(m.data);
-            QUEUES.event.consume(resp);
-            QUEUES.command.consume(resp);
-        };
+    function getServer() {
+        return Server.get(USER.get(), QUEUES);
     }
 
     function sendMessage(value) {
-        const s = JSON.stringify(value);
-        console.log("Sending " + s);
-        socket.send(s);
-    };
+        getServer().sendMessage(value);
+    }
 
 
     const config = {
@@ -144,8 +132,7 @@
 
         getPlayers();
         getBolts();
-
-        setupSocket();
+        getServer();
 
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
 
@@ -275,7 +262,7 @@
         const AI = (function () {
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
-                return new AiBot(USER.get(), getPlayers(), GameConfig.get());
+                return new AiBot(getServer(), QUEUES, getPlayers(), GameConfig.get());
             }
             return {
                 'start': () => {
