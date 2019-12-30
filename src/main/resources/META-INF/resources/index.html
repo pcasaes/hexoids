@@ -10,6 +10,7 @@
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
     <script src="js/player.js"></script>
+    <script src="js/bolts.js"></script>
     <script src="js/scoreboard.js"></script>
     <script src="js/event-queue.js"></script>
     <script src="js/ai.js"></script>
@@ -31,54 +32,12 @@
     let socket;
 
 
-    const bolts = {};
-
-    const PULSE = [0xfffff, 0x888888, 0x888888, 0x000000];
+    function getBolts() {
+        return Bolts.get(gameScene(), PLAYERS, GameConfig.get(), transform);
+    }
 
     function boltMove(b) {
-        const move = transform.view(b.x, b.y);
-        if (!bolts[b.boltId]) {
-            const sprite = gameScene().physics.add.image(move.x, move.y, 'bolt');
-            const spritebg = gameScene().physics.add.image(move.x, move.y, 'bolt');
-
-            const owner = PLAYERS[b.ownerPlayerId];
-            if (owner) {
-                sprite.setTint(owner.ship.color, owner.ship.color, owner.ship.color, owner.ship.color);
-                spritebg.setTint(owner.ship.color, owner.ship.color, owner.ship.color, owner.ship.color);
-                owner.ship.fireBolt.generate();
-            }
-            sprite.setBounce(0, 0);
-            sprite.setScale(0.15);
-            sprite.setDepth(GameConfig.get().add('ship.depth', 1));
-            sprite.setCollideWorldBounds(true);
-
-            spritebg.setBounce(0, 0);
-            spritebg.setScale(1);
-            spritebg.setCollideWorldBounds(true);
-            spritebg.setDepth(GameConfig.get().background.effectsDepth);
-            spritebg.setAlpha(0.7);
-
-
-            bolts[b.boltId] = {
-                "sprite": sprite,
-                "bg": spritebg,
-                "color": owner.ship.color,
-                "pulsePos": 0
-            };
-        } else {
-            let bolt = bolts[b.boltId];
-            bolt.sprite.x = move.x;
-            bolt.sprite.y = move.y;
-            bolt.bg.x = move.x;
-            bolt.bg.y = move.y;
-            bolt.sprite.setTint(
-                bolt.color | PULSE[bolt.pulsePos],
-                bolt.color | PULSE[(bolt.pulsePos + 1) % 4],
-                bolt.color | PULSE[(bolt.pulsePos + 2) % 4],
-                bolt.color | PULSE[(bolt.pulsePos + 3) % 4],
-            );
-            bolt.pulsePos = (bolt.pulsePos + 1) % 4;
-        }
+        getBolts().move(b);
     }
 
     const moveQueue = [];
@@ -162,11 +121,7 @@
             boltMove(resp)
         })
         .add('BOLT_EXHAUSTED', resp => {
-            if (bolts[resp.boltId]) {
-                bolts[resp.boltId].sprite.destroy();
-                bolts[resp.boltId].bg.destroy();
-                delete bolts[resp.boltId];
-            }
+            getBolts().destroyById(resp.boltId);
         });
 
     function setShipThrustAnim(sprite, toplay) {
