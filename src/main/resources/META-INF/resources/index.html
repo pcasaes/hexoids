@@ -6,6 +6,7 @@
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/phaser-arcade-physics.min.js"></script>
     <script src="js/scoreboard.js"></script>
+    <script src="js/event-queue.js"></script>
     <script src="js/ai.js"></script>
 </head>
 <body>
@@ -297,26 +298,22 @@
         PLAYERS[USER_ID].scoreView.x = gameScene().game.config.width - (PLAYERS[USER_ID].scoreView.width + 5);
     }
 
-    const COMMANDS = {
-        'LIST_PLAYERS': resp => {
+    const COMMAND_Q = new EventQueue('command')
+        .add('LIST_PLAYERS', resp => {
             resp.players.forEach(createShip);
-        },
+        })
+        .add('PLAYER_SCORE_UPDATE', updateScore);
 
-        'PLAYER_SCORE_UPDATE': updateScore,
 
-    };
-
-    const EVENTS = {
-
-        'PLAYER_JOINED': resp => {
+    const EVENT_Q = new EventQueue('event')
+        .add('PLAYER_JOINED', resp => {
             createShip(resp);
 
             if (USER_ID === resp.playerId) {
                 gameScene().cameras.main.startFollow(PLAYERS[resp.playerId].sprite, true);
             }
-        },
-
-        'PLAYER_MOVED': resp => {
+        })
+        .add('PLAYER_MOVED', resp => {
             if (PLAYERS[resp.playerId]) {
                 const sprite = PLAYERS[resp.playerId].sprite;
                 const move = transform.view(resp.x, resp.y);
@@ -336,40 +333,30 @@
 
                 PLAYERS[resp.playerId].moveTo(move.x, move.y, resp.angle);
             }
-        },
-
-        'PLAYER_DESTROYED': resp => {
+        })
+        .add('PLAYER_DESTROYED', resp => {
             if (PLAYERS[resp.playerId]) {
                 const explosion = PLAYERS[resp.playerId].explosion;
 
                 explosion.generate();
             }
-        },
-
-        'PLAYER_LEFT': resp => {
+        })
+        .add('PLAYER_LEFT', resp => {
             if (PLAYERS[resp.playerId]) {
                 PLAYERS[resp.playerId].destroy();
                 delete PLAYERS[resp.playerId];
             }
-        },
-
-        'BOLT_MOVED': resp => {
+        })
+        .add('BOLT_MOVED', resp => {
             boltMove(resp)
-        },
-
-        'BOLT_EXHAUSTED': resp => {
+        })
+        .add('BOLT_EXHAUSTED', resp => {
             if (bolts[resp.boltId]) {
                 bolts[resp.boltId].sprite.destroy();
                 bolts[resp.boltId].bg.destroy();
                 delete bolts[resp.boltId];
             }
-        },
-
-        'SCOREBOARD_UPDATED': resp => {
-            SCOREBOARD.process(resp);
-        },
-
-    };
+        });
 
     function setShipThrustAnim(sprite, toplay) {
         const p = sprite.anims.getProgress();
@@ -387,16 +374,8 @@
         socket.onmessage = function (m) {
             console.log("Got message: " + m.data);
             const resp = JSON.parse(m.data);
-
-            const event = EVENTS[resp.event];
-            if (event) {
-                event(resp);
-            }
-
-            const command = COMMANDS[resp.command];
-            if (command) {
-                command(resp);
-            }
+            EVENT_Q.consume(resp);
+            COMMAND_Q.consume(resp);
         };
     }
 
@@ -501,6 +480,7 @@
 
         SCOREBOARD = new Scoreboard(this, PLAYERS, 0, 0)
             .setAlpha(HUD_ALPHA)
+            .setupEventQueue(EVENT_Q)
             .setDepth(DEPTH_HUD);
 
         setupSocket();
