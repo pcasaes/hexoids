@@ -6,6 +6,7 @@
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/phaser-arcade-physics.min.js"></script>
     <script src="js/user-id.js"></script>
+    <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
     <script src="js/player.js"></script>
@@ -16,27 +17,6 @@
 <body>
 
 <script>
-
-    const DEADZONE_SIZE = 100;
-
-    const HUD_ALPHA = 0.6;
-
-    const DEPTH_BG_BEDROCK = -3;
-    const DEPTH_BG_EFFECTS = -2;
-    const DEPTH_BG = -1;
-    const DEPTH_SHIP_BOLT = 101;
-    const DEPTH_HUD = 200;
-
-    const IMAGE_CONFIG = {
-        'ship': {
-            'depth': 100,
-            'effectsDepth': DEPTH_BG_EFFECTS,
-        },
-        'hud': {
-            'alpha': HUD_ALPHA,
-            'depth': DEPTH_HUD,
-        },
-    };
 
 
     const USER = new UserId(getCookie, uuid).start();
@@ -69,13 +49,13 @@
             }
             sprite.setBounce(0, 0);
             sprite.setScale(0.15);
-            sprite.setDepth(DEPTH_SHIP_BOLT);
+            sprite.setDepth(GameConfig.get().add('ship.depth', 1));
             sprite.setCollideWorldBounds(true);
 
             spritebg.setBounce(0, 0);
             spritebg.setScale(1);
             spritebg.setCollideWorldBounds(true);
-            spritebg.setDepth(DEPTH_BG_EFFECTS);
+            spritebg.setDepth(GameConfig.get().background.effectsDepth);
             spritebg.setAlpha(0.7);
 
 
@@ -132,14 +112,14 @@
 
     const COMMAND_Q = new EventQueue('command')
         .add('LIST_PLAYERS', resp => {
-            resp.players.forEach(r => PLAYERS[r.playerId] = Player.create(gameScene(), IMAGE_CONFIG, transform, r));
+            resp.players.forEach(r => PLAYERS[r.playerId] = Player.create(gameScene(), GameConfig.get(), transform, r));
         })
         .add('PLAYER_SCORE_UPDATE', updateScore);
 
 
     const EVENT_Q = new EventQueue('event')
         .add('PLAYER_JOINED', resp => {
-            PLAYERS[resp.playerId] = Player.create(gameScene(), IMAGE_CONFIG, transform, resp);
+            PLAYERS[resp.playerId] = Player.create(gameScene(), GameConfig.get(), transform, resp);
 
             if (USER.get() === resp.playerId) {
                 PLAYERS[resp.playerId].setMoveQueue(moveQueue);
@@ -297,20 +277,20 @@
         this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridb')
             .setOrigin(0)
             .setScale(1)
-            .setDepth(DEPTH_BG_BEDROCK);
+            .setDepth(GameConfig.get().add('background.depth', -2));
 
         this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'gridf')
             .setOrigin(0)
             .setScale(1)
-            .setDepth(DEPTH_BG);
+            .setDepth(GameConfig.get().background.depth);
 
 
-        this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
+        this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
         Scoreboard.get(this, PLAYERS, 0, 0)
-            .setAlpha(HUD_ALPHA)
+            .setAlpha(GameConfig.get().hud.alpha)
             .setupEventQueue(EVENT_Q)
-            .setDepth(DEPTH_HUD);
+            .setDepth(GameConfig.get().hud.depth);
 
         setupSocket();
 

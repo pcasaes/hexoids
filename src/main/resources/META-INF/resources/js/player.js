@@ -20,9 +20,9 @@ const Player = (function () {
     }
 
     class Ship {
-        constructor(scene, imageConfig, transform) {
+        constructor(scene, gameConfig, transform) {
             this.scene = scene;
-            this.imageConfig = imageConfig;
+            this.gameConfig = gameConfig;
             this.transform = transform;
 
             this.sprite = null;
@@ -39,7 +39,7 @@ const Player = (function () {
             this.sprite.setTint(color | 0x555555, color, color | 0x555555, color);
             this.sprite.setBounce(0, 0);
             this.sprite.setScale(0.3);
-            this.sprite.setDepth(this.imageConfig.ship.depth);
+            this.sprite.setDepth(this.gameConfig.ship.depth);
             this.sprite.setCollideWorldBounds(true);
 
 
@@ -77,7 +77,7 @@ const Player = (function () {
             };
 
             wake.sprites.forEach(s => {
-                s.setDepth(this.imageConfig.ship.effectsDepth).setScale(1).setTint(color).setAlpha(0.7);
+                s.setDepth(this.gameConfig.ship.effectsDepth).setScale(1).setTint(color).setAlpha(0.7);
             });
 
 
@@ -86,7 +86,7 @@ const Player = (function () {
                     .setBounce(0, 0)
                     .setScale(0.3)
                     .setCollideWorldBounds(true)
-                    .setDepth(this.imageConfig.ship.depth - 1)
+                    .setDepth(this.gameConfig.ship.depth - 1)
                     .setAlpha(1),
 
                 generate: () => {
@@ -107,7 +107,7 @@ const Player = (function () {
 
             const explosion = {
                 spriteBG: this.scene.physics.add.sprite(-300, -300, 'shockwave')
-                    .setDepth(this.imageConfig.ship.effectsDepth)
+                    .setDepth(this.gameConfig.ship.effectsDepth)
                     .setTintFill(color)
                     .setScale(1.5)
                     .setAlpha(0.9),
@@ -115,7 +115,7 @@ const Player = (function () {
                     .setBounce(0, 0)
                     .setScale(0.3)
                     .setCollideWorldBounds(true)
-                    .setDepth(this.imageConfig.ship.depth - 1)
+                    .setDepth(this.gameConfig.ship.depth - 1)
                     .setAlpha(1),
 
                 generate: () => {
@@ -174,9 +174,9 @@ const Player = (function () {
     }
 
     class PlayerClass {
-        constructor(scene, imageConfig, transform) {
+        constructor(scene, gameConfig, transform) {
             this.scene = scene;
-            this.imageConfig = imageConfig;
+            this.gameConfig = gameConfig;
             this.transform = transform;
             this.moveQueue = null;
 
@@ -188,7 +188,7 @@ const Player = (function () {
         create(p) {
             this.playerId = p.playerId;
 
-            this.ship = new Ship(this.scene, this.imageConfig, this.transform).create(p);
+            this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p);
 
             return this;
         }
@@ -203,8 +203,8 @@ const Player = (function () {
             if (!this.scoreView) {
                 const text = this.scene.add.bitmapText(0, 4, 'font', '', 16);
                 text.setScrollFactor(0);
-                text.setAlpha(this.imageConfig.hud.alpha);
-                text.setDepth(this.imageConfig.hud.depth);
+                text.setAlpha(this.gameConfig.hud.alpha);
+                text.setDepth(this.gameConfig.hud.depth);
                 text.setTintFill(this.ship.color);
 
                 this.scoreView = text;
@@ -252,7 +252,7 @@ const Player = (function () {
 
 
     return {
-        'create': (scene, imageConfig, transform, playerData) => new PlayerClass(scene, imageConfig, transform).create(playerData)
+        'create': (scene, gameConfig, transform, playerData) => new PlayerClass(scene, gameConfig, transform).create(playerData)
     };
 })();
 
