@@ -1,6 +1,7 @@
 class AiBot {
-    constructor(userId, players, gameConfig) {
-        this.userId = userId;
+    constructor(server, queues, players, gameConfig) {
+        this.server = server;
+        this.queues = queues;
         this.players = players;
         this.gameConfig = gameConfig;
         this.intervals = [];
@@ -47,7 +48,7 @@ class AiBot {
                 }
 
                 if (Math.random() <= 0.15) {
-                    sendMessage({
+                    this.server.sendMessage({
                         "command": "FIRE_BOLT"
                     })
                 }
@@ -78,7 +79,7 @@ class AiBot {
                     command.thrustAngle = this.forwardDir;
                 }
 
-                moveQueue.push(command);
+                this.queues.move.produce(command);
             }, 20)
         );
     }

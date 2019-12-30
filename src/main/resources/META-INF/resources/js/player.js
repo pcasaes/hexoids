@@ -331,7 +331,10 @@ const Players = (function () {
                     }
                 })
                 .add('PLAYER_LEFT', resp => {
-                    this.get(resp.playerId).destroyById(resp.playerId);
+                    const p = this.get(resp.playerId);
+                    if (p) {
+                        p.destroy(resp.playerId);
+                    }
                 });
 
             return this;
