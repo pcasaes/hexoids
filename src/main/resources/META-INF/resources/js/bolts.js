@@ -13,6 +13,7 @@ const Bolts = (function () {
             this.bg = null;
             this.pulsePos = 0;
             this.owner = null;
+            this.color = null;
 
             this.isNew = true;
         }
@@ -30,6 +31,9 @@ const Bolts = (function () {
                 this.sprite.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
                 this.bg.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
                 this.owner.ship.fireBolt.generate();
+                this.color = this.owner.ship.color;
+            } else {
+                this.color = 0xffffff;
             }
 
             if (this.isNew) {
@@ -70,10 +74,6 @@ const Bolts = (function () {
                 this.color | PULSE[(this.pulsePos + 3) & 3],
             );
             this.pulsePos++;
-        }
-        
-        get color() {
-            return this.owner.ship.color;
         }
 
         destroy() {
