@@ -125,73 +125,17 @@
 
         this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
+        //create singletons
+        getPlayers();
+        getBolts();
+        getServer();
+
         Scoreboard.get(this, getPlayers(), 0, 0)
             .setAlpha(GameConfig.get().hud.alpha)
             .setupEventQueue(QUEUES.event)
             .setDepth(GameConfig.get().hud.depth);
 
-        getPlayers();
-        getBolts();
-        getServer();
-
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
-
-
-        gameScene().anims.create({
-            key: "ship-fw",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 0, end: 1}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-right",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 2, end: 3}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-back",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 4, end: 5}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-left",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 6, end: 7}),
-            frameRate: 5,
-            repeat: 1
-        });
-
-        gameScene().anims.create({
-            key: "ship-rest",
-            frames: gameScene().anims.generateFrameNumbers('ship', {start: 8, end: 8}),
-            frameRate: 5,
-            repeat: 0
-        });
-
-        gameScene().anims.create({
-            key: "thrust",
-            frames: gameScene().anims.generateFrameNumbers('thrust', {start: 0, end: 8}),
-            frameRate: 30,
-            repeat: 0
-        });
-
-        gameScene().anims.create({
-            key: "explosion",
-            frames: gameScene().anims.generateFrameNumbers('shockwave', {start: 0, end: 8}),
-            frameRate: 20,
-            repeat: 0
-        });
-
-        gameScene().anims.create({
-            key: "fire-bolt",
-            frames: gameScene().anims.generateFrameNumbers('fire-effect', {start: 0, end: 3}),
-            frameRate: 15,
-            repeat: 0
-        });
 
 
         // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
