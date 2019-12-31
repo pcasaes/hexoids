@@ -298,6 +298,66 @@ const Players = (function () {
 
             return player;
         }
+        
+        createAnims() {
+            this.scene.anims.create({
+                key: "ship-fw",
+                frames: this.scene.anims.generateFrameNumbers('ship', {start: 0, end: 1}),
+                frameRate: 5,
+                repeat: 1
+            });
+
+            this.scene.anims.create({
+                key: "ship-right",
+                frames: this.scene.anims.generateFrameNumbers('ship', {start: 2, end: 3}),
+                frameRate: 5,
+                repeat: 1
+            });
+
+            this.scene.anims.create({
+                key: "ship-back",
+                frames: this.scene.anims.generateFrameNumbers('ship', {start: 4, end: 5}),
+                frameRate: 5,
+                repeat: 1
+            });
+
+            this.scene.anims.create({
+                key: "ship-left",
+                frames: this.scene.anims.generateFrameNumbers('ship', {start: 6, end: 7}),
+                frameRate: 5,
+                repeat: 1
+            });
+
+            this.scene.anims.create({
+                key: "ship-rest",
+                frames: this.scene.anims.generateFrameNumbers('ship', {start: 8, end: 8}),
+                frameRate: 5,
+                repeat: 0
+            });
+
+            this.scene.anims.create({
+                key: "thrust",
+                frames: this.scene.anims.generateFrameNumbers('thrust', {start: 0, end: 8}),
+                frameRate: 30,
+                repeat: 0
+            });
+
+            this.scene.anims.create({
+                key: "explosion",
+                frames: this.scene.anims.generateFrameNumbers('shockwave', {start: 0, end: 8}),
+                frameRate: 20,
+                repeat: 0
+            });
+
+            this.scene.anims.create({
+                key: "fire-bolt",
+                frames: this.scene.anims.generateFrameNumbers('fire-effect', {start: 0, end: 3}),
+                frameRate: 15,
+                repeat: 0
+            });
+            
+            return this;
+        }
 
         setupQueues(queues) {
 
@@ -358,7 +418,7 @@ const Players = (function () {
     return {
         'get': (scene, gameConfig, userId, transform, queues) => {
             if (!instance) {
-                instance = new PlayersClass(scene, gameConfig, userId, transform).setupQueues(queues);
+                instance = new PlayersClass(scene, gameConfig, userId, transform).createAnims().setupQueues(queues);
             }
             return instance;
         }
