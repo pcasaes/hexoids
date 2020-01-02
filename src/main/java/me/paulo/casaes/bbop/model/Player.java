@@ -275,8 +275,8 @@ public interface Player {
                             PlayerDestroyedEventDto.of(this.idStr, playerId.toString()))
             );
             fireMoveDomainEvent();
-            ScoreBoard.Factory.get().updateScore(playerId.toString(), 1);
-            ScoreBoard.Factory.get().resetScore(this.idStr);
+            ScoreBoard.Factory.get().updateScore(playerId, 1);
+            ScoreBoard.Factory.get().resetScore(this.id);
         }
 
         @Override

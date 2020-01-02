@@ -10,13 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 public interface ScoreBoard {
 
-    void updateScore(String playerId, int deltaScore);
+    void updateScore(UUID playerId, int deltaScore);
 
-    void resetScore(String playerId);
+    void resetScore(UUID playerId);
 
     void fixedUpdate(long timestamp);
 
@@ -41,25 +42,25 @@ public interface ScoreBoard {
 
         private static final ScoreBoard INSTANCE = new Implementation();
 
-        private final Map<String, Integer> scores = new HashMap<>();
-        private final Map<String, Integer> updatedScores = new HashMap<>();
+        private final Map<UUID, Integer> scores = new HashMap<>();
+        private final Map<UUID, Integer> updatedScores = new HashMap<>();
         private final List<Entry> rankedScoreBoard = new ArrayList<>();
 
         private long lastFixedUpdateTimestamp = 0L;
 
         @Override
-        public void updateScore(String playerId, int deltaScore) {
+        public void updateScore(UUID playerId, int deltaScore) {
             int score = this.scores.getOrDefault(playerId, 0) + deltaScore;
             this.scores.put(playerId, score);
             this.updatedScores.put(playerId, score);
-            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(score)));
+            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId.toString(), PlayerScoreUpdateDto.ofScore(score)));
         }
 
         @Override
-        public void resetScore(String playerId) {
+        public void resetScore(UUID playerId) {
             this.scores.put(playerId, 0);
             this.updatedScores.put(playerId, 0);
-            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId, PlayerScoreUpdateDto.ofScore(0)));
+            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId.toString(), PlayerScoreUpdateDto.ofScore(0)));
         }
 
         @Override
@@ -83,7 +84,7 @@ public interface ScoreBoard {
                     }
 
                     rankedScoreBoard
-                            .forEach(entry -> event.add(entry.getPlayerId(), entry.getScore()));
+                            .forEach(entry -> event.add(entry.getPlayerId().toString(), entry.getScore()));
 
 
                     GameEvents.getClientEvents().register(event);
@@ -91,7 +92,7 @@ public interface ScoreBoard {
             }
         }
 
-        private void tryAddToScoreBoard(Map.Entry<String, Integer> mapEntry) {
+        private void tryAddToScoreBoard(Map.Entry<UUID, Integer> mapEntry) {
             OptionalInt index = IntStream
                     .range(0, rankedScoreBoard.size())
                     .filter(i -> rankedScoreBoard.get(i).getPlayerId().equals(mapEntry.getKey()))
@@ -113,14 +114,14 @@ public interface ScoreBoard {
 
         private static class Entry implements Comparable<Entry> {
 
-            private final String playerId;
+            private final UUID playerId;
             private long score;
 
-            public Entry(String playerId) {
+            public Entry(UUID playerId) {
                 this.playerId = playerId;
             }
 
-            public String getPlayerId() {
+            public UUID getPlayerId() {
                 return playerId;
             }
 
