@@ -6,6 +6,7 @@ import me.paulo.casaes.bbop.dto.PlayerDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
+import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
 import me.paulo.casaes.bbop.util.TrigUtil;
 
 import java.util.Random;
@@ -76,6 +77,7 @@ public interface Player {
         }
 
         @Override
+        @IsThreadSafe
         public void fire() {
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(

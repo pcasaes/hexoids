@@ -53,4 +53,14 @@ public interface EventQueueConsumerService<T> extends Consumer<T> {
      * @return
      */
     Class<?> getEventType();
+
+    /**
+     * Certain events can be consumes directly and should'be be enqueued
+     *
+     * @param event
+     * @return true if event queue is bypassed
+     */
+    default boolean bypassEnqueue(T event) {
+        return false;
+    }
 }

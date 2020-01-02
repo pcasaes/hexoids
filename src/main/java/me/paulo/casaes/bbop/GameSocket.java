@@ -18,6 +18,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @ServerEndpoint("/game/{userId}")
@@ -83,11 +84,12 @@ public class GameSocket {
                         )
                 );
             } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
-                this.gameLoopService.enqueue(() -> Players.get()
-                        .createOrGet(userId)
-                        .fire()
-
-                );
+                Optional<Player> player = Players.get().get(userId);
+                if (player.isPresent()) {
+                    player.get().fire();
+                } else {
+                    gameLoopService.enqueue(() -> Players.get().createOrGet(userId).fire());
+                }
             }
         } catch (RuntimeException ex) {
             LOGGER.warning(ex.getMessage());

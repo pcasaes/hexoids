@@ -26,23 +26,26 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
 
 
+    private final ThreadService threadService;
     private final ConfigurationService configurationService;
 
     private long lastTimestamp;
 
     GameLoopService() {
+        this.threadService = null;
         this.configurationService = null;
     }
 
     @Inject
-    public GameLoopService(ConfigurationService configurationService) {
+    public GameLoopService(ThreadService threadService, ConfigurationService configurationService) {
+        this.threadService = threadService;
         this.configurationService = configurationService;
     }
 
     @PostConstruct
     public void start() {
         this.lastTimestamp = Clock.Factory.get().getTime();
-
+        threadService.setGameLoopThread();
     }
 
     private long fixedUpdate(long lastTimestamp) {
