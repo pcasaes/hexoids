@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.service.kafka;
 
+import me.paulo.casaes.bbop.service.kafka.converter.UUIDBytesSerializer;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -20,9 +21,9 @@ public class KafkaProducerService {
 
     private KafkaConfiguration configuration;
 
-    private Producer<String, String> blockProducer;
+    private Producer<UUID, String> blockProducer;
 
-    private Producer<String, String> fastProducer;
+    private Producer<UUID, String> fastProducer;
 
     @Inject
     public KafkaProducerService(KafkaInitService initService, KafkaConfiguration configuration) {
@@ -38,8 +39,8 @@ public class KafkaProducerService {
         this.fastProducer = createFastProducer();
     }
 
-    public void send(String topic, String key, String message, boolean fast) {
-        Producer<String, String> producer = fast ? fastProducer : blockProducer;
+    public void send(String topic, UUID key, String message, boolean fast) {
+        Producer<UUID, String> producer = fast ? fastProducer : blockProducer;
 
         producer.send(new ProducerRecord<>(
                 topic,
@@ -51,12 +52,12 @@ public class KafkaProducerService {
     private Properties getConfig() {
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configuration.getConnectionUrl());
-        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, UUIDBytesSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return properties;
     }
 
-    private Producer<String, String> createBlockProducer() {
+    private Producer<UUID, String> createBlockProducer() {
         Properties properties = getConfig();
         properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, UUID.randomUUID().toString() + "-guaranteed-" + this.configuration.getClientIdSuffix());
         properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
@@ -64,7 +65,7 @@ public class KafkaProducerService {
         return new KafkaProducer<>(properties);
     }
 
-    private Producer<String, String> createFastProducer() {
+    private Producer<UUID, String> createFastProducer() {
         Properties properties = getConfig();
         properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
         properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, UUID.randomUUID().toString() + "-fast-" + this.configuration.getClientIdSuffix());

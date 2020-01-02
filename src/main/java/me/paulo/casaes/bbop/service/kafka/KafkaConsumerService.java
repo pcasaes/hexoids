@@ -6,6 +6,7 @@ import me.paulo.casaes.bbop.model.Topics;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
 import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
+import me.paulo.casaes.bbop.service.kafka.converter.UUIDBytesDeserializer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
@@ -55,7 +57,7 @@ public class KafkaConsumerService {
     public void start(TopicInfo topicInfo) {
         Properties properties = new Properties();
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configuration.getConnectionUrl());
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, UUIDBytesDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
         topicInfo.consumerConfig()
@@ -100,7 +102,7 @@ public class KafkaConsumerService {
 
         private final java.util.function.Consumer<DomainEvent> processor;
 
-        private final Consumer<String, String> kafkaConsumer;
+        private final Consumer<UUID, String> kafkaConsumer;
 
         private Thread thread;
 
@@ -108,7 +110,7 @@ public class KafkaConsumerService {
 
         private KafkaThreadedConsumer(DtoProcessorService dtoProcessorService,
                                       java.util.function.Consumer<DomainEvent> processor,
-                                      Consumer<String, String> kafkaConsumer) {
+                                      Consumer<UUID, String> kafkaConsumer) {
             this.dtoProcessorService = dtoProcessorService;
             this.processor = processor;
             this.kafkaConsumer = kafkaConsumer;
@@ -119,7 +121,7 @@ public class KafkaConsumerService {
                                                               DtoProcessorService dtoProcessorService,
                                                               java.util.function.Consumer<DomainEvent> processor) {
 
-            Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties);
+            Consumer<UUID, String> kafkaConsumer = new KafkaConsumer<>(properties);
 
 
             Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
@@ -142,7 +144,7 @@ public class KafkaConsumerService {
                                                            DtoProcessorService dtoProcessorService,
                                                            java.util.function.Consumer<DomainEvent> processor) {
 
-            Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties);
+            Consumer<UUID, String> kafkaConsumer = new KafkaConsumer<>(properties);
 
             kafkaConsumer.subscribe(Collections.singletonList(topic));
 
@@ -181,7 +183,7 @@ public class KafkaConsumerService {
 
         private void pollWhileRunning(Duration pollDuration) {
             while (this.running) {
-                ConsumerRecords<String, String> records = kafkaConsumer.poll(pollDuration);
+                ConsumerRecords<UUID, String> records = kafkaConsumer.poll(pollDuration);
                 if (!records.isEmpty()) {
                     StreamSupport
                             .stream(
@@ -200,7 +202,7 @@ public class KafkaConsumerService {
             }
         }
 
-        private void process(ConsumerRecord<String, String> record) {
+        private void process(ConsumerRecord<UUID, String> record) {
             try {
                 if (record.value() == null) {
                     this.processor.accept(DomainEvent.deleted(record.key()));

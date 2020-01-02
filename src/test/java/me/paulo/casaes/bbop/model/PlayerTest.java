@@ -105,7 +105,7 @@ class PlayerTest {
         Players.get().createOrGet(one).join();
         DomainEvent domainEventDto = eventReference.get();
         assertEquals(Topics.JoinGameTopic.name(), domainEventDto.getTopic());
-        assertEquals(one.toString(), domainEventDto.getKey());
+        assertEquals(one, domainEventDto.getKey());
 
         PlayerJoinedEventDto event = (PlayerJoinedEventDto) domainEventDto.getEvent();
 
@@ -150,11 +150,11 @@ class PlayerTest {
         assertEquals(2, domainEvents.size());
 
         assertEquals(Topics.JoinGameTopic.name(), domainEvents.get(0).getTopic());
-        assertEquals(one.toString(), domainEvents.get(0).getKey());
+        assertEquals(one, domainEvents.get(0).getKey());
         assertNull(domainEvents.get(0).getEvent());
 
         assertEquals(Topics.PlayerActionTopic.name(), domainEvents.get(1).getTopic());
-        assertEquals(one.toString(), domainEvents.get(1).getKey());
+        assertEquals(one, domainEvents.get(1).getKey());
         assertNull(domainEvents.get(1).getEvent());
 
 

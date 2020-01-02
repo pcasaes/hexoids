@@ -3,12 +3,14 @@ package me.paulo.casaes.bbop.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import me.paulo.casaes.bbop.dto.EventDto;
 
+import java.util.UUID;
+
 public class DomainEvent {
-    private final String key;
+    private final UUID key;
     private final EventDto event;
     private final String topic;
 
-    private DomainEvent(String topic, String key, EventDto event) {
+    private DomainEvent(String topic, UUID key, EventDto event) {
         this.topic = topic;
         this.key = key;
         this.event = event;
@@ -16,24 +18,29 @@ public class DomainEvent {
 
 
     public static DomainEvent of(
-            String key,
+            UUID key,
             EventDto event) {
         return new DomainEvent(null, key, event);
     }
 
-    public static DomainEvent create(String topic, String key, EventDto event) {
+    public static DomainEvent withoutKey(
+            EventDto event) {
+        return new DomainEvent(null, null, event);
+    }
+
+    public static DomainEvent create(String topic, UUID key, EventDto event) {
         return new DomainEvent(topic, key, event);
     }
 
-    public static DomainEvent delete(String topic, String key) {
+    public static DomainEvent delete(String topic, UUID key) {
         return new DomainEvent(topic, key, null);
     }
 
-    public static DomainEvent deleted(String key) {
+    public static DomainEvent deleted(UUID key) {
         return new DomainEvent(null, key, null);
     }
 
-    public String getKey() {
+    public UUID getKey() {
         return key;
     }
 

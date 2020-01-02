@@ -86,7 +86,7 @@ public interface Player {
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
                             Topics.BoltLifecycleTopic.name(),
-                            this.idStr,
+                            this.id,
                             BoltFiredEventDto.of(
                                     UUID.randomUUID().toString(),
                                     this.idStr,
@@ -146,7 +146,7 @@ public interface Player {
             GameEvents.getDomainEvents().register(
                     DomainEvent
                             .create(Topics.JoinGameTopic.name(),
-                                    this.idStr,
+                                    this.id,
                                     PlayerJoinedEventDto.of(idStr, ship, x, y, angle))
             );
         }
@@ -222,7 +222,7 @@ public interface Player {
             this.movedTimestamp = Clock.Factory.get().getTime();
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(Topics.PlayerActionTopic.name(),
-                            this.idStr,
+                            this.id,
                             PlayerMovedEventDto.of(
                                     this.idStr,
                                     this.x,
@@ -235,8 +235,8 @@ public interface Player {
 
         @Override
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.idStr));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.idStr));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.id));
         }
 
         @Override
@@ -271,7 +271,7 @@ public interface Player {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
                             Topics.PlayerActionTopic.name(),
-                            this.idStr,
+                            this.id,
                             PlayerDestroyedEventDto.of(this.idStr, playerId.toString()))
             );
             fireMoveDomainEvent();
