@@ -52,6 +52,7 @@ public class KafkaInitService {
 
     @PostConstruct
     void start() {
+        LOGGER.info("Starting up kafka consumers");
         try {
             this.kafkaAdmin.execute(this::setup);
         } catch (RuntimeException ex) {
@@ -66,6 +67,7 @@ public class KafkaInitService {
 
                     this.topicsFactory.destroy(topic);
                 });
+        LOGGER.info("Finished starting up kafka consumers");
 
     }
 
