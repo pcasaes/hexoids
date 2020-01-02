@@ -10,7 +10,8 @@ public class Bolt {
 
     private UUID id;
     private String idString;
-    private String ownerPlayerId;
+    private UUID ownerPlayerId;
+    private String ownerPlayerIdStr;
     private float prevX;
     private float x;
     private float prevY;
@@ -24,10 +25,11 @@ public class Bolt {
 
     private final Optional<Bolt> optionalThis;
 
-    private Bolt(UUID boltId, String ownerPlayerId, float x, float y, float angle, float speed, long startTimestamp) {
+    private Bolt(UUID boltId, UUID ownerPlayerId, float x, float y, float angle, float speed, long startTimestamp) {
         this.id = boltId;
         this.idString = this.id.toString();
         this.ownerPlayerId = ownerPlayerId;
+        this.ownerPlayerIdStr = ownerPlayerId.toString();
         this.x = x;
         this.y = y;
         this.prevX = x;
@@ -43,7 +45,7 @@ public class Bolt {
     }
 
     static Bolt create(UUID boltId,
-                       String ownerPlayerId,
+                       UUID ownerPlayerId,
                        float x,
                        float y,
                        float angle,
@@ -171,7 +173,7 @@ public class Bolt {
                 .create(
                         Topics.BoltActionTopic.name(),
                         this.idString,
-                        BoltMovedEventDto.of(this.idString, this.ownerPlayerId, this.x, this.y, this.angle)
+                        BoltMovedEventDto.of(this.idString, this.ownerPlayerIdStr, this.x, this.y, this.angle)
                 );
     }
 
@@ -180,12 +182,12 @@ public class Bolt {
                 .create(
                         Topics.BoltActionTopic.name(),
                         this.idString,
-                        BoltExhaustedEventDto.of(this.idString, this.ownerPlayerId)
+                        BoltExhaustedEventDto.of(this.idString, this.ownerPlayerIdStr)
                 );
     }
 
 
-    boolean isOwnedBy(String playerId) {
+    boolean isOwnedBy(UUID playerId) {
         return this.ownerPlayerId.equals(playerId);
     }
 
