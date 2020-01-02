@@ -8,8 +8,9 @@ import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
+import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
+import me.paulo.casaes.bbop.util.concurrent.SingleMutatorMultipleAccessorConcurrentHashMap;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +22,7 @@ public class Players implements Iterable<Player> {
 
     public static final Players INSTANCE = new Players();
 
-    private final Map<String, Player> playerMap = new HashMap<>();
+    private final Map<String, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
 
     public static Players get() {
         return INSTANCE;
@@ -34,6 +35,7 @@ public class Players implements Iterable<Player> {
         return playerMap.computeIfAbsent(id, this::create);
     }
 
+    @IsThreadSafe
     public Optional<Player> get(String id) {
         return Optional.ofNullable(playerMap.get(id));
     }

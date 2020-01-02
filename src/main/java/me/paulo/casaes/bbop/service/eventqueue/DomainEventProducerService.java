@@ -15,6 +15,8 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent> {
 
+    private ThreadService threadService;
+
     private KafkaProducerService producerService;
 
     private DtoProcessorService dtoProcessorService;
@@ -27,12 +29,23 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     }
 
     @Inject
-    public DomainEventProducerService(KafkaProducerService producerService,
+    public DomainEventProducerService(ThreadService threadService,
+                                      KafkaProducerService producerService,
                                       DtoProcessorService dtoProcessorService,
                                       ConfigurationService configurationService) {
+        this.threadService = threadService;
         this.producerService = producerService;
         this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
+    }
+
+    @Override
+    public boolean bypassEnqueue(DomainEvent event) {
+        if (threadService.isInGameLoop()) {
+            return false;
+        }
+        accept(event);
+        return true;
     }
 
     @Override

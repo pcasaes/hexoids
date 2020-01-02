@@ -17,7 +17,9 @@ public class EventQueueService<T> {
 
 
     public void enqueue(T event) {
-        eventQueue.produce(event);
+        if (!eventQueueExecutorService.bypassEnqueue(event)) {
+            eventQueue.produce(event);
+        }
     }
 
 
