@@ -448,7 +448,7 @@ class PlayerTest {
         assertEquals(0f, playerMovedEventDto.getY());
         assertEquals(0f, playerMovedEventDto.getAngle());
 
-        verify(scoreBoard, times(1)).updateScore(two.toString(), 1);
+        verify(scoreBoard, times(1)).updateScore(two, 1);
 
     }
 }
