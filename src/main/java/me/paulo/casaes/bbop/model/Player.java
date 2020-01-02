@@ -9,12 +9,13 @@ import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
 import me.paulo.casaes.bbop.util.TrigUtil;
 
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 
 public interface Player {
 
-    static Player create(String id) {
+    static Player create(UUID id) {
         return new Implementation(id);
     }
 
@@ -24,7 +25,7 @@ public interface Player {
 
     int getActiveBoltCount();
 
-    boolean is(String playerId);
+    boolean is(UUID playerId);
 
     PlayerDto toDto();
 
@@ -42,7 +43,7 @@ public interface Player {
 
     boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
 
-    void destroyedBy(String playerId);
+    void destroyedBy(UUID playerId);
 
     void destroyed(PlayerDestroyedEventDto event);
 
@@ -52,7 +53,9 @@ public interface Player {
 
         private static final Random RNG = new Random();
 
-        private final String id;
+        private final UUID id;
+
+        private final String idStr;
 
         private int ship;
 
@@ -70,8 +73,9 @@ public interface Player {
 
         private int liveBolts = 0;
 
-        private Implementation(String id) {
+        private Implementation(UUID id) {
             this.id = id;
+            this.idStr = id.toString();
 
             this.ship = RNG.nextInt(6);
         }
@@ -82,10 +86,10 @@ public interface Player {
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
                             Topics.BoltLifecycleTopic.name(),
-                            this.id,
+                            this.idStr,
                             BoltFiredEventDto.of(
                                     UUID.randomUUID().toString(),
-                                    this.id,
+                                    this.idStr,
                                     this.x,
                                     this.y,
                                     this.angle,
@@ -116,13 +120,13 @@ public interface Player {
         }
 
         @Override
-        public boolean is(String playerId) {
+        public boolean is(UUID playerId) {
             return id.equals(playerId);
         }
 
         @Override
         public PlayerDto toDto() {
-            return PlayerDto.of(id, ship, x, y, angle);
+            return PlayerDto.of(idStr, ship, x, y, angle);
         }
 
         private void resetPosition() {
@@ -142,8 +146,8 @@ public interface Player {
             GameEvents.getDomainEvents().register(
                     DomainEvent
                             .create(Topics.JoinGameTopic.name(),
-                                    this.id,
-                                    PlayerJoinedEventDto.of(id, ship, x, y, angle))
+                                    this.idStr,
+                                    PlayerJoinedEventDto.of(idStr, ship, x, y, angle))
             );
         }
 
@@ -153,7 +157,7 @@ public interface Player {
             this.y = event.getY();
             this.angle = event.getAngle();
             this.ship = event.getShip();
-            GameEvents.getClientEvents().register(PlayerJoinedEventDto.of(id, ship, x, y, angle));
+            GameEvents.getClientEvents().register(PlayerJoinedEventDto.of(idStr, ship, x, y, angle));
         }
 
         @Override
@@ -218,9 +222,9 @@ public interface Player {
             this.movedTimestamp = Clock.Factory.get().getTime();
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(Topics.PlayerActionTopic.name(),
-                            this.id,
+                            this.idStr,
                             PlayerMovedEventDto.of(
-                                    this.id,
+                                    this.idStr,
                                     this.x,
                                     this.y,
                                     this.angle,
@@ -231,13 +235,13 @@ public interface Player {
 
         @Override
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.id));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.idStr));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.idStr));
         }
 
         @Override
         public void left() {
-            GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.id));
+            GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.idStr));
         }
 
         @Override
@@ -261,18 +265,18 @@ public interface Player {
         }
 
         @Override
-        public void destroyedBy(String playerId) {
+        public void destroyedBy(UUID playerId) {
             resetPosition();
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
                             Topics.PlayerActionTopic.name(),
-                            this.id,
-                            PlayerDestroyedEventDto.of(this.id, playerId))
+                            this.idStr,
+                            PlayerDestroyedEventDto.of(this.idStr, playerId.toString()))
             );
             fireMoveDomainEvent();
-            ScoreBoard.Factory.get().updateScore(playerId, 1);
-            ScoreBoard.Factory.get().resetScore(this.id);
+            ScoreBoard.Factory.get().updateScore(playerId.toString(), 1);
+            ScoreBoard.Factory.get().resetScore(this.idStr);
         }
 
         @Override
@@ -283,6 +287,19 @@ public interface Player {
         @Override
         public void boltExhausted() {
             this.liveBolts = Math.max(0, liveBolts - 1);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Implementation that = (Implementation) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
         }
     }
 }

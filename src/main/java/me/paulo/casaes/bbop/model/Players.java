@@ -14,6 +14,7 @@ import me.paulo.casaes.bbop.util.concurrent.SingleMutatorMultipleAccessorConcurr
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -22,7 +23,7 @@ public class Players implements Iterable<Player> {
 
     public static final Players INSTANCE = new Players();
 
-    private final Map<String, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
+    private final Map<UUID, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
 
     public static Players get() {
         return INSTANCE;
@@ -31,17 +32,26 @@ public class Players implements Iterable<Player> {
     private Players() {
     }
 
-    public Player createOrGet(String id) {
+    public Player createOrGet(UUID id) {
         return playerMap.computeIfAbsent(id, this::create);
+    }
+
+    public Player createOrGet(String id) {
+        return createOrGet(UUID.fromString(id));
+    }
+
+    @IsThreadSafe
+    public Optional<Player> get(UUID id) {
+        return Optional.ofNullable(playerMap.get(id));
     }
 
     @IsThreadSafe
     public Optional<Player> get(String id) {
-        return Optional.ofNullable(playerMap.get(id));
+        return get(UUID.fromString(id));
     }
 
-    private Player create(String id) {
-        GameEvents.getClientEvents().register(DirectedCommandDto.of(id, Players.get().requestListOfPlayers()));
+    private Player create(UUID id) {
+        GameEvents.getClientEvents().register(DirectedCommandDto.of(id.toString(), Players.get().requestListOfPlayers()));
         return Player.create(id);
     }
 
@@ -69,7 +79,7 @@ public class Players implements Iterable<Player> {
         player.joined(event);
     }
 
-    void left(String playerId) {
+    void left(UUID playerId) {
         Player player = createOrGet(playerId);
         playerMap.remove(playerId);
         player.left();
@@ -77,7 +87,7 @@ public class Players implements Iterable<Player> {
 
     public void consumeFromJoinTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() == null) {
-            left(domainEvent.getKey());
+            left(UUID.fromString(domainEvent.getKey()));
         } else if (domainEvent.getEvent().isEvent(EventType.PLAYER_JOINED)) {
             joined((PlayerJoinedEventDto) domainEvent.getEvent());
         }

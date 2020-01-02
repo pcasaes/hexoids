@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 
 public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map<K, V> {
@@ -184,9 +183,8 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
     }
 
     private void rehash() {
-        MyEntry<K, V>[] originalEntries = this.entries;
         while (this.entries.length < MAXIMUM_CAPACITY) {
-            if (rehash(originalEntries, this.entries.length * 2)) {
+            if (rehash(this.entries.length * 2)) {
                 return;
             }
         }
@@ -205,13 +203,10 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
         return entries.length;
     }
 
-    private boolean rehash(MyEntry<K, V>[] originalEntries, int newSize) {
+    private boolean rehash(int newSize) {
         SingleMutatorMultipleAccessorConcurrentHashMap<K, V> newMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(newSize, hashAttemptsLimit);
         try {
-            Arrays.stream(originalEntries)
-                    .filter(Objects::nonNull)
-                    .filter(entry -> entry.value != null && entry.key != null)
-                    .forEach(entry -> newMap.putAttempt(entry.key, entry.value));
+            this.forEach(newMap::put);
 
             this.entries = newMap.entries;
             this.wrapMask = newMap.wrapMask;

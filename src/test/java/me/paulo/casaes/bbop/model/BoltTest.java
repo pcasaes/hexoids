@@ -78,10 +78,12 @@ class BoltTest {
         List<DomainEvent> events = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(events::add);
 
+        UUID one = UUID.randomUUID();
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
-        assertTrue(bolt.isOwnedBy("1"));
+        assertTrue(bolt.isOwnedBy(one));
 
         assertEquals(1,
                 Bolts.get()
@@ -139,7 +141,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -151,7 +155,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(0.01f, movedEvent.getX());
         assertEquals(0f, movedEvent.getY());
 
@@ -163,7 +167,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0f, 0f, (float) Math.PI / 4f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 4f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -175,7 +181,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(0.0070710676f, movedEvent.getX());
         assertEquals(0.0070710676f, movedEvent.getY());
     }
@@ -186,7 +192,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0f, 0f, (float) Math.PI / 2f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 2f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -198,7 +206,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(0f, movedEvent.getX());
         assertEquals(0.01f, movedEvent.getY());
     }
@@ -209,7 +217,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 1f, 0f, (float) (3 * Math.PI / 4f), 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) (3 * Math.PI / 4f), 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -222,7 +232,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(1f - 0.0070710676f, movedEvent.getX());
         assertEquals(0.0070710676f, movedEvent.getY());
     }
@@ -233,7 +243,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 1f, 0f, (float) Math.PI, 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) Math.PI, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -245,7 +257,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(0.99f, movedEvent.getX());
         assertEquals(0f, movedEvent.getY());
     }
@@ -256,7 +268,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 1f, 1f, (float) (5 * Math.PI / 4), 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (5 * Math.PI / 4), 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -268,7 +282,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(1f - 0.0070710676f, movedEvent.getX());
         assertEquals(1f - 0.0070710676f, movedEvent.getY());
     }
@@ -279,8 +293,9 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 1f, 1f, (float) (3 * Math.PI / 2), 0f, Clock.Factory.get().getTime()).orElse(null);
-
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (3 * Math.PI / 2), 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
         when(clock.getTime()).thenReturn(1_000L);
 
@@ -291,7 +306,7 @@ class BoltTest {
 
         assertNotNull(movedEvent);
         assertTrue(bolt.is(UUID.fromString(movedEvent.getBoltId())));
-        assertEquals("1", movedEvent.getOwnerPlayerId());
+        assertEquals(one.toString(), movedEvent.getOwnerPlayerId());
         assertEquals(1f, movedEvent.getX());
         assertEquals(0.99f, movedEvent.getY());
     }
@@ -315,8 +330,9 @@ class BoltTest {
             return null;
         }).when(this.players).forEach(any(Consumer.class));
 
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
-
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
         doReturn(1_000L).when(clock).getTime();
 
@@ -336,7 +352,7 @@ class BoltTest {
                 .findFirst().orElse(null);
 
         assertNotNull(boltMovedEventDto);
-        assertEquals("1", boltMovedEventDto.getOwnerPlayerId());
+        assertEquals(one.toString(), boltMovedEventDto.getOwnerPlayerId());
 
         BoltExhaustedEventDto boltExhaustedEventDto = (BoltExhaustedEventDto) events
                 .stream()
@@ -362,7 +378,9 @@ class BoltTest {
         doAnswer(c -> playersList.spliterator()).when(this.players).spliterator();
         doAnswer(c -> playersList.stream()).when(this.players).stream();
 
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), "1", 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        UUID one = UUID.randomUUID();
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        assertNotNull(bolt);
 
 
         doReturn(1_000L).when(clock).getTime();
@@ -380,7 +398,7 @@ class BoltTest {
                 .findFirst().orElse(null);
 
         assertNotNull(boltMovedEventDto);
-        assertEquals("1", boltMovedEventDto.getOwnerPlayerId());
+        assertEquals(one.toString(), boltMovedEventDto.getOwnerPlayerId());
 
     }
 

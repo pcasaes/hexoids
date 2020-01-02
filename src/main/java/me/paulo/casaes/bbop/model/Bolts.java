@@ -25,7 +25,7 @@ public class Bolts implements Iterable<Bolt> {
 
     Optional<Bolt> fired(
             UUID boltId,
-            String ownerPlayerId,
+            UUID ownerPlayerId,
             float x,
             float y,
             float angle,
