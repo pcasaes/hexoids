@@ -87,7 +87,7 @@ public class Players implements Iterable<Player> {
 
     public void consumeFromJoinTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() == null) {
-            left(UUID.fromString(domainEvent.getKey()));
+            left(domainEvent.getKey());
         } else if (domainEvent.getEvent().isEvent(EventType.PLAYER_JOINED)) {
             joined((PlayerJoinedEventDto) domainEvent.getEvent());
         }

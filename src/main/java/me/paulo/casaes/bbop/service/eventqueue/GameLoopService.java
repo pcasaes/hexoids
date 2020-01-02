@@ -80,7 +80,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
         lastTimestamp = fixedUpdate(lastTimestamp);
 
         SleepDto sleepDto = SleepDto.sleepUntil(Clock.Factory.get().getTime() + getWaitTime());
-        GameEvents.getDomainEvents().register(DomainEvent.of("", sleepDto));
+        GameEvents.getDomainEvents().register(DomainEvent.withoutKey(sleepDto));
         GameEvents.getClientEvents().register(sleepDto);
     }
 

@@ -172,7 +172,7 @@ public class Bolt {
         return DomainEvent
                 .create(
                         Topics.BoltActionTopic.name(),
-                        this.idString,
+                        this.id,
                         BoltMovedEventDto.of(this.idString, this.ownerPlayerIdStr, this.x, this.y, this.angle)
                 );
     }
@@ -181,7 +181,7 @@ public class Bolt {
         return DomainEvent
                 .create(
                         Topics.BoltActionTopic.name(),
-                        this.idString,
+                        this.id,
                         BoltExhaustedEventDto.of(this.idString, this.ownerPlayerIdStr)
                 );
     }
