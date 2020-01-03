@@ -75,25 +75,29 @@ public class GameSocket {
     @OnMessage
     public void onMessage(String message, @PathParam("userId") String userId) {
         try {
-            if (dtoProcessorService.isCommand(message, CommandType.MOVE_PLAYER)) {
-                final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
+            dtoProcessorService.getCommand(message)
+                    .ifPresent(command -> {
+                        if (command == CommandType.MOVE_PLAYER) {
+                            final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
 
-                this.gameLoopService.enqueue(() -> Players.get()
-                        .createOrGet(userId)
-                        .move(moveCommandDto.getMoveX(),
-                                moveCommandDto.getMoveY(),
-                                moveCommandDto.getAngle(),
-                                moveCommandDto.getThrustAngle()
-                        )
-                );
-            } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
-                Optional<Player> player = Players.get().get(userId);
-                if (player.isPresent()) {
-                    player.get().fire();
-                } else {
-                    gameLoopService.enqueue(() -> Players.get().createOrGet(userId).fire());
-                }
-            }
+                            this.gameLoopService.enqueue(() -> Players.get()
+                                    .createOrGet(userId)
+                                    .move(moveCommandDto.getMoveX(),
+                                            moveCommandDto.getMoveY(),
+                                            moveCommandDto.getAngle(),
+                                            moveCommandDto.getThrustAngle()
+                                    )
+                            );
+                        } else if (command == CommandType.FIRE_BOLT) {
+                            Optional<Player> player = Players.get().get(userId);
+                            if (player.isPresent()) {
+                                player.get().fire();
+                            } else {
+                                gameLoopService.enqueue(() -> Players.get().createOrGet(userId).fire());
+                            }
+                        }
+                    });
+
         } catch (RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
         }

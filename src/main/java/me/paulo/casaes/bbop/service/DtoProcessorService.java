@@ -54,16 +54,16 @@ public class DtoProcessorService {
         return Optional.empty();
     }
 
-    public boolean isCommand(String value, CommandType command) {
+    public Optional<CommandType> getCommand(String value) {
         try {
             JsonNode node = DESERIALIZER.readTree(value);
             if (!node.has("command")) {
-                return false;
+                return Optional.empty();
             }
-            return command == CommandType.valueOf(node.get("command").asText());
+            return Optional.ofNullable(CommandType.valueOf(node.get("command").asText()));
         } catch (IOException | RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
-            return false;
+            return Optional.empty();
         }
     }
 
