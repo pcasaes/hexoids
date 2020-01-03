@@ -49,7 +49,6 @@ public class Bolt {
                        float x,
                        float y,
                        float angle,
-                       float speedAdjustment,
                        long startTimestamp) {
         return new Bolt(
                 boltId,
@@ -57,7 +56,7 @@ public class Bolt {
                 x,
                 y,
                 angle,
-                Config.get().getBoltSpeed() + speedAdjustment,
+                Config.get().getBoltSpeed(),
                 startTimestamp);
     }
 

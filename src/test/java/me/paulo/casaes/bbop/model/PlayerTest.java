@@ -254,7 +254,7 @@ class PlayerTest {
         UUID one = UUID.randomUUID();
         Player player = Players.get().createOrGet(one);
         player.join();
-        player.moved(PlayerMovedEventDto.of(one.toString(), 0f, 1f, 3f, 3f, 4f, 1000L));
+        player.moved(PlayerMovedEventDto.of(one.toString(), 0f, 1f, 3f, 3f, 1000L));
 
         PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
@@ -262,7 +262,6 @@ class PlayerTest {
         assertEquals(0f, event.getX());
         assertEquals(1f, event.getY());
         assertEquals(3f, event.getAngle());
-        assertEquals(4f, event.getCurrentSpeed());
 
     }
 
@@ -310,9 +309,9 @@ class PlayerTest {
         Player player = Players.get().createOrGet(one);
         player.join();
 
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, 0, Clock.Factory.get().getTime()));
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, 0, Clock.Factory.get().getTime()));
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, 0, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
 
 
         assertEquals(2, player.getActiveBoltCount());
@@ -326,7 +325,7 @@ class PlayerTest {
         Player player = Players.get().createOrGet(one);
         player.join();
 
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, 0, Clock.Factory.get().getTime()));
+        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
 
         assertEquals(1, player.getActiveBoltCount());
 

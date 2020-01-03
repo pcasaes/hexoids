@@ -10,7 +10,6 @@ public class PlayerMovedEventDto implements EventDto {
     private final float y;
     private final float angle;
     private final float thrustAngle;
-    private final float currentSpeed;
     private final long timestamp;
 
     private PlayerMovedEventDto(String playerId,
@@ -18,14 +17,12 @@ public class PlayerMovedEventDto implements EventDto {
                                 float y,
                                 float angle,
                                 float thrustAngle,
-                                float currentSpeed,
                                 long timestamp) {
         this.playerId = playerId;
         this.x = x;
         this.y = y;
         this.angle = angle;
         this.thrustAngle = thrustAngle;
-        this.currentSpeed = currentSpeed;
         this.timestamp = timestamp;
     }
 
@@ -36,9 +33,8 @@ public class PlayerMovedEventDto implements EventDto {
             @JsonProperty("y") float y,
             @JsonProperty("angle") float angle,
             @JsonProperty("thrustAngle") float thrustAngle,
-            @JsonProperty("currentSpeed") float currentSpeed,
             @JsonProperty("timestamp") long timestamp) {
-        return new PlayerMovedEventDto(playerId, x, y, angle, thrustAngle, currentSpeed, timestamp);
+        return new PlayerMovedEventDto(playerId, x, y, angle, thrustAngle, timestamp);
     }
 
     public String getPlayerId() {
@@ -59,10 +55,6 @@ public class PlayerMovedEventDto implements EventDto {
 
     public float getThrustAngle() {
         return thrustAngle;
-    }
-
-    public float getCurrentSpeed() {
-        return currentSpeed;
     }
 
     public long getTimestamp() {
