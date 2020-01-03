@@ -3,3 +3,9 @@ function uuid() {
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
 }
+
+try {
+    module.exports = uuid;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
+}

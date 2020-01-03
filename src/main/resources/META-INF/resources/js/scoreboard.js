@@ -73,3 +73,9 @@ const Scoreboard = (function () {
         }
     }
 })();
+
+try {
+    module.exports = Scoreboard;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
+}

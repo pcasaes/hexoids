@@ -60,3 +60,9 @@ const GameConfig = (function () {
         'get': () => GAME_CONFIG
     };
 })();
+
+try {
+    module.exports = GameConfig;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
+}

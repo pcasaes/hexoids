@@ -1,8 +1,9 @@
 class AiBot {
-    constructor(server, queues, players, gameConfig) {
+    constructor(server, queues, players, transform, gameConfig) {
         this.server = server;
         this.queues = queues;
         this.players = players;
+        this.transform = transform;
         this.gameConfig = gameConfig;
         this.intervals = [];
         this.x = 0;
@@ -71,10 +72,10 @@ class AiBot {
                 const x = ship.x + moveX;
                 const y = ship.y + moveY;
 
-                command.move = transform.model(moveX, moveY);
+                command.move = this.transform.model(moveX, moveY);
                 if (Math.abs(ship.x - x) > 2 || Math.abs(ship.y - y) > 2) {
                     command.angle = {
-                        "value": Phaser.Math.Angle.Between(ship.x, ship.y, x, y) + this.forwardDir
+                        "value": Math.atan2(y - ship.y, x - ship.x) + this.forwardDir
                     };
                     command.thrustAngle = this.forwardDir;
                 }
@@ -88,4 +89,10 @@ class AiBot {
         this.intervals.forEach(v => clearTimeout(v));
         this.intervals = [];
     }
+}
+
+try {
+    module.exports = AiBot;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
 }

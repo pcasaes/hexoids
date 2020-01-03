@@ -58,15 +58,18 @@ public class GameSocket {
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
+            Optional<Player> player = Players.get().get(userId);
+            if (player.isPresent()) {
+                player.get().leave();
+            } else {
+                gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
+            }
         }
     }
 
     @OnError
     public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
-        if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
-        }
+        onClose(session, userId);
     }
 
     @OnMessage

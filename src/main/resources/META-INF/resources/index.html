@@ -10,10 +10,12 @@
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
     <script src="js/server.js"></script>
+    <script src="js/transform.js"></script>
     <script src="js/player.js"></script>
     <script src="js/bolts.js"></script>
     <script src="js/scoreboard.js"></script>
-    <script src="js/event-queue.js"></script>
+    <script src="js/event-queue-consumer.js"></script>
+    <script src="js/event-queue-producer.js"></script>
     <script src="js/ai.js"></script>
 </head>
 <body>
@@ -44,7 +46,7 @@
     }
 
     function getServer() {
-        return Server.get(USER.get(), QUEUES);
+        return Server.get(USER.get(), QUEUES, location.host);
     }
 
     function sendMessage(value) {
@@ -90,20 +92,7 @@
         this.load.image('gridb', 'assets/gridb.png');
     }
 
-    const transform = {
-        "model": (x, y) => {
-            return {
-                "x": x / GameConfig.get().world.width_float,
-                "y": y / GameConfig.get().world.height_float,
-            }
-        },
-        "view": (x, y) => {
-            return {
-                "x": x * GameConfig.get().world.width_float,
-                "y": y * GameConfig.get().world.height_float
-            }
-        },
-    };
+    const transform = Transform.get(GameConfig.get());
 
 
     function create() {
@@ -206,7 +195,7 @@
         const AI = (function () {
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
-                return new AiBot(getServer(), QUEUES, getPlayers(), GameConfig.get());
+                return new AiBot(getServer(), QUEUES, getPlayers(), transform, GameConfig.get());
             }
             return {
                 'start': () => {
