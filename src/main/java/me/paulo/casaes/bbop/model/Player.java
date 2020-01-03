@@ -67,8 +67,6 @@ public interface Player {
 
         private float thrustAngle = 0f;
 
-        private float currentSpeed = 0f;
-
         private long movedTimestamp;
 
         private int liveBolts = 0;
@@ -93,7 +91,6 @@ public interface Player {
                                     this.x,
                                     this.y,
                                     this.angle,
-                                    this.currentSpeed,
                                     Clock.Factory.get().getTime()
                             )
                     ));
@@ -107,7 +104,6 @@ public interface Player {
                         event.getX(),
                         event.getY(),
                         event.getAngle(),
-                        event.getSpeedAdjustment(),
                         event.getStartTimestamp())
                         .ifPresent(b -> this.liveBolts++);
             }
@@ -164,13 +160,11 @@ public interface Player {
         public void move(float moveX, float moveY, Float angle, Float thrustAngle) {
 
             float minMove = Config.get().getMinMove();
-            if (Math.abs(moveX) <= minMove &&
+            if (angle == null &&
+                    Math.abs(moveX) <= minMove &&
                     Math.abs(moveY) <= minMove
             ) {
-                this.currentSpeed = 0f;
-                if (angle == null) {
-                    return;
-                }
+                return;
             }
 
             float maxMove = Config.get().getPlayerMaxMove();
@@ -193,9 +187,6 @@ public interface Player {
                     this.angle = angle;
                 }
             }
-
-            this.currentSpeed = (float) Math.sqrt(Math.pow(Math.abs(moveX), 2) + Math.pow(Math.abs(moveY), 2));
-
 
             this.x = Math.max(0f, Math.min(1f, nx));
             this.y = Math.max(0f, Math.min(1f, ny));
@@ -229,7 +220,6 @@ public interface Player {
                                     this.y,
                                     this.angle,
                                     this.thrustAngle,
-                                    this.currentSpeed,
                                     this.movedTimestamp)));
         }
 

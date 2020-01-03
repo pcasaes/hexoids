@@ -80,7 +80,7 @@ class BoltTest {
 
         UUID one = UUID.randomUUID();
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
         assertTrue(bolt.isOwnedBy(one));
@@ -142,7 +142,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -168,7 +168,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 4f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 4f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -193,7 +193,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 2f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0f, 0f, (float) Math.PI / 2f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -218,7 +218,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) (3 * Math.PI / 4f), 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) (3 * Math.PI / 4f), Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -244,7 +244,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) Math.PI, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 0f, (float) Math.PI, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -269,7 +269,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (5 * Math.PI / 4), 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (5 * Math.PI / 4), Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -294,7 +294,7 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (3 * Math.PI / 2), 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 1f, 1f, (float) (3 * Math.PI / 2), Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -331,7 +331,7 @@ class BoltTest {
         }).when(this.players).forEach(any(Consumer.class));
 
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
         doReturn(1_000L).when(clock).getTime();
@@ -379,7 +379,7 @@ class BoltTest {
         doAnswer(c -> playersList.stream()).when(this.players).stream();
 
         UUID one = UUID.randomUUID();
-        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, 0f, Clock.Factory.get().getTime()).orElse(null);
+        final Bolt bolt = Bolts.get().fired(UUID.randomUUID(), one, 0.5f, 0.5f, 0f, Clock.Factory.get().getTime()).orElse(null);
         assertNotNull(bolt);
 
 
