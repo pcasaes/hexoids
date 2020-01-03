@@ -234,6 +234,7 @@ public interface Player {
         }
 
         @Override
+        @IsThreadSafe
         public void leave() {
             GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.id));
             GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.id));

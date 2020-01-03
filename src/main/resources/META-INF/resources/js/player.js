@@ -425,3 +425,9 @@ const Players = (function () {
     };
 })();
 
+
+try {
+    module.exports = Players;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
+}

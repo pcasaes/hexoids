@@ -1,23 +1,3 @@
-class QueueConsumer {
-    constructor(typeProperty) {
-        this.typeProperty = typeProperty;
-        this.events = {};
-    }
-
-    add(type, consumer) {
-        this.events[type] = consumer;
-        return this;
-    }
-
-    consume(resp) {
-        const event = this.events[resp[this.typeProperty]];
-        if (event) {
-            event(resp);
-        }
-    }
-}
-
-
 class QueueProducer {
     constructor(sendMessage) {
         this.queue = [];
@@ -56,4 +36,10 @@ class QueueProducer {
 
         return this;
     }
+}
+
+try {
+    module.exports = QueueProducer;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
 }

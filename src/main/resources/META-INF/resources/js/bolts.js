@@ -142,3 +142,9 @@ const Bolts = (function () {
         }
     };
 })();
+
+try {
+    module.exports = Bolts;
+} catch (ex) {
+    console.debug("Could not export module. Only needed in nodejs. " + ex);
+}
