@@ -55,7 +55,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
                 this.sleepDto = (GameLoopService.SleepDto) event.getEvent();
             } else {
                 String message = event.getEvent() == null ? null : dtoProcessorService.serializeToString(event.getEvent());
-                this.producerService.send(event.getTopic(), event.getKey(), message, false);
+                this.producerService.send(event.getTopic(), event.getKey(), message);
             }
         }
     }
