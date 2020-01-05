@@ -50,7 +50,9 @@ class PlayerTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         GameEvents.getClientEvents().setConsumer(null);
-        GameEvents.getDomainEvents().setConsumer(null);
+        GameEvents.getDomainEvents().setConsumer(domainEvent -> {
+            Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
+        });
 
         new MockUp<Clock.Factory>() {
             @mockit.Mock
@@ -98,16 +100,12 @@ class PlayerTest {
 
     @Test
     void testJoin() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
         Players.get().createOrGet(one).join();
-        DomainEvent domainEventDto = eventReference.get();
-        assertEquals(Topics.JoinGameTopic.name(), domainEventDto.getTopic());
-        assertEquals(one, domainEventDto.getKey());
-
-        PlayerJoinedEventDto event = (PlayerJoinedEventDto) domainEventDto.getEvent();
+        PlayerJoinedEventDto event = (PlayerJoinedEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(EventType.PLAYER_JOINED, event.getEvent());
@@ -140,39 +138,24 @@ class PlayerTest {
 
     @Test
     void testLeave() {
-        List<DomainEvent> domainEvents = new ArrayList<>();
-        GameEvents.getDomainEvents().setConsumer(domainEvents::add);
+        List<Dto> dtos = new ArrayList<>();
+        GameEvents.getClientEvents().setConsumer(dtos::add);
 
         UUID one = UUID.randomUUID();
         Player player = Players.get().createOrGet(one);
         player.leave();
 
-        assertEquals(2, domainEvents.size());
+        List<EventDto> events = dtos
+                .stream()
+                .filter(dto -> dto.getDtoType() == EventDto.DtoType.EVENT_DTO)
+                .map(dto -> (EventDto) dto)
+                .collect(Collectors.toList());
 
-        assertEquals(Topics.JoinGameTopic.name(), domainEvents.get(0).getTopic());
-        assertEquals(one, domainEvents.get(0).getKey());
-        assertNull(domainEvents.get(0).getEvent());
+        assertEquals(1, events.size());
 
-        assertEquals(Topics.PlayerActionTopic.name(), domainEvents.get(1).getTopic());
-        assertEquals(one, domainEvents.get(1).getKey());
-        assertNull(domainEvents.get(1).getEvent());
-
-
-    }
-
-    @Test
-    void testLeft() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
-
-        UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
-        Players.get().left(one);
-        PlayerLeftEventDto event = (PlayerLeftEventDto) eventReference.get();
-
-        assertNotNull(event);
+        EventDto event = events.get(0);
         assertEquals(EventType.PLAYER_LEFT, event.getEvent());
-        assertEquals(one.toString(), event.getPlayerId());
+        assertEquals(one.toString(), ((PlayerLeftEventDto) event).getPlayerId());
 
         assertFalse(Players.get().stream()
                 .anyMatch(p -> p == player));
@@ -204,40 +187,39 @@ class PlayerTest {
 
     @Test
     void testMove() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
         Player player = Players.get().createOrGet(one);
         player.join();
         player.move(0.1f, 0.2f, (float) Math.PI, (float) Math.PI);
 
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertEquals(Topics.PlayerActionTopic.name(), domainEvent.getTopic());
-        PlayerMovedEventDto event = (PlayerMovedEventDto) domainEvent.getEvent();
+        assertEquals(EventDto.DtoType.EVENT_DTO, eventReference.get().getDtoType());
+        assertEquals(EventType.PLAYER_MOVED, ((EventDto) eventReference.get()).getEvent());
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(0.1f, event.getX());
         assertEquals(0.2f, event.getY());
         assertEquals((float) Math.PI, event.getAngle());
+        assertEquals((float) Math.PI, event.getThrustAngle());
 
     }
 
     @Test
     void testBoundedMove() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
         Player player = Players.get().createOrGet(one);
         player.join();
         player.move(-1f, 2f, null, null);
 
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertEquals(Topics.PlayerActionTopic.name(), domainEvent.getTopic());
-        PlayerMovedEventDto event = (PlayerMovedEventDto) domainEvent.getEvent();
+        assertEquals(EventDto.DtoType.EVENT_DTO, eventReference.get().getDtoType());
+        assertEquals(EventType.PLAYER_MOVED, ((EventDto) eventReference.get()).getEvent());
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(0f, event.getX());
@@ -247,38 +229,18 @@ class PlayerTest {
     }
 
     @Test
-    void testMoved() {
+    void testOnlyAngleMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
         Player player = Players.get().createOrGet(one);
         player.join();
-        player.moved(PlayerMovedEventDto.of(one.toString(), 0f, 1f, 3f, 3f, 1000L));
-
-        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
-
-        assertNotNull(event);
-        assertEquals(0f, event.getX());
-        assertEquals(1f, event.getY());
-        assertEquals(3f, event.getAngle());
-
-    }
-
-    @Test
-    void testOnlyAngleMove() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
-
-        UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
-        player.join();
         player.move(0f, 0f, (float) Math.PI, (float) Math.PI);
 
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertEquals(Topics.PlayerActionTopic.name(), domainEvent.getTopic());
-        PlayerMovedEventDto event = (PlayerMovedEventDto) domainEvent.getEvent();
+        assertEquals(EventDto.DtoType.EVENT_DTO, eventReference.get().getDtoType());
+        assertEquals(EventType.PLAYER_MOVED, ((EventDto) eventReference.get()).getEvent());
+        PlayerMovedEventDto event = (PlayerMovedEventDto) eventReference.get();
 
         assertNotNull(event);
         assertEquals(0f, event.getX());
@@ -309,9 +271,9 @@ class PlayerTest {
         Player player = Players.get().createOrGet(one);
         player.join();
 
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
+        player.fire();
+        player.fire();
+        player.fire();
 
 
         assertEquals(2, player.getActiveBoltCount());
@@ -325,7 +287,7 @@ class PlayerTest {
         Player player = Players.get().createOrGet(one);
         player.join();
 
-        player.fired(BoltFiredEventDto.of(UUID.randomUUID().toString(), one.toString(), 0, 0, 0f, Clock.Factory.get().getTime()));
+        player.fire();
 
         assertEquals(1, player.getActiveBoltCount());
 
