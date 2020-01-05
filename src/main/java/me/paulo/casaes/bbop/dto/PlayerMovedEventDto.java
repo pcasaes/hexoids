@@ -1,21 +1,40 @@
 package me.paulo.casaes.bbop.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PlayerMovedEventDto implements EventDto {
 
     private final String playerId;
     private final float x;
     private final float y;
     private final float angle;
+    private final float thrustAngle;
+    private final long timestamp;
 
-    private PlayerMovedEventDto(String playerId, float x, float y, float angle) {
+    private PlayerMovedEventDto(String playerId,
+                                float x,
+                                float y,
+                                float angle,
+                                float thrustAngle,
+                                long timestamp) {
         this.playerId = playerId;
         this.x = x;
         this.y = y;
         this.angle = angle;
+        this.thrustAngle = thrustAngle;
+        this.timestamp = timestamp;
     }
 
-    public static PlayerMovedEventDto of(String playerId, float x, float y, float angle) {
-        return new PlayerMovedEventDto(playerId, x, y, angle);
+    @JsonCreator
+    public static PlayerMovedEventDto of(
+            @JsonProperty("playerId") String playerId,
+            @JsonProperty("x") float x,
+            @JsonProperty("y") float y,
+            @JsonProperty("angle") float angle,
+            @JsonProperty("thrustAngle") float thrustAngle,
+            @JsonProperty("timestamp") long timestamp) {
+        return new PlayerMovedEventDto(playerId, x, y, angle, thrustAngle, timestamp);
     }
 
     public String getPlayerId() {
@@ -32,6 +51,14 @@ public class PlayerMovedEventDto implements EventDto {
 
     public float getAngle() {
         return angle;
+    }
+
+    public float getThrustAngle() {
+        return thrustAngle;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     @Override

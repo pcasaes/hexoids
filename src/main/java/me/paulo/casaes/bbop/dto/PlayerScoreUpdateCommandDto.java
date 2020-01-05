@@ -1,15 +1,15 @@
 package me.paulo.casaes.bbop.dto;
 
-public class PlayerScoreUpdateDto implements CommandDto {
+public class PlayerScoreUpdateCommandDto implements CommandDto {
 
     private final long score;
 
-    private PlayerScoreUpdateDto(long score) {
+    private PlayerScoreUpdateCommandDto(long score) {
         this.score = score;
     }
 
-    public static PlayerScoreUpdateDto ofScore(long score) {
-        return new PlayerScoreUpdateDto(score);
+    public static PlayerScoreUpdateCommandDto ofScore(long score) {
+        return new PlayerScoreUpdateCommandDto(score);
     }
 
     public long getScore() {

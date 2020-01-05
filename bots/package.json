@@ -1,0 +1,15 @@
+{
+  "name": "bbop-bots",
+  "version": "1.0.0",
+  "description": "bots to load test bbop",
+  "main": "index.js",
+  "dependencies": {
+    "ws": "^7.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paulo Casaes",
+  "license": "GPL-3.0"
+}
