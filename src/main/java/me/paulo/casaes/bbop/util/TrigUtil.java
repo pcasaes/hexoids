@@ -30,6 +30,39 @@ public class TrigUtil {
                 (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS) ? r : -r;
     }
 
+    public static float limitRotation(float currentAngle, float nextAngle, float maxAngleDelta) {
+
+        /*
+        Optimization of TrigUtil#calculateAngleDistance
+
+        if the abs of the angle difference is is less that max angle delta than it's good enough to
+        answer with nextAngle
+         */
+        float abDiff = nextAngle - currentAngle;
+        float abDiffAbs = Math.abs(abDiff);
+        if (abDiffAbs <= maxAngleDelta) {
+            return nextAngle;
+        }
+
+        float d = abDiffAbs % FULL_CIRCLE_IN_RADIANS;
+        float r = d > HALF_CIRCLE_IN_RADIANS ? FULL_CIRCLE_IN_RADIANS - d : d;
+
+
+        float aDiff1 = (abDiff >= 0 && abDiff <= HALF_CIRCLE_IN_RADIANS) ||
+                (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS) ? r : -r;
+
+
+        if (aDiff1 > maxAngleDelta) {
+            aDiff1 = maxAngleDelta;
+            return currentAngle + aDiff1;
+        } else if (aDiff1 < -maxAngleDelta) {
+            aDiff1 = -maxAngleDelta;
+            return currentAngle + aDiff1;
+        } else {
+            return nextAngle;
+        }
+    }
+
     /**
      * https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
      *

@@ -1,5 +1,8 @@
 package me.paulo.casaes.bbop.service;
 
+import me.paulo.casaes.bbop.model.Player;
+import me.paulo.casaes.bbop.model.Players;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.Session;
 import java.nio.channels.ClosedChannelException;
@@ -40,7 +43,9 @@ public class SessionService {
         session.getAsyncRemote().sendObject(message, result -> {
             if (result.getException() instanceof ClosedChannelException) {
                 LOGGER.warning("Session closed: " + result.getException());
-                sessions.remove(userId);
+                if (sessions.remove(userId) != null ) {
+                    Players.get().get(userId).ifPresent(Player::leave);
+                }
             } else if (result.getException() != null) {
                 LOGGER.warning("Unable to send message: " + result.getException());
             }

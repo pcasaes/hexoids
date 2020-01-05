@@ -1,5 +1,7 @@
 package me.paulo.casaes.bbop.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class DirectedCommandDto implements Dto {
     private final String playerId;
     private final CommandDto command;
@@ -20,4 +22,15 @@ public class DirectedCommandDto implements Dto {
     public CommandDto getCommand() {
         return command;
     }
+
+    @Override
+    @JsonIgnore
+    public Dto.Type getDtoType() {
+        return DtoType.DIRECTED_COMMAND_DTO;
+    }
+
+    public enum DtoType implements Dto.Type {
+        DIRECTED_COMMAND_DTO;
+    }
+
 }

@@ -2,167 +2,193 @@ package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.BoltExhaustedEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
-import me.paulo.casaes.bbop.dto.EventDto;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class Bolt {
 
-    private static final Map<UUID, Bolt> ACTIVE_BOLTS = new HashMap<>();
-
     private UUID id;
     private String idString;
-    private String ownerPlayerId;
+    private UUID ownerPlayerId;
+    private String ownerPlayerIdStr;
     private float prevX;
     private float x;
     private float prevY;
     private float y;
     private float angle;
     private float speed;
+    private long previousUpdatesTimestamp;
     private long timestamp;
     private long startTimestamp;
     private boolean exhausted;
 
-    private Bolt(String ownerPlayerId, float x, float y, float angle, float speed) {
-        this.id = UUID.randomUUID();
+    private final Optional<Bolt> optionalThis;
+
+    private Bolt(UUID boltId, UUID ownerPlayerId, float x, float y, float angle, float speed, long startTimestamp) {
+        this.id = boltId;
         this.idString = this.id.toString();
         this.ownerPlayerId = ownerPlayerId;
+        this.ownerPlayerIdStr = ownerPlayerId.toString();
         this.x = x;
         this.y = y;
         this.prevX = x;
         this.prevY = y;
         this.angle = angle;
         this.speed = speed;
-        this.timestamp = Clock.Factory.get().getTime();
+        this.timestamp = startTimestamp;
         this.startTimestamp = this.timestamp;
+        this.previousUpdatesTimestamp = this.timestamp;
         this.exhausted = false;
+
+        this.optionalThis = Optional.of(this);
     }
 
-    static Bolt fire(String ownerPlayerId, float x, float y, float angle, float speedAdjustment) {
-        Bolt bolt = new Bolt(ownerPlayerId, x, y, angle, Config.get().getBoltSpeed() + speedAdjustment);
-        ACTIVE_BOLTS.put(bolt.id, bolt);
-        return bolt;
+    static Bolt create(UUID boltId,
+                       UUID ownerPlayerId,
+                       float x,
+                       float y,
+                       float angle,
+                       long startTimestamp) {
+        return new Bolt(
+                boltId,
+                ownerPlayerId,
+                x,
+                y,
+                angle,
+                Config.get().getBoltSpeed(),
+                startTimestamp);
+    }
+
+    UUID getId() {
+        return id;
     }
 
     boolean is(UUID id) {
         return this.id.equals(id);
     }
 
-    private void move(long timestamp) {
+    /**
+     * Updates the this bolt's internal timestamp.
+     *
+     * @param timestamp
+     * @return return empty if the timestamp hasn't changed
+     */
+    Optional<Bolt> updateTimestamp(long timestamp) {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
-        this.timestamp = timestamp;
+        if (elapsed > 0L) {
+            this.previousUpdatesTimestamp = this.timestamp;
+            this.timestamp = timestamp;
+            return optionalThis;
+        }
+        return Optional.empty();
+    }
 
-        EventDto event = null;
+    Bolt tackleBoltExhaustion() {
+        if (isOutOfBounds() || isExpired()) {
+            this.exhausted = true;
+            GameEvents.getDomainEvents().register(generateExhaustedEvent());
+        }
+        return this;
+    }
+
+    Bolt move() {
+
+        DomainEvent event = null;
         this.prevX = this.x;
         this.prevY = this.y;
-        if (elapsed > 0L) {
-            float r = speed * elapsed / 1000f;
+        long elapsed = this.timestamp - this.previousUpdatesTimestamp;
+        float r = speed * elapsed / 1000f;
 
-            float ox = this.x;
-            float oy = this.y;
+        float ox = this.x;
+        float oy = this.y;
 
-            float mx = (float) Math.cos(angle) * r;
-            float my = (float) Math.sin(angle) * r;
+        float mx = (float) Math.cos(angle) * r;
+        float my = (float) Math.sin(angle) * r;
 
-            float minMove = Config.get().getMinMove();
-            if (Math.abs(mx) > minMove) {
-                this.x += mx;
-            }
-            if (Math.abs(my) > minMove) {
-                this.y += my;
-            }
+        float minMove = Config.get().getMinMove();
+        if (Math.abs(mx) > minMove) {
+            this.x += mx;
+        }
+        if (Math.abs(my) > minMove) {
+            this.y += my;
+        }
 
-            if (ox != this.x || oy != this.y) {
-                event = toEvent();
-            }
+        if (ox != this.x || oy != this.y) {
+            event = generateMovedEvent();
         }
 
         if (event != null) {
-            GameEvents.get().register(event);
+            GameEvents.getDomainEvents().register(
+                    event
+            );
         }
+
+        return this;
     }
 
     boolean isExhausted() {
-        if (this.exhausted) {
-            return true;
-        }
-        if (x < 0f || x > 1f ||
-                y < 0f || y > 1f ||
-                this.timestamp - this.startTimestamp > Config.get().getBoltMaxDuration()) {
-            this.exhausted = true;
-            return true;
-        }
-        return false;
+        return this.exhausted;
+    }
+
+    boolean isOutOfBounds() {
+        return x < 0f || x > 1f ||
+                y < 0f || y > 1f;
+    }
+
+    boolean isExpired() {
+        return this.timestamp - this.startTimestamp > Config.get().getBoltMaxDuration();
     }
 
     boolean isActive() {
         return !isExhausted();
     }
 
-    private void hits() {
-        for (Player player : Players.get().iterable()) {
-            hit(player);
+    void checkHits() {
+        if (!this.exhausted) {
+            Players.get()
+                    .forEach(this::hit);
         }
     }
 
     private void hit(Player player) {
-        boolean isHit = !player.is(ownerPlayerId) && player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
+        boolean isHit = !player.is(ownerPlayerId) &&
+                player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
-            player.destroyedBy(this.ownerPlayerId);
+            player.destroy(this.ownerPlayerId);
             if (!this.exhausted) {
                 this.exhausted = true;
-                GameEvents.get().register(BoltExhaustedEventDto.of(this.idString));
+
+                GameEvents.getDomainEvents().register(
+                        generateExhaustedEvent()
+                );
             }
         }
     }
 
-    EventDto toEvent() {
-        return isExhausted() ?
-                BoltExhaustedEventDto.of(this.idString) :
-                BoltMovedEventDto.of(this.idString, this.ownerPlayerId, this.x, this.y, this.angle);
+    DomainEvent generateMovedEvent() {
+        return DomainEvent
+                .create(
+                        Topics.BoltActionTopic.name(),
+                        this.id,
+                        BoltMovedEventDto.of(this.idString, this.ownerPlayerIdStr, this.x, this.y, this.angle)
+                );
     }
 
-    public static void fixedUpdate(final long timestamp) {
-        ACTIVE_BOLTS
-                .values()
-                .forEach(b -> b.move(timestamp));
-
-        ACTIVE_BOLTS
-                .values()
-                .forEach(Bolt::hits);
-
-        cleanup();
+    private DomainEvent generateExhaustedEvent() {
+        return DomainEvent
+                .create(
+                        Topics.BoltActionTopic.name(),
+                        this.id,
+                        BoltExhaustedEventDto.of(this.idString, this.ownerPlayerIdStr)
+                );
     }
 
-    public static Iterable<Bolt> iterable() {
-        return ACTIVE_BOLTS
-                .values();
-    }
 
-    private static void cleanup() {
-        List<UUID> toRemove = ACTIVE_BOLTS
-                .entrySet()
-                .stream()
-                .filter(e -> e.getValue().isExhausted())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-
-        toRemove
-                .forEach(ACTIVE_BOLTS::remove);
-
-    }
-
-    boolean isOwnedBy(String playerId) {
+    boolean isOwnedBy(UUID playerId) {
         return this.ownerPlayerId.equals(playerId);
     }
 
-    static void reset() {
-        ACTIVE_BOLTS.clear();
-    }
 
 }

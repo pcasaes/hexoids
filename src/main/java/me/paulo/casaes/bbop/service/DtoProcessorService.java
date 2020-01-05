@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import me.paulo.casaes.bbop.dto.CommandType;
+import me.paulo.casaes.bbop.dto.EventType;
 
 import javax.enterprise.context.Dependent;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @Dependent
@@ -40,16 +42,28 @@ public class DtoProcessorService {
         }
     }
 
-    public boolean isCommand(String value, CommandType command) {
+    public Optional<EventType> getEventType(String value) {
+        try {
+            JsonNode node = DESERIALIZER.readTree(value);
+            if (node.has("event")) {
+                return Optional.of(EventType.valueOf(node.get("event").asText()));
+            }
+        } catch (IOException | RuntimeException ex) {
+            LOGGER.warning(ex.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    public Optional<CommandType> getCommand(String value) {
         try {
             JsonNode node = DESERIALIZER.readTree(value);
             if (!node.has("command")) {
-                return false;
+                return Optional.empty();
             }
-            return command == CommandType.valueOf(node.get("command").asText());
+            return Optional.ofNullable(CommandType.valueOf(node.get("command").asText()));
         } catch (IOException | RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
-            return false;
+            return Optional.empty();
         }
     }
 

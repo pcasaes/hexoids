@@ -8,15 +8,18 @@ public class MoveCommandDto {
     private final float moveX;
     private final float moveY;
     private final Float angle;
+    private final Float thrustAngle;
 
     @JsonCreator
     public MoveCommandDto(
             @JsonProperty("moveX") float moveX,
             @JsonProperty("moveY") float moveY,
-            @JsonProperty("angle") Float angle) {
+            @JsonProperty("angle") Float angle,
+            @JsonProperty("thrustAngle") Float thrustAngle) {
         this.moveX = moveX;
         this.moveY = moveY;
         this.angle = angle;
+        this.thrustAngle = thrustAngle;
     }
 
     public float getMoveX() {
@@ -29,5 +32,9 @@ public class MoveCommandDto {
 
     public Float getAngle() {
         return angle;
+    }
+
+    public Float getThrustAngle() {
+        return thrustAngle;
     }
 }

@@ -3,251 +3,71 @@
 <head>
     <title>BBOP MMO ARCADE</title>
     <meta charset="UTF-8">
-    <!-- https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js -->
+    <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
+    <script src="js/optional.js"></script>
     <script src="js/phaser-arcade-physics.min.js"></script>
+    <script src="js/user-id.js"></script>
+    <script src="js/game-config.js"></script>
+    <script src="js/uuid.js"></script>
+    <script src="js/get-cookie.js"></script>
+    <script src="js/server.js"></script>
+    <script src="js/transform.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/bolts.js"></script>
+    <script src="js/scoreboard.js"></script>
+    <script src="js/event-queue-consumer.js"></script>
+    <script src="js/event-queue-producer.js"></script>
+    <script src="js/ai.js"></script>
 </head>
 <body>
 
 <script>
 
-    const DEADZONE_SIZE = 100;
 
-    const HUD_ALPHA = 0.6;
-    const HUD_BG = 'black';
+    const USER = new UserId(getCookie, uuid).start();
 
-    function getCookie(cname) {
-        var name = cname + "=";
-        var decodedCookie = decodeURIComponent(document.cookie);
-        var ca = decodedCookie.split(';');
-        for (var i = 0; i < ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0) == ' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) == 0) {
-                return c.substring(name.length, c.length);
-            }
-        }
-        return "";
-    }
 
-    function uuidv4() {
-        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        );
-    }
-
-    let userIdFromCookie = getCookie("user_id");
-    const USER_ID = !userIdFromCookie ? uuidv4() : userIdFromCookie;
-    document.cookie = "user_id=" + USER_ID;
-    console.log(USER_ID);
-
-    const players = {};
+    const QUEUES = {
+        'event': new QueueConsumer('event'),
+        'command': new QueueConsumer('command'),
+        'move': new QueueProducer(sendMessage).start(),
+    };
 
     function gameScene() {
         return game.scene.scenes[0];
     }
 
 
-    let socket;
+    const getPlayers = (function () {
+        let userSet = false;
 
-    function getColorFromShip(ship) {
-        switch (ship) {
-            case 0:
-                return 0xff0000;
-            case 1:
-                return 0x00ff00;
-            case 2:
-                return 0x0000ff;
-            case 3:
-                return 0xffff00;
-            case 4:
-                return 0x00ffff;
-            default:
-                return 0xff00ff;
+        return function() {
+            if (userSet) {
+                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES);
+            } else {
+                userSet = true;
+                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES)
+                    .follow(USER.get())
+                    .addControllableUser(USER.get());
+            }
         }
+    })();
+
+    function getMyPlayer() {
+        return Optional.of(getPlayers().players[USER.get()]);
     }
 
-    function createShip(p) {
-        const move = transform.view(p.x, p.y);
-        const sprite = gameScene().physics.add.image(move.x, move.y, 'ship');
-        const color = getColorFromShip(p.ship);
-        sprite.setTint(color | 0x555555, color, color | 0x555555, color);
-        sprite.setBounce(0, 0);
-        sprite.setScale(0.75);
-        sprite.setCollideWorldBounds(true);
-
-        let str = color.toString(16);
-        while (str.length < 6) {
-            str = '0' + str;
-        }
-        str = '#' + str;
-
-        players[p.playerId] = {
-            "playerId": p.playerId,
-            "color": color,
-            "sprite": sprite,
-            "colorStyle": str,
-        }
+    function getBolts() {
+        return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform, QUEUES);
     }
 
-    const bolts = {};
-
-    const PULSE = [0xfffff, 0x888888, 0x888888, 0x000000];
-
-    function boltMove(b) {
-        const move = transform.view(b.x, b.y);
-        if (!bolts[b.boltId]) {
-            const sprite = gameScene().physics.add.image(move.x, move.y, 'bolt');
-
-            const owner = players[b.ownerPlayerId];
-            if (owner) {
-                sprite.setTint(owner.color, owner.color, owner.color, owner.color);
-            }
-            sprite.setBounce(0, 0);
-            sprite.setScale(0.15);
-            sprite.setCollideWorldBounds(true);
-
-            bolts[b.boltId] = {
-                "sprite": sprite,
-                "color": owner.color,
-                "pulsePos": 0
-            };
-        } else {
-            let bolt = bolts[b.boltId];
-            bolt.sprite.x = move.x;
-            bolt.sprite.y = move.y;
-            bolt.sprite.setTint(
-                bolt.color | PULSE[bolt.pulsePos],
-                bolt.color | PULSE[(bolt.pulsePos + 1) % 4],
-                bolt.color | PULSE[(bolt.pulsePos + 2) % 4],
-                bolt.color | PULSE[(bolt.pulsePos + 3) % 4],
-            );
-            bolt.pulsePos = (bolt.pulsePos + 1) % 4;
-        }
-    }
-
-    const moveQueue = [];
-    setInterval(() => {
-        const m = {
-            "command": "MOVE_PLAYER",
-            "moveX": 0,
-            "moveY": 0,
-        };
-
-        let hasAngle = false;
-        for (let evt = moveQueue.shift(); !!evt; evt = moveQueue.shift()) {
-            if (evt.move) {
-                m.moveX += evt.move.x;
-                m.moveY += evt.move.y;
-            }
-            if (evt.angle) {
-                m.angle = evt.angle.value;
-                hasAngle = true;
-            }
-        }
-        if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
-            sendMessage(m);
-        }
-    }, 50);
-
-    function updateScore(resp) {
-        if (!players[USER_ID].scoreView) {
-            const text = gameScene().add.text(0, 0, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
-            text.setScrollFactor(0);
-            text.setAlpha(HUD_ALPHA);
-            text.setBackgroundColor(HUD_BG);
-            text.setColor(players[USER_ID].colorStyle);
-
-            players[USER_ID].scoreView = text;
-        }
-
-        players[USER_ID].scoreView.setText(USER_ID.substr(0, 7) + ': ' + resp.score);
-        players[USER_ID].scoreView.x = gameScene().game.config.width - (players[USER_ID].scoreView.displayWidth + 5);
-    }
-
-    const COMMANDS = {
-        'LIST_PLAYERS': resp => {
-            resp.players.forEach(createShip);
-        },
-
-        'PLAYER_SCORE_UPDATE': updateScore,
-
-    };
-
-    const EVENTS = {
-
-        'PLAYER_JOINED': resp => {
-            createShip(resp);
-
-            if (USER_ID === resp.playerId) {
-                gameScene().cameras.main.startFollow(players[resp.playerId].sprite, true);
-            }
-        },
-
-        'PLAYER_MOVED': resp => {
-            if (players[resp.playerId]) {
-                const sprite = players[resp.playerId].sprite;
-                const move = transform.view(resp.x, resp.y);
-
-                sprite.x = move.x;
-                sprite.y = move.y;
-
-                sprite.setRotation(resp.angle);
-            }
-        },
-
-        'PLAYER_LEFT': resp => {
-            if (players[resp.playerId]) {
-                const sprite = players[resp.playerId].sprite;
-                sprite.destroy();
-                delete players[resp.playerId];
-            }
-        },
-
-        'BOLT_MOVED': resp => {
-            boltMove(resp)
-        },
-
-        'BOLT_EXHAUSTED': resp => {
-            if (bolts[resp.boltId]) {
-                bolts[resp.boltId].sprite.destroy();
-                delete bolts[resp.boltId];
-            }
-        },
-
-        'SCOREBOARD_UPDATED': resp => {
-            SCOREBOARD.process(resp);
-        },
-
-    };
-
-    function setupSocket() {
-        socket = new WebSocket("ws://" + location.host + "/game/" + USER_ID);
-        socket.onopen = function () {
-            console.log("Connected to the web socket");
-        };
-        socket.onmessage = function (m) {
-            console.log("Got message: " + m.data);
-            const resp = JSON.parse(m.data);
-
-            const event = EVENTS[resp.event];
-            if (event) {
-                event(resp);
-            }
-
-            const command = COMMANDS[resp.command];
-            if (command) {
-                command(resp);
-            }
-        };
+    function getServer() {
+        return Server.get(USER.get(), QUEUES, location.host);
     }
 
     function sendMessage(value) {
-        const s = JSON.stringify(value);
-        console.log("Sending " + s);
-        socket.send(s);
-    };
+        getServer().sendMessage(value);
+    }
 
 
     const config = {
@@ -257,7 +77,8 @@
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: {y: 0}
+                gravity: {y: 0},
+                isPaused: true
             }
         },
         scene: {
@@ -271,99 +92,55 @@
     function preload() {
         //this.load.setBaseURL('http://labs.phaser.io');
 
-        this.load.image('ship', 'assets/triangle.png');
+        this.load.spritesheet('ship', 'assets/ship3-sheet.png', {frameWidth: 128, frameHeight: 128});
+        this.load.spritesheet('thrust', 'assets/thrust3-sheet.png', {frameWidth: 64, frameHeight: 64});
+        this.load.spritesheet('shockwave', 'assets/shockwave1-sheet.png', {frameWidth: 272, frameHeight: 272});
+        this.load.spritesheet('fire-effect', 'assets/fire-effect.png', {frameWidth: 128, frameHeight: 128});
+
+        this.load.atlas('fontatlas', 'assets/font/font2.png', 'assets/font/font2.json');
+
+        this.load.xml('atariXML', 'assets/font/atari-sunset.xml');
 
         this.load.image('bolt', 'assets/white.png');
+        this.load.image('wake', 'assets/white.png');
 
-        //https://hubblesite.org/contents/media/images/2019/17/4493-Image.html
-        this.load.image('grid', 'assets/grid.png');
+        this.load.image('gridf', 'assets/gridf.png');
+        this.load.image('gridb', 'assets/gridb.png');
     }
 
-    const BOUNDS = {
-        "min": {
-            "x": 0,
-            "y": 0,
-        },
-        "max": {
-            "x": 10000,
-            "y": 9235
-        }
-    };
+    const transform = Transform.get(GameConfig.get());
 
-    BOUNDS["width"] = BOUNDS.max.x - BOUNDS.min.x;
-    BOUNDS["height"] = BOUNDS.max.y - BOUNDS.min.y;
-
-    BOUNDS["width_float"] = 1.0 * BOUNDS.width;
-    BOUNDS["height_float"] = 1.0 * BOUNDS.height;
-
-    const transform = {
-        "model": (x, y) => {
-            return {
-                "x": x / BOUNDS.width_float,
-                "y": y / BOUNDS.height_float,
-            }
-        },
-        "view": (x, y) => {
-            return {
-                "x": x * BOUNDS.width_float, // + BOUNDS.min.x,
-                "y": y * BOUNDS.height_float// + BOUNDS.min.y,
-            }
-        },
-    };
-
-    class Scoreboard {
-        constructor(scene, width, height, x, y) {
-            this.scene = scene;
-            this.width = width;
-            this.height = height;
-            this.x = x;
-            this.y = y;
-            this.entries = [];
-
-
-        }
-
-        process(scoreboardUpdatedEvent) {
-            scoreboardUpdatedEvent.scores.forEach((entry, i) => {
-                if (i >= this.entries.length) {
-                    let y = 0;
-                    if (i > 0) {
-                        y = this.entries[0].displayHeight;
-                    }
-                    const entry = this.scene.add.text(this.x + 5, this.y + i * y + 2, '', {fontFamily: 'Verdana, "Times New Roman", Tahoma, serif'});
-                    entry.setScrollFactor(0);
-                    entry.setAlpha(HUD_ALPHA);
-                    entry.setBackgroundColor(HUD_BG);
-                    this.entries.push(entry);
-                }
-                this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
-                if (players[entry.playerId]) {
-                    this.entries[i].setColor(players[entry.playerId].colorStyle);
-                } else {
-                    this.entries[i].setColor("#ffffff");
-                }
-            });
-        }
-    }
-
-    let SCOREBOARD;
 
     function create() {
 
-        this.cameras.main.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
-        this.physics.world.setBounds(BOUNDS.min.x, BOUNDS.min.y, BOUNDS.width, BOUNDS.height);
+        this.cameras.main.setBounds(GameConfig.get().world.min.x, GameConfig.get().world.min.y, GameConfig.get().world.width, GameConfig.get().world.height);
+        this.physics.world.setBounds(GameConfig.get().world.min.x, GameConfig.get().world.min.y, GameConfig.get().world.width, GameConfig.get().world.height);
 
 
-        this.add.image(BOUNDS.min.x, BOUNDS.min.y, 'grid')
+        this.add.image(GameConfig.get().world.min.x, GameConfig.get().world.min.y, 'gridb')
             .setOrigin(0)
-            .setScale(1);
+            .setScale(1)
+            .setDepth(GameConfig.get().add('background.depth', -2));
+
+        this.add.image(GameConfig.get().world.min.x, GameConfig.get().world.min.y, 'gridf')
+            .setOrigin(0)
+            .setScale(1)
+            .setDepth(GameConfig.get().background.depth);
 
 
-        this.cameras.main.setDeadzone(DEADZONE_SIZE, DEADZONE_SIZE);
+        this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
-        SCOREBOARD = new Scoreboard(this, 200, 300, 0, 0);
+        //create singletons
+        getPlayers();
+        getBolts();
+        getServer();
 
-        setupSocket();
+        Scoreboard.get(this, getPlayers(), 0, 0)
+            .setAlpha(GameConfig.get().hud.alpha)
+            .setupEventQueue(QUEUES.event)
+            .setDepth(GameConfig.get().hud.depth);
+
+        Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
 
 
         // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
@@ -379,25 +156,7 @@
         this.input.on('pointermove', function (pointer) {
 
             if (this.input.mouse.locked) {
-                const command = {};
-                if (MOVE_CARTESIAN || MOVE_CARTESIAN === MOVE_RADIAL) {
-                    command.move = transform.model(pointer.movementX, pointer.movementY);
-                }
-                if (MOVE_RADIAL || MOVE_CARTESIAN === MOVE_RADIAL) {
-                    const moveX = pointer.movementX;
-                    const moveY = pointer.movementY;
-
-                    const sprite = players[USER_ID].sprite;
-                    const x = sprite.x + moveX;
-                    const y = sprite.y + moveY;
-                    if (Math.abs(sprite.x - x) > 2 || Math.abs(sprite.y - y) > 2) {
-                        command.angle = {
-                            "value": Phaser.Math.Angle.Between(sprite.x, sprite.y, x, y) + FORWARD_DIR
-                        };
-                    }
-                }
-                moveQueue.push(command);
-
+                getMyPlayer().ifPresent(p => p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR));
             }
         }, this);
 
@@ -447,7 +206,21 @@
         }, this);
 
 
+        const AI = (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if ('true' === urlParams.get('ai')) {
+                return new AiBot(USER.get(), getServer(), getPlayers(), transform, GameConfig.get());
+            }
+            return {
+                'start': () => {
+                }, 'stop': () => {
+                }
+            };
+        })();
+        AI.start();
     }
+
+
 </script>
 
 </body>
