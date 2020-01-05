@@ -12,7 +12,7 @@ public class Game {
     }
 
     public void fixedUpdate(long timestamp) {
-        Bolt.fixedUpdate(timestamp);
+        Bolts.get().fixedUpdate(timestamp);
         ScoreBoard.Factory.get().fixedUpdate(timestamp);
     }
 }

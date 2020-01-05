@@ -5,8 +5,9 @@ import me.paulo.casaes.bbop.dto.MoveCommandDto;
 import me.paulo.casaes.bbop.model.Player;
 import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
-import me.paulo.casaes.bbop.service.GameLoopService;
 import me.paulo.casaes.bbop.service.SessionService;
+import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
+import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,6 +18,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @ServerEndpoint("/game/{userId}")
@@ -29,7 +31,7 @@ public class GameSocket {
 
     private final DtoProcessorService dtoProcessorService;
 
-    private final GameLoopService gameLoopService;
+    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     public GameSocket() {
         this.sessionService = null;
@@ -40,7 +42,7 @@ public class GameSocket {
     @Inject
     public GameSocket(SessionService sessionService,
                       DtoProcessorService dtoProcessorService,
-                      GameLoopService gameLoopService) {
+                      EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
@@ -56,34 +58,46 @@ public class GameSocket {
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
+            Optional<Player> player = Players.get().get(userId);
+            if (player.isPresent()) {
+                player.get().leave();
+            } else {
+                gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
+            }
         }
     }
 
     @OnError
     public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
-        if (sessionService.remove(userId)) {
-            gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
-        }
+        onClose(session, userId);
     }
 
     @OnMessage
     public void onMessage(String message, @PathParam("userId") String userId) {
         try {
-            if (dtoProcessorService.isCommand(message, CommandType.MOVE_PLAYER)) {
-                final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
+            dtoProcessorService.getCommand(message)
+                    .ifPresent(command -> {
+                        if (command == CommandType.MOVE_PLAYER) {
+                            final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
 
-                this.gameLoopService.enqueue(() -> Players.get()
-                        .createOrGet(userId)
-                        .move(moveCommandDto.getMoveX(), moveCommandDto.getMoveY(), moveCommandDto.getAngle())
-                );
-            } else if (dtoProcessorService.isCommand(message, CommandType.FIRE_BOLT)) {
-                this.gameLoopService.enqueue(() -> Players.get()
-                        .createOrGet(userId)
-                        .fire()
+                            this.gameLoopService.enqueue(() -> Players.get()
+                                    .createOrGet(userId)
+                                    .move(moveCommandDto.getMoveX(),
+                                            moveCommandDto.getMoveY(),
+                                            moveCommandDto.getAngle(),
+                                            moveCommandDto.getThrustAngle()
+                                    )
+                            );
+                        } else if (command == CommandType.FIRE_BOLT) {
+                            Optional<Player> player = Players.get().get(userId);
+                            if (player.isPresent()) {
+                                player.get().fire();
+                            } else {
+                                gameLoopService.enqueue(() -> Players.get().createOrGet(userId).fire());
+                            }
+                        }
+                    });
 
-                );
-            }
         } catch (RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
         }
