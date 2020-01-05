@@ -273,14 +273,14 @@ const Players = (function () {
     }
 
     class PlayersClass {
-        constructor(scene, gameConfig, userId, transform) {
+        constructor(scene, gameConfig, transform) {
             this.scene = scene;
             this.gameConfig = gameConfig;
-            this.userId = userId;
             this.transform = transform;
 
             this.players = {};
-            this.myPlayer = null;
+            this.controllableUsers = {};
+            this.playerToFollow = null;
         }
 
         create(p) {
@@ -292,13 +292,43 @@ const Players = (function () {
 
             this.players[p.playerId] = player;
 
-            if (this.userId === p.playerId) {
-                this.myPlayer = player;
-            }
-
             return player;
         }
-        
+
+        addControllableUser(userId) {
+            this.controllableUsers[userId] = userId;
+            return this;
+        }
+
+        getControllablePlayer(userId) {
+            if (this.controllableUsers[userId]) {
+                return Optional.of(this.players[userId])
+            }
+            return Optional.empty();
+        }
+
+        follow(userId) {
+            this.playerToFollow = userId;
+            this._setCameraToFollow();
+            return this;
+        }
+
+        _setCameraToFollow() {
+            this.getFollowedPlayer()
+                .ifPresent(p => {
+                    this.scene.cameras.main.startFollow(
+                        p.ship.sprite, true);
+                });
+
+        }
+
+        getFollowedPlayer() {
+            if (this.playerToFollow) {
+                return Optional.of(this.players[this.playerToFollow]);
+            }
+            return Optional.empty();
+        }
+
         createAnims() {
             this.scene.anims.create({
                 key: "ship-fw",
@@ -355,7 +385,7 @@ const Players = (function () {
                 frameRate: 15,
                 repeat: 0
             });
-            
+
             return this;
         }
 
@@ -365,17 +395,19 @@ const Players = (function () {
                 .add('LIST_PLAYERS', resp => {
                     resp.players.forEach(r => this.create(r));
                 })
-                .add('PLAYER_SCORE_UPDATE', r => this.myPlayer.updateScore(r));
+                .add('PLAYER_SCORE_UPDATE', r => this.getFollowedPlayer().ifPresent(p => p.updateScore(r)));
 
             queues.event
                 .add('PLAYER_JOINED', resp => {
                     this.create(resp);
 
-                    if (this.userId === resp.playerId) {
-                        this.scene.cameras.main.startFollow(
-                            this
-                                .get(resp.playerId)
-                                .setMoveQueue(queues.move).ship.sprite, true);
+                    if (queues.move) {
+                        this.getControllablePlayer(resp.playerId)
+                            .ifPresent(p => p.setMoveQueue(queues.move));
+                    }
+
+                    if (this.playerToFollow === resp.playerId) {
+                        this._setCameraToFollow();
                     }
                 })
                 .add('PLAYER_MOVED', resp => {
@@ -416,9 +448,9 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, gameConfig, userId, transform, queues) => {
+        'get': (scene, gameConfig, transform, queues) => {
             if (!instance) {
-                instance = new PlayersClass(scene, gameConfig, userId, transform).createAnims().setupQueues(queues);
+                instance = new PlayersClass(scene, gameConfig, transform).createAnims().setupQueues(queues);
             }
             return instance;
         }

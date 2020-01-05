@@ -4,6 +4,7 @@
     <title>BBOP MMO ARCADE</title>
     <meta charset="UTF-8">
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.21.0/dist/phaser-arcade-physics.min.js -->
+    <script src="js/optional.js"></script>
     <script src="js/phaser-arcade-physics.min.js"></script>
     <script src="js/user-id.js"></script>
     <script src="js/game-config.js"></script>
@@ -37,8 +38,23 @@
     }
 
 
-    function getPlayers() {
-        return Players.get(gameScene(), GameConfig.get(), USER.get(), transform, QUEUES);
+    const getPlayers = (function () {
+        let userSet = false;
+
+        return function() {
+            if (userSet) {
+                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES);
+            } else {
+                userSet = true;
+                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES)
+                    .follow(USER.get())
+                    .addControllableUser(USER.get());
+            }
+        }
+    })();
+
+    function getMyPlayer() {
+        return Optional.of(getPlayers().players[USER.get()]);
     }
 
     function getBolts() {
@@ -140,9 +156,7 @@
         this.input.on('pointermove', function (pointer) {
 
             if (this.input.mouse.locked) {
-                if (getPlayers().myPlayer) {
-                    getPlayers().myPlayer.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR)
-                }
+                getMyPlayer().ifPresent(p => p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR));
             }
         }, this);
 
@@ -195,7 +209,7 @@
         const AI = (function () {
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
-                return new AiBot(getServer(), QUEUES, getPlayers(), transform, GameConfig.get());
+                return new AiBot(USER.get(), getServer(), getPlayers(), transform, GameConfig.get());
             }
             return {
                 'start': () => {

@@ -34,4 +34,4 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
 
-bots/bots-config-local.js
+bots/settings.local.js
