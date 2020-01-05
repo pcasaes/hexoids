@@ -11,26 +11,28 @@ class QueueProducer {
 
     start() {
         this.intervalId  = setInterval(() => {
-            const m = {
-                "command": "MOVE_PLAYER",
-                "moveX": 0,
-                "moveY": 0,
-            };
+            if (this.queue.length > 0) {
+                const m = {
+                    "command": "MOVE_PLAYER",
+                    "moveX": 0,
+                    "moveY": 0,
+                };
 
-            let hasAngle = false;
-            for (let evt = this.queue.shift(); !!evt; evt = this.queue.shift()) {
-                if (evt.move) {
-                    m.moveX += evt.move.x;
-                    m.moveY += evt.move.y;
+                let hasAngle = false;
+                for (let evt = this.queue.shift(); !!evt; evt = this.queue.shift()) {
+                    if (evt.move) {
+                        m.moveX += evt.move.x;
+                        m.moveY += evt.move.y;
+                    }
+                    if (evt.angle) {
+                        m.angle = evt.angle.value;
+                        hasAngle = true;
+                    }
+                    m.thrustAngle = evt.thrustAngle;
                 }
-                if (evt.angle) {
-                    m.angle = evt.angle.value;
-                    hasAngle = true;
+                if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
+                    this.sendMessage(m);
                 }
-                m.thrustAngle = evt.thrustAngle;
-            }
-            if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
-                this.sendMessage(m);
             }
         }, 50);
 

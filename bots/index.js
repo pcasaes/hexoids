@@ -1,33 +1,30 @@
 global.WebSocket = require('ws');
+global.Optional = require('../src/main/resources/META-INF/resources/js/optional');
 const crypto = require('crypto');
 const Server = require('../src/main/resources/META-INF/resources/js/server');
 const QueueConsumer = require('../src/main/resources/META-INF/resources/js/event-queue-consumer');
-const QueueProducer = require('../src/main/resources/META-INF/resources/js/event-queue-producer');
 const GameConfig = require('../src/main/resources/META-INF/resources/js/game-config');
 const Players = require('../src/main/resources/META-INF/resources/js/player');
 const Transform = require('../src/main/resources/META-INF/resources/js/transform');
 const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
-const botsConfig = require('./bots-config');
+const settings = require('./settings');
 
 
 const QUEUES = {
     'event': new QueueConsumer('event'),
-    'command': new QueueConsumer('command'),
-    'move': new QueueProducer(sendMessage).start(),
+    'command': new QueueConsumer('command')
 };
 
-function uuid() {
+function genUuid() {
     const flat = crypto.randomBytes(16).toString('hex');
     return flat.substr(0, 8) + '-' +
         flat.substr(8, 4) + '-' +
         flat.substr(12, 4) + '-' +
         flat.substr(16, 4) + '-' +
-        flat.substr(20) ;
+        flat.substr(20);
 
 }
 
-const UUID = uuid();
-console.log("user id " + UUID);
 
 const SCENE_MOCK = {
     'anims': {
@@ -52,10 +49,11 @@ const SCENE_MOCK = {
                     'x': x,
                     'y': y,
                     'rotation': 0,
-                    'destroy': () => {},
+                    'destroy': () => {
+                    },
                     'setRotation': (r) => {
-                      sprite.rotation = r;
-                      return sprite;
+                        sprite.rotation = r;
+                        return sprite;
                     },
                     'setTint': setterMock,
                     'setBounce': setterMock,
@@ -65,7 +63,8 @@ const SCENE_MOCK = {
                     'setTintFill': setterMock,
                     'setCollideWorldBounds': setterMock,
                     'anims': {
-                        'play': () => {},
+                        'play': () => {
+                        },
                         'getProgress': () => {
                             return 0;
                         },
@@ -102,18 +101,28 @@ const SCENE_MOCK = {
 const transform = Transform.get(GameConfig.get());
 
 function getPlayers() {
-    return Players.get(SCENE_MOCK, GameConfig.get(), UUID, transform, QUEUES);
+    return Players.get(SCENE_MOCK, GameConfig.get(), transform, QUEUES);
 }
 
-function getServer() {
-    return Server.get(UUID, QUEUES, botsConfig.host);
+function getServer(uuid) {
+    return Server.get(uuid, QUEUES, settings.host);
 }
 
-function sendMessage(value) {
-    getServer().sendMessage(value);
+for (let i = 0; i < settings.bots; i++) {
+    const UUID = genUuid();
+    console.log("user id " + UUID);
+
+
+
+    getPlayers()
+        .addControllableUser(UUID);
+
+    const bot = new AiBot(UUID,
+        getServer(UUID),
+        getPlayers()
+            .addControllableUser(UUID),
+        transform,
+        GameConfig.get());
+
+    bot.start();
 }
-
-
-const bot = new AiBot(getServer(), QUEUES, getPlayers(), transform, GameConfig.get());
-
-bot.start();
