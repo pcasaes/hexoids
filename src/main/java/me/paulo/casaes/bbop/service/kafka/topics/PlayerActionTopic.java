@@ -9,8 +9,6 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
 
 @Named("PlayerActionTopic")
 @Dependent
@@ -35,13 +33,4 @@ public class PlayerActionTopic implements TopicInfo {
         return Topics.PlayerActionTopic;
     }
 
-    @Override
-    public boolean useSubscription() {
-        return false;
-    }
-
-    @Override
-    public Optional<Properties> consumerConfig() {
-        return Optional.empty();
-    }
 }

@@ -23,6 +23,13 @@ class ScoreBoardTest {
 
         ScoreBoard.Factory.get().reset();
 
+        GameEvents.getDomainEvents().setConsumer(domainEvent -> {
+            if (domainEvent.getTopic().equals(Topics.ScoreBoardControlTopic.name())) {
+                ScoreBoard.Factory.get().consumeFromScoreBoardControlTopic(domainEvent);
+            } else if (domainEvent.getTopic().equals(Topics.ScoreBoardUpdateTopic.name())) {
+                ScoreBoard.Factory.get().consumeFromScoreBoardUpdateTopic(domainEvent);
+            }
+        });
     }
 
     @Test
@@ -49,6 +56,7 @@ class ScoreBoardTest {
     void testSimpleReset() {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
+
 
         UUID one = UUID.randomUUID();
         ScoreBoard.Factory.get().updateScore(one, 100);

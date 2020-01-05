@@ -5,6 +5,8 @@ public enum EventType {
     PLAYER_MOVED(PlayerMovedEventDto.class),
     PLAYER_LEFT(PlayerLeftEventDto.class),
     PLAYER_DESTROYED(PlayerDestroyedEventDto.class),
+    PLAYER_SCORE_UPDATED(PlayerScoreUpdatedEventDto.class),
+    PLAYER_SCORE_INCREASED(PlayerScoreIncreasedEventDto.class),
 
     BOLT_FIRED(BoltFiredEventDto.class),
     BOLT_MOVED(BoltMovedEventDto.class),

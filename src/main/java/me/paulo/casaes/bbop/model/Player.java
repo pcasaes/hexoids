@@ -43,7 +43,7 @@ public interface Player {
 
     boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
 
-    void destroyedBy(UUID playerId);
+    void destroy(UUID playerId);
 
     void destroyed(PlayerDestroyedEventDto event);
 
@@ -221,6 +221,7 @@ public interface Player {
 
         @Override
         public void left() {
+            ScoreBoard.Factory.get().resetScore(this.id);
             GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.idStr));
         }
 
@@ -245,22 +246,22 @@ public interface Player {
         }
 
         @Override
-        public void destroyedBy(UUID playerId) {
+        public void destroy(UUID byPlayerId) {
             resetPosition();
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
                             Topics.PlayerActionTopic.name(),
                             this.id,
-                            PlayerDestroyedEventDto.of(this.idStr, playerId.toString()))
+                            PlayerDestroyedEventDto.of(this.id, byPlayerId))
             );
             fireMoveDomainEvent();
-            ScoreBoard.Factory.get().updateScore(playerId, 1);
-            ScoreBoard.Factory.get().resetScore(this.id);
+            ScoreBoard.Factory.get().updateScore(byPlayerId, 1);
         }
 
         @Override
         public void destroyed(PlayerDestroyedEventDto event) {
+            ScoreBoard.Factory.get().resetScore(event.getPlayerId());
             GameEvents.getClientEvents().register(event);
         }
 

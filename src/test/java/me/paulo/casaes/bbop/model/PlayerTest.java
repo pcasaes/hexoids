@@ -429,7 +429,7 @@ class PlayerTest {
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(domainEvents::add);
 
-        player1.destroyedBy(two);
+        player1.destroy(two);
 
         List<EventDto> events = domainEvents
                 .stream()

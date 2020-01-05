@@ -1,8 +1,11 @@
 package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
+import me.paulo.casaes.bbop.dto.EventType;
+import me.paulo.casaes.bbop.dto.PlayerScoreIncreasedEventDto;
+import me.paulo.casaes.bbop.dto.PlayerScoreUpdatedEventDto;
 import me.paulo.casaes.bbop.dto.ScoreBoardUpdatedEventDto;
-import me.paulo.casaes.bbop.dto.PlayerScoreUpdateDto;
+import me.paulo.casaes.bbop.dto.PlayerScoreUpdateCommandDto;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +20,21 @@ public interface ScoreBoard {
 
     void updateScore(UUID playerId, int deltaScore);
 
+    void scoreUpdated(PlayerScoreUpdatedEventDto event);
+
+    void scoreIncreased(PlayerScoreIncreasedEventDto event);
+
     void resetScore(UUID playerId);
+
+    void scoreReset(UUID playerId);
 
     void fixedUpdate(long timestamp);
 
     void reset();
+
+    void consumeFromScoreBoardControlTopic(DomainEvent domainEvent);
+
+    void consumeFromScoreBoardUpdateTopic(DomainEvent domainEvent);
 
     class Factory {
 
@@ -50,17 +63,80 @@ public interface ScoreBoard {
 
         @Override
         public void updateScore(UUID playerId, int deltaScore) {
-            int score = this.scores.getOrDefault(playerId, 0) + deltaScore;
-            this.scores.put(playerId, score);
-            this.updatedScores.put(playerId, score);
-            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId.toString(), PlayerScoreUpdateDto.ofScore(score)));
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.create(
+                            Topics.ScoreBoardControlTopic.name(),
+                            playerId,
+                            PlayerScoreIncreasedEventDto.increased(playerId, deltaScore)
+                    )
+            );
+        }
+
+        @Override
+        public void scoreIncreased(PlayerScoreIncreasedEventDto event) {
+            int score = this.scores.getOrDefault(event.getPlayerId(), 0) + event.getGained();
+            this.scores.put(event.getPlayerId(), score);
+
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.create(
+                            Topics.ScoreBoardUpdateTopic.name(),
+                            event.getPlayerId(),
+                            PlayerScoreUpdatedEventDto.updated(event.getPlayerId(), score)
+                    )
+            );
+        }
+
+        @Override
+        public void scoreReset(UUID playerId) {
+            this.scores.remove(playerId);
+
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.delete(
+                            Topics.ScoreBoardUpdateTopic.name(),
+                            playerId
+                    )
+            );
+        }
+
+        @Override
+        public void scoreUpdated(PlayerScoreUpdatedEventDto event) {
+            if (event.getScore() <= 0) {
+                this.scores.remove(event.getPlayerId());
+            } else {
+                this.scores.compute(event.getPlayerId(), (k, v) ->
+                        Math.max(v == null ? 0 : v, event.getScore())
+                );
+            }
+            this.updatedScores.put(event.getPlayerId(), event.getScore());
+            GameEvents.getClientEvents().register(DirectedCommandDto.of(event.getPlayerId().toString(), PlayerScoreUpdateCommandDto.ofScore(event.getScore())));
         }
 
         @Override
         public void resetScore(UUID playerId) {
-            this.scores.put(playerId, 0);
-            this.updatedScores.put(playerId, 0);
-            GameEvents.getClientEvents().register(DirectedCommandDto.of(playerId.toString(), PlayerScoreUpdateDto.ofScore(0)));
+            GameEvents.getDomainEvents().register(
+                    DomainEvent.delete(
+                            Topics.ScoreBoardControlTopic.name(),
+                            playerId
+                    )
+            );
+        }
+
+        @Override
+        public void consumeFromScoreBoardControlTopic(DomainEvent domainEvent) {
+            if (domainEvent.getEvent() == null) {
+                scoreReset(domainEvent.getKey());
+            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_SCORE_INCREASED)) {
+                scoreIncreased((PlayerScoreIncreasedEventDto) domainEvent.getEvent());
+            }
+        }
+
+        @Override
+        public void consumeFromScoreBoardUpdateTopic(DomainEvent domainEvent) {
+            if (domainEvent.getEvent() == null) {
+                scoreUpdated(PlayerScoreUpdatedEventDto.updated(domainEvent.getKey(), 0));
+            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_SCORE_UPDATED)) {
+                scoreUpdated((PlayerScoreUpdatedEventDto) domainEvent.getEvent());
+            }
         }
 
         @Override
