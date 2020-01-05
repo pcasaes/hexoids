@@ -174,18 +174,7 @@ public interface Player {
             float nx = this.x + moveX;
             float ny = this.y + moveY;
             if (angle != null) {
-
-                final float maxAngle = Config.get().getPlayerMaxAngle();
-                float aDiff1 = TrigUtil.calculateAngleDistance(angle, this.angle);
-                if (aDiff1 > maxAngle) {
-                    aDiff1 = maxAngle;
-                    this.angle += aDiff1;
-                } else if (aDiff1 < -maxAngle) {
-                    aDiff1 = -maxAngle;
-                    this.angle += aDiff1;
-                } else {
-                    this.angle = angle;
-                }
+                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
             }
 
             this.x = Math.max(0f, Math.min(1f, nx));
