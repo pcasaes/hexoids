@@ -5,6 +5,7 @@ import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.kafka.KafkaProducerService;
+import me.paulo.casaes.bbop.service.kafka.KafkaProducerType;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -30,7 +31,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
 
     @Inject
     public DomainEventProducerService(ThreadService threadService,
-                                      KafkaProducerService producerService,
+                                      @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService,
                                       DtoProcessorService dtoProcessorService,
                                       ConfigurationService configurationService) {
         this.threadService = threadService;

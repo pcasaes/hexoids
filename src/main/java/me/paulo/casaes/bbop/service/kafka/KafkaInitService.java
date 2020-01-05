@@ -37,9 +37,13 @@ public class KafkaInitService {
 
     private KafkaAdmin kafkaAdmin;
 
+    KafkaInitService() {
+        //required for CDI normal scoped beans
+    }
 
     @Inject
-    public KafkaInitService(Instance<TopicInfo> topicsFactory, KafkaAdmin kafkaAdmin,
+    public KafkaInitService(Instance<TopicInfo> topicsFactory,
+                            KafkaAdmin kafkaAdmin,
                             Instance<KafkaConsumerService> kafkaConsumerServiceFactory) {
         this.topicsFactory = topicsFactory;
         this.kafkaAdmin = kafkaAdmin;
@@ -128,7 +132,6 @@ public class KafkaInitService {
                 LOGGER.log(Level.SEVERE, "Could not create topic " + topic, ex);
             }
         }
-
-
     }
+
 }

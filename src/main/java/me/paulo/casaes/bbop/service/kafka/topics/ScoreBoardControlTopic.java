@@ -16,9 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-@Named("BoltLifeCycleTopic")
 @Dependent
-public class BoltLifeCycleTopic implements TopicInfo {
+@Named("ScoreBoardControlTopic")
+public class ScoreBoardControlTopic implements TopicInfo {
 
     private final Collection<ConsumerInfo> consumerInfos = Collections.singleton(new ConsumerInfo() {
         @Override
@@ -31,7 +31,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
             Properties properties = new Properties();
 
             properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "bbop-server");
-            properties.setProperty(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "20000");
+            properties.setProperty(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "10000");
             properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
 
             return Optional.of(properties);
@@ -46,10 +46,10 @@ public class BoltLifeCycleTopic implements TopicInfo {
     @Override
     public NewTopic newTopic() {
         final Map<String, String> props = new HashMap<>();
-        props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(60_000));
+        props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(60_000L));
         props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(60_000));
         props.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.25");
-        props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_DELETE);
+        props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT + ", " + TopicConfig.CLEANUP_POLICY_DELETE);
         props.put(TopicConfig.MESSAGE_TIMESTAMP_TYPE_CONFIG, "LogAppendTime");
 
         return new NewTopic(topic().name(), 1, (short) 1)
@@ -58,7 +58,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.BoltLifecycleTopic;
+        return Topics.ScoreBoardControlTopic;
     }
 
     @Override

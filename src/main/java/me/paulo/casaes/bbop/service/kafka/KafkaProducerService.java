@@ -8,32 +8,26 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Properties;
 import java.util.UUID;
 
-@ApplicationScoped
 public class KafkaProducerService {
-
-    private KafkaInitService initService;
 
     private KafkaConfiguration configuration;
 
     private Producer<UUID, String> producer;
 
-    @Inject
-    public KafkaProducerService(KafkaInitService initService, KafkaConfiguration configuration) {
-        this.initService = initService;
+    KafkaProducerService(KafkaConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    @PostConstruct
-    public void start() {
-        initService.init();
+    KafkaProducerService start(boolean fast) {
+        this.producer = fast ? createFastProducer() : createBlockProducer();
+        return this;
+    }
 
-        this.producer = createFastProducer();
+    void stop() {
+        this.producer.close();
     }
 
     public void send(String topic, UUID key, String message) {
@@ -50,6 +44,14 @@ public class KafkaProducerService {
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, UUIDBytesSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return properties;
+    }
+
+    private Producer<UUID, String> createBlockProducer() {
+        Properties properties = getConfig();
+        properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, UUID.randomUUID().toString() + "-guaranteed-" + this.configuration.getClientIdSuffix());
+        properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
+
+        return new KafkaProducer<>(properties);
     }
 
     private Producer<UUID, String> createFastProducer() {

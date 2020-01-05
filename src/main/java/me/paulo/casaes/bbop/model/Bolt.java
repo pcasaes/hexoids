@@ -156,7 +156,7 @@ public class Bolt {
                 player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
-            player.destroyedBy(this.ownerPlayerId);
+            player.destroy(this.ownerPlayerId);
             if (!this.exhausted) {
                 this.exhausted = true;
 

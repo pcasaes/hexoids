@@ -9,6 +9,8 @@ public enum Topics {
     PlayerActionTopic(Players.get()::consumeFromPlayerActionTopic),
     BoltLifecycleTopic(Players.get()::consumeFromBoltFiredTopic),
     BoltActionTopic(Bolts.get()::consumeFromBoltActionTopic, Players.get()::consumeFromBoltActionTopic),
+    ScoreBoardControlTopic(ScoreBoard.Factory.get()::consumeFromScoreBoardControlTopic),
+    ScoreBoardUpdateTopic(ScoreBoard.Factory.get()::consumeFromScoreBoardUpdateTopic),
     ;
 
     private final List<Consumer<DomainEvent>> consumers;

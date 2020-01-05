@@ -1,11 +1,9 @@
 package me.paulo.casaes.bbop.service.kafka;
 
 import me.paulo.casaes.bbop.dto.EventDto;
-import me.paulo.casaes.bbop.model.DomainEvent;
-import me.paulo.casaes.bbop.model.Topics;
-import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
 import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
+import me.paulo.casaes.bbop.service.kafka.converter.EventDtoDeserializer;
 import me.paulo.casaes.bbop.service.kafka.converter.UUIDBytesDeserializer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -15,7 +13,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.StringDeserializer;
 
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.Dependent;
@@ -27,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
@@ -38,18 +36,14 @@ public class KafkaConsumerService {
 
     private final KafkaConfiguration configuration;
 
-    private final DtoProcessorService dtoProcessorService;
-
     private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     private List<KafkaThreadedConsumer> threads = Collections.synchronizedList(new ArrayList<>());
 
     @Inject
     public KafkaConsumerService(KafkaConfiguration configuration,
-                                DtoProcessorService dtoProcessorService,
                                 EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
         this.configuration = configuration;
-        this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
     }
 
@@ -58,32 +52,35 @@ public class KafkaConsumerService {
         Properties properties = new Properties();
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configuration.getConnectionUrl());
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, UUIDBytesDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventDtoDeserializer.class.getName());
 
-        topicInfo.consumerConfig()
-                .ifPresent(properties::putAll);
+        topicInfo
+                .consumerInfos()
+                .forEach(consumerInfo -> {
+                    consumerInfo.consumerConfig()
+                            .ifPresent(properties::putAll);
 
-        if (topicInfo.useSubscription()) {
-            threads.add(KafkaThreadedConsumer.startWithSubscription(
-                    properties,
-                    topicInfo.topic().name(),
-                    dtoProcessorService,
-                    runInGameLoop(topicInfo.topic())
-            ));
-        } else {
-            try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
-                kafkaConsumer.partitionsFor(topicInfo.topic().name())
-                        .stream()
-                        .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
-                        .map(topicPartition -> KafkaThreadedConsumer
-                                .startWithoutSubscription(
-                                        properties,
-                                        topicPartition,
-                                        dtoProcessorService,
-                                        runInGameLoop(topicInfo.topic())))
-                        .forEach(threads::add);
-            }
-        }
+                    if (consumerInfo.useSubscription()) {
+                        threads.add(KafkaThreadedConsumer.startWithSubscription(
+                                properties,
+                                topicInfo.topic().name(),
+                                runInGameLoop(consumerInfo)
+                        ));
+                    } else {
+                        try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
+                            kafkaConsumer.partitionsFor(topicInfo.topic().name())
+                                    .stream()
+                                    .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
+                                    .map(topicPartition -> KafkaThreadedConsumer
+                                            .startWithoutSubscription(
+                                                    properties,
+                                                    topicPartition,
+                                                    runInGameLoop(consumerInfo)))
+                                    .forEach(threads::add);
+                        }
+                    }
+                });
+
     }
 
     @PreDestroy
@@ -92,36 +89,34 @@ public class KafkaConsumerService {
                 .forEach(KafkaThreadedConsumer::stop);
     }
 
-    private java.util.function.Consumer<DomainEvent> runInGameLoop(Topics topic) {
-        return domainEvent -> gameLoopService.enqueue(() -> topic.consume(domainEvent));
+    private Predicate<ConsumerRecord<UUID, EventDto>> runInGameLoop(TopicInfo.ConsumerInfo info) {
+        return record -> {
+            gameLoopService.enqueue(() -> info.consumeRecord(record));
+            return false;
+        };
     }
 
     private static class KafkaThreadedConsumer {
 
-        private final DtoProcessorService dtoProcessorService;
+        private final Predicate<ConsumerRecord<UUID, EventDto>> processor;
 
-        private final java.util.function.Consumer<DomainEvent> processor;
-
-        private final Consumer<UUID, String> kafkaConsumer;
+        private final Consumer<UUID, EventDto> kafkaConsumer;
 
         private Thread thread;
 
         private boolean running;
 
-        private KafkaThreadedConsumer(DtoProcessorService dtoProcessorService,
-                                      java.util.function.Consumer<DomainEvent> processor,
-                                      Consumer<UUID, String> kafkaConsumer) {
-            this.dtoProcessorService = dtoProcessorService;
+        private KafkaThreadedConsumer(Predicate<ConsumerRecord<UUID, EventDto>> processor,
+                                      Consumer<UUID, EventDto> kafkaConsumer) {
             this.processor = processor;
             this.kafkaConsumer = kafkaConsumer;
         }
 
         static KafkaThreadedConsumer startWithoutSubscription(Properties properties,
                                                               TopicPartition topicPartition,
-                                                              DtoProcessorService dtoProcessorService,
-                                                              java.util.function.Consumer<DomainEvent> processor) {
+                                                              Predicate<ConsumerRecord<UUID, EventDto>> processor) {
 
-            Consumer<UUID, String> kafkaConsumer = new KafkaConsumer<>(properties);
+            Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
 
 
             Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
@@ -129,7 +124,6 @@ public class KafkaConsumerService {
             kafkaConsumer.seekToBeginning(partitions);
 
             KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    dtoProcessorService,
                     processor,
                     kafkaConsumer);
 
@@ -141,16 +135,14 @@ public class KafkaConsumerService {
 
         static KafkaThreadedConsumer startWithSubscription(Properties properties,
                                                            String topic,
-                                                           DtoProcessorService dtoProcessorService,
-                                                           java.util.function.Consumer<DomainEvent> processor) {
+                                                           Predicate<ConsumerRecord<UUID, EventDto>> processor) {
 
-            Consumer<UUID, String> kafkaConsumer = new KafkaConsumer<>(properties);
+            Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
 
             kafkaConsumer.subscribe(Collections.singletonList(topic));
 
 
             KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    dtoProcessorService,
                     processor,
                     kafkaConsumer);
 
@@ -183,7 +175,7 @@ public class KafkaConsumerService {
 
         private void pollWhileRunning(Duration pollDuration) {
             while (this.running) {
-                ConsumerRecords<UUID, String> records = kafkaConsumer.poll(pollDuration);
+                ConsumerRecords<UUID, EventDto> records = kafkaConsumer.poll(pollDuration);
                 if (!records.isEmpty()) {
                     StreamSupport
                             .stream(
@@ -202,16 +194,10 @@ public class KafkaConsumerService {
             }
         }
 
-        private void process(ConsumerRecord<UUID, String> record) {
+        private void process(ConsumerRecord<UUID, EventDto> record) {
             try {
-                if (record.value() == null) {
-                    this.processor.accept(DomainEvent.deleted(record.key()));
-                } else {
-                    dtoProcessorService.getEventType(record.value())
-                            .ifPresent(eventType -> {
-                                EventDto event = dtoProcessorService.deserialize(record.value(), eventType.getClassType());
-                                this.processor.accept(DomainEvent.of(record.key(), event));
-                            });
+                if (this.processor.test(record)) {
+                    this.kafkaConsumer.commitAsync();
                 }
             } catch (RuntimeException ex) {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
