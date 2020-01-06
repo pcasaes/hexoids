@@ -1,0 +1,33 @@
+bbop:
+  config:
+    environment: PRODUCTION
+    min:
+      move: 0.000000001
+    player:
+      max:
+        bolts: 10
+        angle:
+          divisor: 4
+    bolt:
+      max:
+        duration: 10000
+      speed: 0.07
+      collision:
+        radius: 0.001
+
+    service:
+      client:
+        broadcast:
+          eventqueue:
+            linkedlist: false
+            exponent: 17
+      domain:
+        event:
+          eventqueue:
+            linkedlist: false
+            exponent: 17
+      game:
+        loop:
+          eventqueue:
+            linkedlist: false
+            exponent: 17
