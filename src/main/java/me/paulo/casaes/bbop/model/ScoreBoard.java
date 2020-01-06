@@ -20,13 +20,7 @@ public interface ScoreBoard {
 
     void updateScore(UUID playerId, int deltaScore);
 
-    void scoreUpdated(PlayerScoreUpdatedEventDto event);
-
-    void scoreIncreased(PlayerScoreIncreasedEventDto event);
-
     void resetScore(UUID playerId);
-
-    void scoreReset(UUID playerId);
 
     void fixedUpdate(long timestamp);
 
@@ -44,16 +38,23 @@ public interface ScoreBoard {
 
         private static final long FIXED_UPDATE_DELTA = 1_000L;
 
-        private static final ScoreBoard INSTANCE = new Implementation();
+        private static final ScoreBoard INSTANCE = new Implementation(Clock.get());
 
 
         static final int SCORE_BOARD_SIZE = 10;
 
         private final Map<UUID, Integer> scores = new HashMap<>();
+        private final Map<UUID, Long> scoresTimestamps = new HashMap<>();
         private final Map<UUID, Integer> updatedScores = new HashMap<>();
         private final List<Entry> rankedScoreBoard = new ArrayList<>();
 
         private long lastFixedUpdateTimestamp = 0L;
+
+        private final Clock clock;
+
+        private Implementation(Clock clock) {
+            this.clock = clock;
+        }
 
         @Override
         public void updateScore(UUID playerId, int deltaScore) {
@@ -61,28 +62,31 @@ public interface ScoreBoard {
                     DomainEvent.create(
                             Topics.ScoreBoardControlTopic.name(),
                             playerId,
-                            PlayerScoreIncreasedEventDto.increased(playerId, deltaScore)
+                            PlayerScoreIncreasedEventDto.increased(playerId, deltaScore, clock.getTime())
                     )
             );
         }
 
-        @Override
-        public void scoreIncreased(PlayerScoreIncreasedEventDto event) {
-            int score = this.scores.getOrDefault(event.getPlayerId(), 0) + event.getGained();
-            this.scores.put(event.getPlayerId(), score);
+        private void scoreIncreased(PlayerScoreIncreasedEventDto event) {
+            Long currentTimestamp = this.scoresTimestamps.get(event.getPlayerId());
+            if (currentTimestamp == null || currentTimestamp <= event.getTimestamp()) {
+                this.scoresTimestamps.put(event.getPlayerId(), event.getTimestamp());
+                int score = this.scores.getOrDefault(event.getPlayerId(), 0) + event.getGained();
+                this.scores.put(event.getPlayerId(), score);
 
-            GameEvents.getDomainEvents().register(
-                    DomainEvent.create(
-                            Topics.ScoreBoardUpdateTopic.name(),
-                            event.getPlayerId(),
-                            PlayerScoreUpdatedEventDto.updated(event.getPlayerId(), score)
-                    )
-            );
+                GameEvents.getDomainEvents().register(
+                        DomainEvent.create(
+                                Topics.ScoreBoardUpdateTopic.name(),
+                                event.getPlayerId(),
+                                PlayerScoreUpdatedEventDto.updated(event.getPlayerId(), score)
+                        )
+                );
+            }
         }
 
-        @Override
-        public void scoreReset(UUID playerId) {
+        private void scoreReset(UUID playerId) {
             this.scores.remove(playerId);
+            this.scoresTimestamps.remove(playerId);
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
@@ -92,10 +96,10 @@ public interface ScoreBoard {
             );
         }
 
-        @Override
-        public void scoreUpdated(PlayerScoreUpdatedEventDto event) {
+        private void scoreUpdated(PlayerScoreUpdatedEventDto event) {
             if (event.getScore() <= 0) {
                 this.scores.remove(event.getPlayerId());
+                this.scoresTimestamps.remove(event.getPlayerId());
             } else {
                 this.scores.compute(event.getPlayerId(), (k, v) ->
                         Math.max(v == null ? 0 : v, event.getScore())
