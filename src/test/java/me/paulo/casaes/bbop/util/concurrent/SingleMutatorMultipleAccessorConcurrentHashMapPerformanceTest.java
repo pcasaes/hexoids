@@ -35,6 +35,8 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
     private static final Long[] INPUT_DATA = new Long[INITIAL_CAPACITY * 4];
 
     private static final int INPUT_DATA_WRAP_MASK = INPUT_DATA.length - 1;
+    
+    private static final Clock clock = Clock.create();
 
     static {
         for (int i = 0; i < INPUT_DATA.length; i++) {
@@ -109,9 +111,9 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
     }
 
     private void profiled(Runnable runnable) {
-        long start = Clock.get().getTime();
+        long start = clock.getTime();
         runnable.run();
-        LOGGER.info(type + " ran in\t" + (Clock.get().getTime() - start) + "ms");
+        LOGGER.info(type + " ran in\t" + (clock.getTime() - start) + "ms");
     }
 
     @RepeatedTest(3)
@@ -186,7 +188,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
             @Override
             public void run() {
                 long o = 0;
-                long start = Clock.get().getTime();
+                long start = clock.getTime();
                 outer:
                 while (true) {
                     for (Long val : data) {
@@ -194,7 +196,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
                             map.get(val);
                             o++;
                         }
-                        if (Clock.get().getTime() - start >= TIME) {
+                        if (clock.getTime() - start >= TIME) {
                             break outer;
                         }
                     }
@@ -219,13 +221,13 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
             new Thread(runner).start();
         }
 
-        long start = Clock.get().getTime();
+        long start = clock.getTime();
         long writeOps = 0;
         for (int i = 0; i < 10_00_000; i++) {
             for (Long val : data) {
                 map.put(val, val);
                 writeOps++;
-                if (Clock.get().getTime() - start >= TIME) {
+                if (clock.getTime() - start >= TIME) {
                     i = 10_00_000;
                     break;
                 }
@@ -233,7 +235,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMapPerformanceTest {
             for (Long val : data) {
                 map.remove(val);
                 writeOps++;
-                if (Clock.get().getTime() - start >= TIME) {
+                if (clock.getTime() - start >= TIME) {
                     i = 10_00_000;
                     break;
                 }

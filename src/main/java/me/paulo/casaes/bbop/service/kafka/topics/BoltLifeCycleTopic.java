@@ -58,7 +58,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.BoltLifecycleTopic;
+        return Topics.BOLT_LIFECYCLE_TOPIC;
     }
 
     @Override

@@ -30,7 +30,7 @@ public class ScoreBoardUpdateTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.ScoreBoardUpdateTopic;
+        return Topics.SCORE_BOARD_UPDATE_TOPIC;
     }
 
 

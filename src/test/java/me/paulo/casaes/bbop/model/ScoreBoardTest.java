@@ -4,6 +4,8 @@ import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.ScoreBoardUpdatedEventDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +16,24 @@ import static me.paulo.casaes.bbop.model.ScoreBoard.Implementation.SCORE_BOARD_S
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.doReturn;
 
 class ScoreBoardTest {
 
+    @Mock
+    private Game game;
+
+    private ScoreBoard scoreBoard;
+
     @BeforeEach
     void setup() {
+        MockitoAnnotations.initMocks(this);
         GameEvents.getClientEvents().setConsumer(null);
 
-        ScoreBoard.get().reset();
+        Topics.setGame(game);
+
+        scoreBoard = ScoreBoard.create(Clock.create());
+        doReturn(scoreBoard).when(game).getScoreBoard();
 
         GameEvents.getDomainEvents().setConsumer(domainEvent -> {
             Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
@@ -33,7 +45,7 @@ class ScoreBoardTest {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        ScoreBoard.get().fixedUpdate(500L);
+        scoreBoard.fixedUpdate(500L);
 
         assertNull(eventReference.get());
     }
@@ -43,7 +55,7 @@ class ScoreBoardTest {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        ScoreBoard.get().fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L);
 
         assertNull(eventReference.get());
     }
@@ -55,14 +67,14 @@ class ScoreBoardTest {
 
 
         UUID one = UUID.randomUUID();
-        ScoreBoard.get().updateScore(one, 100);
+        scoreBoard.updateScore(one, 100);
 
-        ScoreBoard.get().fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L);
 
-        ScoreBoard.get().resetScore(one);
+        scoreBoard.resetScore(one);
 
 
-        ScoreBoard.get().fixedUpdate(2000L);
+        scoreBoard.fixedUpdate(2000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -85,10 +97,10 @@ class ScoreBoardTest {
         }
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
-            ScoreBoard.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
+            scoreBoard.updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
         }
 
-        ScoreBoard.get().fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -114,10 +126,10 @@ class ScoreBoardTest {
         }
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
-            ScoreBoard.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
+            scoreBoard.updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
         }
 
-        ScoreBoard.get().fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -125,11 +137,11 @@ class ScoreBoardTest {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
         UUID c = UUID.randomUUID();
-        ScoreBoard.get().updateScore(a, 100);
-        ScoreBoard.get().updateScore(b, 3);
-        ScoreBoard.get().updateScore(c, -1);
+        scoreBoard.updateScore(a, 100);
+        scoreBoard.updateScore(b, 3);
+        scoreBoard.updateScore(c, -1);
 
-        ScoreBoard.get().fixedUpdate(2000L);
+        scoreBoard.fixedUpdate(2000L);
 
         event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);

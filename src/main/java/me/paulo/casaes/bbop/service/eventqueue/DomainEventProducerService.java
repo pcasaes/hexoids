@@ -1,7 +1,7 @@
 package me.paulo.casaes.bbop.service.eventqueue;
 
-import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.model.DomainEvent;
+import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.kafka.KafkaProducerService;
@@ -71,7 +71,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
         if (this.sleepDto == null) {
             return 0L;
         }
-        long waitTime = sleepDto.getSleepUntil() - Clock.get().getTime();
+        long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
         this.sleepDto = null;
 
         return waitTime;

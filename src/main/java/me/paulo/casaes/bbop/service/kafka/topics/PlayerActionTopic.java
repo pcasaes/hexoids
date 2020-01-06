@@ -30,7 +30,7 @@ public class PlayerActionTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.PlayerActionTopic;
+        return Topics.PLAYER_ACTION_TOPIC;
     }
 
 }

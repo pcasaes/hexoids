@@ -14,14 +14,12 @@ import java.util.stream.StreamSupport;
 
 public class Bolts implements Iterable<Bolt> {
 
-    private static final Bolts INSTANCE = new Bolts();
+    static Bolts create() {
+        return new Bolts();
+    }
 
     private final Map<UUID, Bolt> activeBolts = new HashMap<>();
 
-
-    public static Bolts get() {
-        return INSTANCE;
-    }
 
     Optional<Bolt> fired(
             Players players,
@@ -84,9 +82,5 @@ public class Bolts implements Iterable<Bolt> {
         toRemove
                 .forEach(activeBolts::remove);
 
-    }
-
-    void reset() {
-        activeBolts.clear();
     }
 }

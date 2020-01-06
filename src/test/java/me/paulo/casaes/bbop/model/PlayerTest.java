@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,24 +45,40 @@ class PlayerTest {
     @Mock
     private ScoreBoard scoreBoard;
 
+    @Mock
+    private Game game;
+
+    private Bolts bolts;
+
     private Players players;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        this.players = new Players(Bolts.get(), clock, scoreBoard);
+        this.bolts = Bolts.create();
+        this.players = Players.create(bolts, clock, scoreBoard);
+
+        doReturn(clock)
+                .when(game)
+                .getClock();
+
+        doReturn(scoreBoard)
+                .when(game)
+                .getScoreBoard();
+
+        doReturn(players)
+                .when(game)
+                .getPlayers();
+
+        doReturn(bolts)
+                .when(game)
+                .getBolts();
+
+        Topics.setGame(game);
 
         GameEvents.getClientEvents().setConsumer(null);
         GameEvents.getDomainEvents().setConsumer(domainEvent -> {
-            if (domainEvent.getTopic().equals(Topics.JoinGameTopic.name())) {
-                players.consumeFromJoinTopic(domainEvent);
-            } else if (domainEvent.getTopic().equals(Topics.PlayerActionTopic.name())) {
-                players.consumeFromPlayerActionTopic(domainEvent);
-            } else if (domainEvent.getTopic().equals(Topics.BoltLifecycleTopic.name())) {
-                players.consumeFromBoltFiredTopic(domainEvent);
-            } else if (domainEvent.getTopic().equals(Topics.BoltActionTopic.name())) {
-                players.consumeFromBoltActionTopic(domainEvent);
-            }
+            Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
         });
 
 
@@ -71,8 +88,6 @@ class PlayerTest {
         Config.get().setPlayerMaxMove(1f);
         Config.get().setMinMove(0.000000001f);
         Config.get().setPlayerMaxAngleDivisor(0.5f);
-
-        this.players.reset();
     }
 
     @Test
@@ -313,7 +328,7 @@ class PlayerTest {
 
         player.fired((BoltFiredEventDto) event.getEvent());
 
-        assertEquals(1, Bolts.get()
+        assertEquals(1, bolts
                 .stream()
                 .filter(b -> b.isOwnedBy(one))
                 .map(Bolt::generateMovedEvent)

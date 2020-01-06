@@ -5,13 +5,11 @@ public interface Clock {
     long getTime();
 
 
-    static Clock get() {
-        return Implementation.INSTANCE;
+    static Clock create() {
+        return new Implementation();
     }
 
     class Implementation implements Clock {
-
-        private static final Clock INSTANCE = new Implementation();
 
         private final long adjustment;
 

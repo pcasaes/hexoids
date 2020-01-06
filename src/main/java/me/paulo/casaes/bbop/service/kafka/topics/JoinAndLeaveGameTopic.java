@@ -30,7 +30,7 @@ public class JoinAndLeaveGameTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.JoinGameTopic;
+        return Topics.JOIN_GAME_TOPIC;
     }
 
 }

@@ -21,13 +21,11 @@ import java.util.stream.StreamSupport;
 
 public class Players implements Iterable<Player> {
 
-    private static final Players INSTANCE = new Players(Bolts.get(), Clock.get(), ScoreBoard.get());
+    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        return new Players(bolts, clock, scoreBoard);
+    }
 
     private final Map<UUID, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
-
-    public static Players get() {
-        return INSTANCE;
-    }
 
     private final Bolts bolts;
 
@@ -35,7 +33,7 @@ public class Players implements Iterable<Player> {
 
     private final ScoreBoard scoreBoard;
 
-    Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
         this.bolts = bolts;
         this.clock = clock;
         this.scoreBoard = scoreBoard;
@@ -126,10 +124,6 @@ public class Players implements Iterable<Player> {
             get(event.getOwnerPlayerId())
                     .ifPresent(Player::boltExhausted);
         }
-    }
-
-    void reset() {
-        playerMap.clear();
     }
 
 }

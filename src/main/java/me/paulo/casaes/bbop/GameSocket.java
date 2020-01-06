@@ -2,8 +2,8 @@ package me.paulo.casaes.bbop;
 
 import me.paulo.casaes.bbop.dto.CommandType;
 import me.paulo.casaes.bbop.dto.MoveCommandDto;
+import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.model.Player;
-import me.paulo.casaes.bbop.model.Players;
 import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.SessionService;
 import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
@@ -51,18 +51,18 @@ public class GameSocket {
     @OnOpen
     public void onOpen(Session session, @PathParam("userId") String userId) {
         this.sessionService.add(userId, session);
-        this.gameLoopService.enqueue(() -> Players.get().createOrGet(userId).join());
+        this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).join());
 
     }
 
     @OnClose
     public void onClose(Session session, @PathParam("userId") String userId) {
         if (sessionService.remove(userId)) {
-            Optional<Player> player = Players.get().get(userId);
+            Optional<Player> player = Game.get().getPlayers().get(userId);
             if (player.isPresent()) {
                 player.get().leave();
             } else {
-                gameLoopService.enqueue(() -> Players.get().get(userId).ifPresent(Player::leave));
+                gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
             }
         }
     }
@@ -80,7 +80,7 @@ public class GameSocket {
                         if (command == CommandType.MOVE_PLAYER) {
                             final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
 
-                            this.gameLoopService.enqueue(() -> Players.get()
+                            this.gameLoopService.enqueue(() -> Game.get().getPlayers()
                                     .createOrGet(userId)
                                     .move(moveCommandDto.getMoveX(),
                                             moveCommandDto.getMoveY(),
@@ -89,11 +89,11 @@ public class GameSocket {
                                     )
                             );
                         } else if (command == CommandType.FIRE_BOLT) {
-                            Optional<Player> player = Players.get().get(userId);
+                            Optional<Player> player = Game.get().getPlayers().get(userId);
                             if (player.isPresent()) {
                                 player.get().fire();
                             } else {
-                                gameLoopService.enqueue(() -> Players.get().createOrGet(userId).fire());
+                                gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
                             }
                         }
                     });

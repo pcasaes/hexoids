@@ -30,7 +30,7 @@ public class BoltActionTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.BoltActionTopic;
+        return Topics.BOLT_ACTION_TOPIC;
     }
 
 
