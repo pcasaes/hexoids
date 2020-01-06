@@ -10,16 +10,20 @@ public class PlayerScoreIncreasedEventDto implements EventDto {
 
     private final int gained;
 
-    private PlayerScoreIncreasedEventDto(UUID playerId, int gained) {
+    private final long timestamp;
+
+    private PlayerScoreIncreasedEventDto(UUID playerId, int gained, long timestamp) {
         this.playerId = playerId;
         this.gained = gained;
+        this.timestamp = timestamp;
     }
 
     @JsonCreator
     public static PlayerScoreIncreasedEventDto increased(
             @JsonProperty("playerId") UUID playerId,
-            @JsonProperty("gained") int gained) {
-        return new PlayerScoreIncreasedEventDto(playerId, gained);
+            @JsonProperty("gained") int gained,
+            @JsonProperty("timestamp") long timestamp) {
+        return new PlayerScoreIncreasedEventDto(playerId, gained, timestamp);
     }
 
     public UUID getPlayerId() {
@@ -28,6 +32,10 @@ public class PlayerScoreIncreasedEventDto implements EventDto {
 
     public int getGained() {
         return gained;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     @Override
