@@ -71,7 +71,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
         if (this.sleepDto == null) {
             return 0L;
         }
-        long waitTime = sleepDto.getSleepUntil() - Clock.Factory.get().getTime();
+        long waitTime = sleepDto.getSleepUntil() - Clock.get().getTime();
         this.sleepDto = null;
 
         return waitTime;

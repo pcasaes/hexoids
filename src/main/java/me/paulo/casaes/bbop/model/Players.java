@@ -21,7 +21,7 @@ import java.util.stream.StreamSupport;
 
 public class Players implements Iterable<Player> {
 
-    public static final Players INSTANCE = new Players();
+    private static final Players INSTANCE = new Players(Bolts.get(), Clock.get(), ScoreBoard.get());
 
     private final Map<UUID, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
 
@@ -29,7 +29,16 @@ public class Players implements Iterable<Player> {
         return INSTANCE;
     }
 
-    private Players() {
+    private final Bolts bolts;
+
+    private final Clock clock;
+
+    private final ScoreBoard scoreBoard;
+
+    Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        this.bolts = bolts;
+        this.clock = clock;
+        this.scoreBoard = scoreBoard;
     }
 
     public Player createOrGet(UUID id) {
@@ -51,8 +60,8 @@ public class Players implements Iterable<Player> {
     }
 
     private Player create(UUID id) {
-        GameEvents.getClientEvents().register(DirectedCommandDto.of(id.toString(), Players.get().requestListOfPlayers()));
-        return Player.create(id);
+        GameEvents.getClientEvents().register(DirectedCommandDto.of(id.toString(), this.requestListOfPlayers()));
+        return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
     }
 
     public PlayersListCommandDto requestListOfPlayers() {

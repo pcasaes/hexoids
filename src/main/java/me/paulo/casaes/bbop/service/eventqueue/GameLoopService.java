@@ -44,12 +44,12 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     @PostConstruct
     public void start() {
-        this.lastTimestamp = Clock.Factory.get().getTime();
+        this.lastTimestamp = Clock.get().getTime();
         threadService.setGameLoopThread();
     }
 
     private long fixedUpdate(long lastTimestamp) {
-        long timestamp = Clock.Factory.get().getTime();
+        long timestamp = Clock.get().getTime();
         if (timestamp - lastTimestamp > UPDATE_DELTA) {
             Game.get()
                     .fixedUpdate(timestamp);
@@ -61,7 +61,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     @Override
     public long getWaitTime() {
-        long timeSinceFixedUpdate = Clock.Factory.get().getTime() - lastTimestamp;
+        long timeSinceFixedUpdate = Clock.get().getTime() - lastTimestamp;
         return timeSinceFixedUpdate % UPDATE_DELTA;
     }
 
@@ -79,7 +79,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     public void empty() {
         lastTimestamp = fixedUpdate(lastTimestamp);
 
-        SleepDto sleepDto = SleepDto.sleepUntil(Clock.Factory.get().getTime() + getWaitTime());
+        SleepDto sleepDto = SleepDto.sleepUntil(Clock.get().getTime() + getWaitTime());
         GameEvents.getDomainEvents().register(DomainEvent.withoutKey(sleepDto));
         GameEvents.getClientEvents().register(sleepDto);
     }

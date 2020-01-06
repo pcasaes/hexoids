@@ -21,7 +21,7 @@ class ScoreBoardTest {
     void setup() {
         GameEvents.getClientEvents().setConsumer(null);
 
-        ScoreBoard.Factory.get().reset();
+        ScoreBoard.get().reset();
 
         GameEvents.getDomainEvents().setConsumer(domainEvent -> {
             Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
@@ -33,7 +33,7 @@ class ScoreBoardTest {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        ScoreBoard.Factory.get().fixedUpdate(500L);
+        ScoreBoard.get().fixedUpdate(500L);
 
         assertNull(eventReference.get());
     }
@@ -43,7 +43,7 @@ class ScoreBoardTest {
         AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        ScoreBoard.Factory.get().fixedUpdate(1000L);
+        ScoreBoard.get().fixedUpdate(1000L);
 
         assertNull(eventReference.get());
     }
@@ -55,14 +55,14 @@ class ScoreBoardTest {
 
 
         UUID one = UUID.randomUUID();
-        ScoreBoard.Factory.get().updateScore(one, 100);
+        ScoreBoard.get().updateScore(one, 100);
 
-        ScoreBoard.Factory.get().fixedUpdate(1000L);
+        ScoreBoard.get().fixedUpdate(1000L);
 
-        ScoreBoard.Factory.get().resetScore(one);
+        ScoreBoard.get().resetScore(one);
 
 
-        ScoreBoard.Factory.get().fixedUpdate(2000L);
+        ScoreBoard.get().fixedUpdate(2000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -85,10 +85,10 @@ class ScoreBoardTest {
         }
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
-            ScoreBoard.Factory.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
+            ScoreBoard.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
         }
 
-        ScoreBoard.Factory.get().fixedUpdate(1000L);
+        ScoreBoard.get().fixedUpdate(1000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -114,10 +114,10 @@ class ScoreBoardTest {
         }
 
         for (int i = 0; i < SCORE_BOARD_SIZE; i++) {
-            ScoreBoard.Factory.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
+            ScoreBoard.get().updateScore(ids.get(i), SCORE_BOARD_SIZE - i);
         }
 
-        ScoreBoard.Factory.get().fixedUpdate(1000L);
+        ScoreBoard.get().fixedUpdate(1000L);
 
         ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);
@@ -125,11 +125,11 @@ class ScoreBoardTest {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
         UUID c = UUID.randomUUID();
-        ScoreBoard.Factory.get().updateScore(a, 100);
-        ScoreBoard.Factory.get().updateScore(b, 3);
-        ScoreBoard.Factory.get().updateScore(c, -1);
+        ScoreBoard.get().updateScore(a, 100);
+        ScoreBoard.get().updateScore(b, 3);
+        ScoreBoard.get().updateScore(c, -1);
 
-        ScoreBoard.Factory.get().fixedUpdate(2000L);
+        ScoreBoard.get().fixedUpdate(2000L);
 
         event = (ScoreBoardUpdatedEventDto) eventReference.get();
         assertNotNull(event);

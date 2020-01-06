@@ -15,8 +15,8 @@ import java.util.UUID;
 
 public interface Player {
 
-    static Player create(UUID id) {
-        return new Implementation(id);
+    static Player create(UUID id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        return new Implementation(id, players, bolts, clock, scoreBoard);
     }
 
     void fire();
@@ -71,7 +71,19 @@ public interface Player {
 
         private int liveBolts = 0;
 
-        private Implementation(UUID id) {
+        private final Players players;
+
+        private final Bolts bolts;
+
+        private final Clock clock;
+
+        private final ScoreBoard scoreBoard;
+
+        private Implementation(UUID id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+            this.players = players;
+            this.bolts = bolts;
+            this.clock = clock;
+            this.scoreBoard = scoreBoard;
             this.id = id;
             this.idStr = id.toString();
 
@@ -91,14 +103,15 @@ public interface Player {
                                     this.x,
                                     this.y,
                                     this.angle,
-                                    Clock.Factory.get().getTime()
+                                    this.clock.getTime()
                             )
                     ));
         }
 
         public void fired(BoltFiredEventDto event) {
             if (this.liveBolts < Config.get().getMaxBolts()) {
-                Bolts.get().fired(
+                this.bolts.fired(
+                        players,
                         UUID.fromString(event.getBoltId()),
                         this.id,
                         event.getX(),
@@ -199,7 +212,7 @@ public interface Player {
         }
 
         private void fireMoveDomainEvent() {
-            this.movedTimestamp = Clock.Factory.get().getTime();
+            this.movedTimestamp = this.clock.getTime();
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(Topics.PlayerActionTopic.name(),
                             this.id,
@@ -221,7 +234,7 @@ public interface Player {
 
         @Override
         public void left() {
-            ScoreBoard.Factory.get().resetScore(this.id);
+            scoreBoard.resetScore(this.id);
             GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.idStr));
         }
 
@@ -256,12 +269,12 @@ public interface Player {
                             PlayerDestroyedEventDto.of(this.id, byPlayerId))
             );
             fireMoveDomainEvent();
-            ScoreBoard.Factory.get().updateScore(byPlayerId, 1);
+            this.scoreBoard.updateScore(byPlayerId, 1);
         }
 
         @Override
         public void destroyed(PlayerDestroyedEventDto event) {
-            ScoreBoard.Factory.get().resetScore(event.getPlayerId());
+            this.scoreBoard.resetScore(event.getPlayerId());
             GameEvents.getClientEvents().register(event);
         }
 

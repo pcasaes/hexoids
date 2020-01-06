@@ -4,20 +4,14 @@ public interface Clock {
 
     long getTime();
 
-    class Factory {
 
-        private Factory() {
-        }
-
-        public static Clock get() {
-            return Implementation.INSTANCE;
-        }
+    static Clock get() {
+        return Implementation.INSTANCE;
     }
 
     class Implementation implements Clock {
 
-        public static final Clock INSTANCE = new Implementation();
-
+        private static final Clock INSTANCE = new Implementation();
 
         private final long adjustment;
 
@@ -25,10 +19,6 @@ public interface Clock {
             long cpuTimeMillis = System.nanoTime() / 1_000_000L;
             long systemTimeMillis = System.currentTimeMillis();
             this.adjustment = systemTimeMillis - cpuTimeMillis;
-        }
-
-        public static Clock get() {
-            return INSTANCE;
         }
 
         @Override
