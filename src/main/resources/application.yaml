@@ -1,6 +1,20 @@
+"%dev":
+   bbop:
+     config:
+       environment: DEV
+
+"%test":
+   bbop:
+     config:
+       environment: DEV
+
+"%prod":
+   bbop:
+     config:
+       environment: PRODUCTION
+
 bbop:
   config:
-    environment: PRODUCTION
     min:
       move: 0.000000001
     player:
