@@ -58,7 +58,7 @@ public class ScoreBoardControlTopic implements TopicInfo {
 
     @Override
     public Topics topic() {
-        return Topics.ScoreBoardControlTopic;
+        return Topics.SCORE_BOARD_CONTROL_TOPIC;
     }
 
     @Override

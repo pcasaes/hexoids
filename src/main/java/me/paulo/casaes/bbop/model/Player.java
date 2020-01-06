@@ -95,7 +95,7 @@ public interface Player {
         public void fire() {
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
-                            Topics.BoltLifecycleTopic.name(),
+                            Topics.BOLT_LIFECYCLE_TOPIC.name(),
                             this.id,
                             BoltFiredEventDto.of(
                                     UUID.randomUUID().toString(),
@@ -154,7 +154,7 @@ public interface Player {
             resetPosition();
             GameEvents.getDomainEvents().register(
                     DomainEvent
-                            .create(Topics.JoinGameTopic.name(),
+                            .create(Topics.JOIN_GAME_TOPIC.name(),
                                     this.id,
                                     PlayerJoinedEventDto.of(idStr, ship, x, y, angle))
             );
@@ -214,7 +214,7 @@ public interface Player {
         private void fireMoveDomainEvent() {
             this.movedTimestamp = this.clock.getTime();
             GameEvents.getDomainEvents().register(
-                    DomainEvent.create(Topics.PlayerActionTopic.name(),
+                    DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
                             this.id,
                             PlayerMovedEventDto.of(
                                     this.idStr,
@@ -228,8 +228,8 @@ public interface Player {
         @Override
         @IsThreadSafe
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JoinGameTopic.name(), this.id));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PlayerActionTopic.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JOIN_GAME_TOPIC.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PLAYER_ACTION_TOPIC.name(), this.id));
         }
 
         @Override
@@ -264,7 +264,7 @@ public interface Player {
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
-                            Topics.PlayerActionTopic.name(),
+                            Topics.PLAYER_ACTION_TOPIC.name(),
                             this.id,
                             PlayerDestroyedEventDto.of(this.id, byPlayerId))
             );

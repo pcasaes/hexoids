@@ -3,7 +3,6 @@ package me.paulo.casaes.bbop.service.eventqueue;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.EventType;
-import me.paulo.casaes.bbop.model.Clock;
 import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.model.GameEvents;
@@ -44,12 +43,12 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     @PostConstruct
     public void start() {
-        this.lastTimestamp = Clock.get().getTime();
+        this.lastTimestamp = Game.get().getClock().getTime();
         threadService.setGameLoopThread();
     }
 
     private long fixedUpdate(long lastTimestamp) {
-        long timestamp = Clock.get().getTime();
+        long timestamp = Game.get().getClock().getTime();
         if (timestamp - lastTimestamp > UPDATE_DELTA) {
             Game.get()
                     .fixedUpdate(timestamp);
@@ -61,7 +60,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     @Override
     public long getWaitTime() {
-        long timeSinceFixedUpdate = Clock.get().getTime() - lastTimestamp;
+        long timeSinceFixedUpdate = Game.get().getClock().getTime() - lastTimestamp;
         return timeSinceFixedUpdate % UPDATE_DELTA;
     }
 
@@ -79,7 +78,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     public void empty() {
         lastTimestamp = fixedUpdate(lastTimestamp);
 
-        SleepDto sleepDto = SleepDto.sleepUntil(Clock.get().getTime() + getWaitTime());
+        SleepDto sleepDto = SleepDto.sleepUntil(Game.get().getClock().getTime() + getWaitTime());
         GameEvents.getDomainEvents().register(DomainEvent.withoutKey(sleepDto));
         GameEvents.getClientEvents().register(sleepDto);
     }

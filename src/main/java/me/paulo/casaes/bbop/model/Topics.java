@@ -1,29 +1,36 @@
 package me.paulo.casaes.bbop.model;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 
 public enum Topics {
-    JoinGameTopic(Players.get()::consumeFromJoinTopic),
-    PlayerActionTopic(Players.get()::consumeFromPlayerActionTopic),
-    BoltLifecycleTopic(Players.get()::consumeFromBoltFiredTopic),
-    BoltActionTopic(Bolts.get()::consumeFromBoltActionTopic, Players.get()::consumeFromBoltActionTopic),
-    ScoreBoardControlTopic(ScoreBoard.get()::consumeFromScoreBoardControlTopic),
-    ScoreBoardUpdateTopic(ScoreBoard.get()::consumeFromScoreBoardUpdateTopic),
+    JOIN_GAME_TOPIC(d -> getGame().getPlayers().consumeFromJoinTopic(d)),
+    PLAYER_ACTION_TOPIC(d -> getGame().getPlayers().consumeFromPlayerActionTopic(d)),
+    BOLT_LIFECYCLE_TOPIC(d -> getGame().getPlayers().consumeFromBoltFiredTopic(d)),
+    BOLT_ACTION_TOPIC(((Consumer<DomainEvent>) d -> getGame().getBolts().consumeFromBoltActionTopic(d)) //NOSONAR: false positive
+            .andThen(d -> getGame().getPlayers().consumeFromBoltActionTopic(d))),
+    SCORE_BOARD_CONTROL_TOPIC(d -> getGame().getScoreBoard().consumeFromScoreBoardControlTopic(d)),
+    SCORE_BOARD_UPDATE_TOPIC(d -> getGame().getScoreBoard().consumeFromScoreBoardUpdateTopic(d)),
     ;
 
-    private final List<Consumer<DomainEvent>> consumers;
+    private static Game game;
+
+    static void setGame(Game game) {
+        Topics.game = game;
+    }
+
+    static Game getGame() {
+        return game;
+    }
+
+    private final Consumer<DomainEvent> consumer;
 
 
-    Topics(Consumer<DomainEvent>... consumers) {
-        this.consumers = Arrays.asList(consumers);
+    Topics(Consumer<DomainEvent> consumer) {
+        this.consumer = consumer;
     }
 
     public void consume(DomainEvent domainEvent) {
-        for (Consumer<DomainEvent> consumer : consumers) {
-            consumer.accept(domainEvent);
-        }
+        consumer.accept(domainEvent);
     }
 
 }

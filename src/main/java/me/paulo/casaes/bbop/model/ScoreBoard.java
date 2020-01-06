@@ -24,21 +24,17 @@ public interface ScoreBoard {
 
     void fixedUpdate(long timestamp);
 
-    void reset();
-
     void consumeFromScoreBoardControlTopic(DomainEvent domainEvent);
 
     void consumeFromScoreBoardUpdateTopic(DomainEvent domainEvent);
 
-    static ScoreBoard get() {
-        return Implementation.INSTANCE;
+    static ScoreBoard create(Clock clock) {
+        return new Implementation(clock);
     }
 
     class Implementation implements ScoreBoard {
 
         private static final long FIXED_UPDATE_DELTA = 1_000L;
-
-        private static final ScoreBoard INSTANCE = new Implementation(Clock.get());
 
 
         static final int SCORE_BOARD_SIZE = 10;
@@ -60,7 +56,7 @@ public interface ScoreBoard {
         public void updateScore(UUID playerId, int deltaScore) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
-                            Topics.ScoreBoardControlTopic.name(),
+                            Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId,
                             PlayerScoreIncreasedEventDto.increased(playerId, deltaScore, clock.getTime())
                     )
@@ -76,7 +72,7 @@ public interface ScoreBoard {
 
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(
-                                Topics.ScoreBoardUpdateTopic.name(),
+                                Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
                                 event.getPlayerId(),
                                 PlayerScoreUpdatedEventDto.updated(event.getPlayerId(), score)
                         )
@@ -90,7 +86,7 @@ public interface ScoreBoard {
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
-                            Topics.ScoreBoardUpdateTopic.name(),
+                            Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
                             playerId
                     )
             );
@@ -113,7 +109,7 @@ public interface ScoreBoard {
         public void resetScore(UUID playerId) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
-                            Topics.ScoreBoardControlTopic.name(),
+                            Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId
                     )
             );
@@ -176,14 +172,6 @@ public interface ScoreBoard {
             } else {
                 rankedScoreBoard.add(new Entry(mapEntry.getKey()).setScore(mapEntry.getValue()));
             }
-        }
-
-        @Override
-        public void reset() {
-            scores.clear();
-            rankedScoreBoard.clear();
-            updatedScores.clear();
-            this.lastFixedUpdateTimestamp = 0L;
         }
 
         private static class Entry implements Comparable<Entry> {
