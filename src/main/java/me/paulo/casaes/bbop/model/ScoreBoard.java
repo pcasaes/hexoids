@@ -3,9 +3,9 @@ package me.paulo.casaes.bbop.model;
 import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.EventType;
 import me.paulo.casaes.bbop.dto.PlayerScoreIncreasedEventDto;
+import me.paulo.casaes.bbop.dto.PlayerScoreUpdateCommandDto;
 import me.paulo.casaes.bbop.dto.PlayerScoreUpdatedEventDto;
 import me.paulo.casaes.bbop.dto.ScoreBoardUpdatedEventDto;
-import me.paulo.casaes.bbop.dto.PlayerScoreUpdateCommandDto;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,24 +36,18 @@ public interface ScoreBoard {
 
     void consumeFromScoreBoardUpdateTopic(DomainEvent domainEvent);
 
-    class Factory {
-
-        private Factory() {
-        }
-
-        public static ScoreBoard get() {
-            return ScoreBoard.Implementation.INSTANCE;
-        }
+    static ScoreBoard get() {
+        return Implementation.INSTANCE;
     }
-
 
     class Implementation implements ScoreBoard {
 
         private static final long FIXED_UPDATE_DELTA = 1_000L;
 
-        static final int SCORE_BOARD_SIZE = 10;
-
         private static final ScoreBoard INSTANCE = new Implementation();
+
+
+        static final int SCORE_BOARD_SIZE = 10;
 
         private final Map<UUID, Integer> scores = new HashMap<>();
         private final Map<UUID, Integer> updatedScores = new HashMap<>();

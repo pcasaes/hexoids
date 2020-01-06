@@ -23,9 +23,19 @@ public class Bolt {
     private long startTimestamp;
     private boolean exhausted;
 
-    private final Optional<Bolt> optionalThis;
+    private final Optional<Bolt> optionalThis; // NOSONAR: optional memo
 
-    private Bolt(UUID boltId, UUID ownerPlayerId, float x, float y, float angle, float speed, long startTimestamp) {
+    private final Players players;
+
+    private Bolt(Players players,
+                 UUID boltId,
+                 UUID ownerPlayerId,
+                 float x,
+                 float y,
+                 float angle,
+                 float speed,
+                 long startTimestamp) {
+        this.players = players;
         this.id = boltId;
         this.idString = this.id.toString();
         this.ownerPlayerId = ownerPlayerId;
@@ -44,13 +54,15 @@ public class Bolt {
         this.optionalThis = Optional.of(this);
     }
 
-    static Bolt create(UUID boltId,
+    static Bolt create(Players players,
+                       UUID boltId,
                        UUID ownerPlayerId,
                        float x,
                        float y,
                        float angle,
                        long startTimestamp) {
         return new Bolt(
+                players,
                 boltId,
                 ownerPlayerId,
                 x,
@@ -146,8 +158,7 @@ public class Bolt {
 
     void checkHits() {
         if (!this.exhausted) {
-            Players.get()
-                    .forEach(this::hit);
+            this.players.forEach(this::hit);
         }
     }
 

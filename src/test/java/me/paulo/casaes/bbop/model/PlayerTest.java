@@ -11,7 +11,6 @@ import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerLeftEventDto;
 import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
-import mockit.MockUp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -45,28 +44,26 @@ class PlayerTest {
     @Mock
     private ScoreBoard scoreBoard;
 
+    private Players players;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
+        this.players = new Players(Bolts.get(), clock, scoreBoard);
+
         GameEvents.getClientEvents().setConsumer(null);
         GameEvents.getDomainEvents().setConsumer(domainEvent -> {
-            Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
+            if (domainEvent.getTopic().equals(Topics.JoinGameTopic.name())) {
+                players.consumeFromJoinTopic(domainEvent);
+            } else if (domainEvent.getTopic().equals(Topics.PlayerActionTopic.name())) {
+                players.consumeFromPlayerActionTopic(domainEvent);
+            } else if (domainEvent.getTopic().equals(Topics.BoltLifecycleTopic.name())) {
+                players.consumeFromBoltFiredTopic(domainEvent);
+            } else if (domainEvent.getTopic().equals(Topics.BoltActionTopic.name())) {
+                players.consumeFromBoltActionTopic(domainEvent);
+            }
         });
 
-        new MockUp<Clock.Factory>() {
-            @mockit.Mock
-            public Clock get() {
-                return clock;
-            }
-        };
-
-        new MockUp<ScoreBoard.Factory>() {
-            @mockit.Mock
-            public ScoreBoard get() {
-                return scoreBoard;
-            }
-        };
 
         when(clock.getTime()).thenReturn(0L);
 
@@ -75,26 +72,26 @@ class PlayerTest {
         Config.get().setMinMove(0.000000001f);
         Config.get().setPlayerMaxAngleDivisor(0.5f);
 
-        Players.get().reset();
+        this.players.reset();
     }
 
     @Test
     void testCreate() {
         UUID one = UUID.randomUUID();
         UUID two = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
 
-        assertTrue(Players.get().stream()
+        assertTrue(this.players.stream()
                 .anyMatch(p -> p == player));
 
         assertTrue(player.is(one));
         assertFalse(player.is(two));
 
-        assertSame(player, Players.get().get(one).orElse(null));
-        assertEquals(player, Players.get().get(one.toString()).orElse(null));
+        assertSame(player, this.players.get(one).orElse(null));
+        assertEquals(player, this.players.get(one.toString()).orElse(null));
 
-        assertNotSame(player, Players.get().get(two).orElse(null));
-        assertNotEquals(player, Players.get().get(two.toString()).orElse(null));
+        assertNotSame(player, this.players.get(two).orElse(null));
+        assertNotEquals(player, this.players.get(two.toString()).orElse(null));
 
     }
 
@@ -104,7 +101,7 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
-        Players.get().createOrGet(one).join();
+        this.players.createOrGet(one).join();
         PlayerJoinedEventDto event = (PlayerJoinedEventDto) eventReference.get();
 
         assertNotNull(event);
@@ -122,7 +119,7 @@ class PlayerTest {
 
         UUID one = UUID.randomUUID();
 
-        Players.get().joined(
+        this.players.joined(
                 PlayerJoinedEventDto.of(one.toString(), 5, 0f, 1f, 2f)
         );
         PlayerJoinedEventDto event = (PlayerJoinedEventDto) eventReference.get();
@@ -142,7 +139,7 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(dtos::add);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.leave();
 
         List<EventDto> events = dtos
@@ -157,7 +154,7 @@ class PlayerTest {
         assertEquals(EventType.PLAYER_LEFT, event.getEvent());
         assertEquals(one.toString(), ((PlayerLeftEventDto) event).getPlayerId());
 
-        assertFalse(Players.get().stream()
+        assertFalse(this.players.stream()
                 .anyMatch(p -> p == player));
 
     }
@@ -166,10 +163,10 @@ class PlayerTest {
     void testRequestListOfPlayers() {
         UUID one = UUID.randomUUID();
         UUID two = UUID.randomUUID();
-        Players.get().createOrGet(one).join();
-        Players.get().createOrGet(two).join();
+        this.players.createOrGet(one).join();
+        this.players.createOrGet(two).join();
 
-        PlayersListCommandDto command = Players.get().requestListOfPlayers();
+        PlayersListCommandDto command = this.players.requestListOfPlayers();
 
         assertNotNull(command);
         assertEquals(CommandType.LIST_PLAYERS, command.getCommand());
@@ -191,7 +188,7 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.1f, 0.2f, (float) Math.PI, (float) Math.PI);
 
@@ -213,7 +210,7 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(-1f, 2f, null, null);
 
@@ -234,7 +231,7 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0f, 0f, (float) Math.PI, (float) Math.PI);
 
@@ -252,7 +249,7 @@ class PlayerTest {
     @Test
     void testNoMove() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
 
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
@@ -268,7 +265,7 @@ class PlayerTest {
         Config.get().setMaxBolts(2);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
 
         player.fire();
@@ -284,7 +281,7 @@ class PlayerTest {
         Config.get().setMaxBolts(2);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
 
         player.fire();
@@ -301,7 +298,7 @@ class PlayerTest {
         Config.get().setMaxBolts(2);
 
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.5f, 0.5f, (float) Math.PI, (float) Math.PI);
 
@@ -330,7 +327,7 @@ class PlayerTest {
     @Test
     void testCollisionHitBullsEye() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.5f, 0.5f, null, null);
 
@@ -340,7 +337,7 @@ class PlayerTest {
     @Test
     void testCollisionHitWithinRadius() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.54f, 0.54f, null, null);
 
@@ -350,7 +347,7 @@ class PlayerTest {
     @Test
     void testCollisionNoHitInsideSquare() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.4f, 0.6f, null, null);
 
@@ -360,7 +357,7 @@ class PlayerTest {
     @Test
     void testCollisionNoHitOutsideSquareX() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.2f, 0.2f, null, null);
 
@@ -370,7 +367,7 @@ class PlayerTest {
     @Test
     void testCollisionNoHitOutsideSquareY() {
         UUID one = UUID.randomUUID();
-        Player player = Players.get().createOrGet(one);
+        Player player = this.players.createOrGet(one);
         player.join();
         player.move(0.5f, 0.2f, null, null);
 
@@ -381,9 +378,9 @@ class PlayerTest {
     void testDestroyedBy() {
         UUID one = UUID.randomUUID();
         UUID two = UUID.randomUUID();
-        Player player1 = Players.get().createOrGet(one);
+        Player player1 = this.players.createOrGet(one);
         player1.join();
-        Player player2 = Players.get().createOrGet(two);
+        Player player2 = this.players.createOrGet(two);
         player2.join();
 
         player1.move(0.5f, 0.5f, 1f, 1f);
