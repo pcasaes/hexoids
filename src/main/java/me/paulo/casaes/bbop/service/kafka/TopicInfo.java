@@ -4,6 +4,7 @@ import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.Collection;
@@ -37,17 +38,12 @@ public interface TopicInfo {
         void consume(DomainEvent domainEvent);
 
         /**
-         * If the consumer does not use autocommit will commit on return true
+         * Called after consume. Note that consumer is async.
+         * @param kafkaConsumer
          * @param record
-         * @return
          */
-        default boolean consumeRecord(ConsumerRecord<UUID, EventDto> record) {
-            if (record.value() == null) {
-                this.consume(DomainEvent.deleted(record.key()));
-            } else {
-                this.consume(DomainEvent.of(record.key(), record.value()));
-            }
-            return false;
+        default void postConsume(Consumer<UUID, EventDto> kafkaConsumer, ConsumerRecord<UUID, EventDto> record) {
+            //do nothing
         }
     }
 

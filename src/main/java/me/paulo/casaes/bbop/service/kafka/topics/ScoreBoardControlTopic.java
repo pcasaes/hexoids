@@ -47,6 +47,8 @@ public class ScoreBoardControlTopic implements TopicInfo {
     public NewTopic newTopic() {
         final Map<String, String> props = new HashMap<>();
         props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(60_000L));
+        props.put(TopicConfig.DELETE_RETENTION_MS_CONFIG, String.valueOf(60_000L));
+        props.put(TopicConfig.MIN_COMPACTION_LAG_MS_CONFIG, String.valueOf(60_000L));
         props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(60_000));
         props.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.25");
         props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT + ", " + TopicConfig.CLEANUP_POLICY_DELETE);
