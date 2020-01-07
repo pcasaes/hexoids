@@ -1,6 +1,7 @@
 package me.paulo.casaes.bbop.service.kafka;
 
 import me.paulo.casaes.bbop.dto.EventDto;
+import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
 import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
 import me.paulo.casaes.bbop.service.kafka.converter.EventDtoDeserializer;
@@ -24,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
@@ -62,9 +62,10 @@ public class KafkaConsumerService {
 
                     if (consumerInfo.useSubscription()) {
                         threads.add(KafkaThreadedConsumer.startWithSubscription(
+                                gameLoopService,
                                 properties,
                                 topicInfo.topic().name(),
-                                runInGameLoop(consumerInfo)
+                                consumerInfo
                         ));
                     } else {
                         try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
@@ -73,9 +74,10 @@ public class KafkaConsumerService {
                                     .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
                                     .map(topicPartition -> KafkaThreadedConsumer
                                             .startWithoutSubscription(
+                                                    gameLoopService,
                                                     properties,
                                                     topicPartition,
-                                                    runInGameLoop(consumerInfo)))
+                                                    consumerInfo))
                                     .forEach(threads::add);
                         }
                     }
@@ -89,32 +91,31 @@ public class KafkaConsumerService {
                 .forEach(KafkaThreadedConsumer::stop);
     }
 
-    private Predicate<ConsumerRecord<UUID, EventDto>> runInGameLoop(TopicInfo.ConsumerInfo info) {
-        return record -> {
-            gameLoopService.enqueue(() -> info.consumeRecord(record));
-            return false;
-        };
-    }
-
     private static class KafkaThreadedConsumer {
 
-        private final Predicate<ConsumerRecord<UUID, EventDto>> processor;
+        private final TopicInfo.ConsumerInfo consumerInfo;
 
         private final Consumer<UUID, EventDto> kafkaConsumer;
+
+        private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
         private Thread thread;
 
         private boolean running;
 
-        private KafkaThreadedConsumer(Predicate<ConsumerRecord<UUID, EventDto>> processor,
-                                      Consumer<UUID, EventDto> kafkaConsumer) {
-            this.processor = processor;
+        private KafkaThreadedConsumer(TopicInfo.ConsumerInfo consumerInfo,
+                                      Consumer<UUID, EventDto> kafkaConsumer,
+                                      EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+            this.consumerInfo = consumerInfo;
             this.kafkaConsumer = kafkaConsumer;
+            this.gameLoopService = gameLoopService;
         }
 
-        static KafkaThreadedConsumer startWithoutSubscription(Properties properties,
-                                                              TopicPartition topicPartition,
-                                                              Predicate<ConsumerRecord<UUID, EventDto>> processor) {
+        static KafkaThreadedConsumer startWithoutSubscription(
+                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                Properties properties,
+                TopicPartition topicPartition,
+                TopicInfo.ConsumerInfo consumerInfo) {
 
             Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
 
@@ -124,8 +125,9 @@ public class KafkaConsumerService {
             kafkaConsumer.seekToBeginning(partitions);
 
             KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    processor,
-                    kafkaConsumer);
+                    consumerInfo,
+                    kafkaConsumer,
+                    gameLoopService);
 
             kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topicPartition.topic());
             kafkaThreadedConsumer.thread.start();
@@ -133,9 +135,11 @@ public class KafkaConsumerService {
             return kafkaThreadedConsumer;
         }
 
-        static KafkaThreadedConsumer startWithSubscription(Properties properties,
-                                                           String topic,
-                                                           Predicate<ConsumerRecord<UUID, EventDto>> processor) {
+        static KafkaThreadedConsumer startWithSubscription(
+                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                Properties properties,
+                String topic,
+                TopicInfo.ConsumerInfo consumerInfo) {
 
             Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
 
@@ -143,8 +147,9 @@ public class KafkaConsumerService {
 
 
             KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    processor,
-                    kafkaConsumer);
+                    consumerInfo,
+                    kafkaConsumer,
+                    gameLoopService);
 
             kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topic);
             kafkaThreadedConsumer.thread.start();
@@ -196,9 +201,14 @@ public class KafkaConsumerService {
 
         private void process(ConsumerRecord<UUID, EventDto> record) {
             try {
-                if (this.processor.test(record)) {
-                    this.kafkaConsumer.commitAsync();
+                DomainEvent domainEvent;
+                if (record.value() == null) {
+                    domainEvent = DomainEvent.deleted(record.key());
+                } else {
+                    domainEvent = DomainEvent.of(record.key(), record.value());
                 }
+                this.gameLoopService.enqueue(() -> consumerInfo.consume(domainEvent));
+                this.consumerInfo.postConsume(kafkaConsumer, record);
             } catch (RuntimeException ex) {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
