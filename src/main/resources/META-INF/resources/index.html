@@ -168,6 +168,16 @@
             }
         }, this);
 
+        this.input.keyboard.on('keydown_SPACE', function (event) {
+            getMyPlayer().ifPresent(p => {
+                if (!p.ship.sprite.active) {
+                    sendMessage({
+                        "command": "SPAWN_PLAYER"
+                    })
+                }
+            });
+        }, this);
+
         let MOVE_CARTESIAN = false;
         let MOVE_RADIAL = false;
         let FORWARD_DIR = 0;

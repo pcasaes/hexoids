@@ -95,6 +95,8 @@ public class GameSocket {
                             } else {
                                 gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
                             }
+                        } else if (command == CommandType.SPAWN_PLAYER) {
+                            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
                         }
                     });
 

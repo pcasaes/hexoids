@@ -3,21 +3,29 @@ package me.paulo.casaes.bbop.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PlayerJoinedEventDto extends PlayerDto implements EventDto {
+public class PlayerJoinedEventDto implements EventDto {
 
+    private final String playerId;
+    private final int ship;
 
-    private PlayerJoinedEventDto(String playerId, int ship, float x, float y, float angle) {
-        super(playerId, ship, x, y, angle);
+    private PlayerJoinedEventDto(String playerId, int ship) {
+        this.playerId = playerId;
+        this.ship = ship;
     }
 
     @JsonCreator
     public static PlayerJoinedEventDto of(
             @JsonProperty("playerId") String playerId,
-            @JsonProperty("ship") int ship,
-            @JsonProperty("x") float x,
-            @JsonProperty("y") float y,
-            @JsonProperty("angle") float angle) {
-        return new PlayerJoinedEventDto(playerId, ship, x, y, angle);
+            @JsonProperty("ship") int ship) {
+        return new PlayerJoinedEventDto(playerId, ship);
+    }
+
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    public int getShip() {
+        return ship;
     }
 
     @Override

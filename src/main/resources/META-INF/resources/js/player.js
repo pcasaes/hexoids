@@ -42,14 +42,16 @@ const Players = (function () {
         }
 
         create(p) {
-            const move = this.transform.view(p.x, p.y);
-            this.sprite = this.scene.physics.add.sprite(move.x, move.y, 'ship');
+            this.sprite = this.scene.physics.add.sprite(-100, -100, 'ship');
             const color = getColorFromShip(p.ship);
             this.sprite.setTint(color | 0x555555, color, color | 0x555555, color);
             this.sprite.setBounce(0, 0);
             this.sprite.setScale(0.3);
             this.sprite.setDepth(this.gameConfig.ship.depth);
             this.sprite.setCollideWorldBounds(true);
+            this.sprite
+                .setActive(false)
+                .setVisible(false);
 
 
             this.sprite.anims.play("ship-rest");
@@ -152,6 +154,20 @@ const Players = (function () {
             return this;
         }
 
+        destroyed() {
+            this.explosion.generate();
+            this.sprite
+                .setActive(false)
+                .setVisible(false);
+        }
+
+        spawned(x, y, angle, thrustAngle) {
+            this.sprite
+                .setActive(true)
+                .setVisible(true);
+            this.moveTo(x, y, angle, thrustAngle)
+        }
+
         moveTo(x, y, angle, thrustAngle) {
             this.wake.generate();
 
@@ -205,6 +221,7 @@ const Players = (function () {
             this.playerId = null;
             this.ship = null;
             this.scoreView = null;
+            this.startView = null;
         }
 
         create(p) {
@@ -220,6 +237,52 @@ const Players = (function () {
             return this;
         }
 
+
+        showStart() {
+            if (!this.startView) {
+                this.startView = [];
+                this.startView.push(this.scene.add.bitmapText(-100, -100, 'font', 'Press SPACEBAR to START', 16));
+                this.startView.push(this.scene.add.bitmapText(-100, -100, 'font', 'Press SPACEBAR to START', 16));
+
+                this.startView.forEach(text => {
+                    text.setScrollFactor(0)
+                        .setTintFill(this.ship.color);
+
+                    text.x = (this.scene.game.config.width / 2) - (text.width / 2);
+                    text.y = (this.scene.game.config.height / 2) - (text.height);
+                });
+
+                this.startView[0]
+                    .setAlpha(this.gameConfig.hud.alpha)
+                    .setDepth(this.gameConfig.hud.depth);
+
+                this.startView[1]
+                    .setAlpha(1)
+                    .setDepth(this.gameConfig.background.effectsDepth);
+
+
+            }
+
+            setTimeout(() => this.startView.forEach(t => {
+                    if (!this.ship.sprite.active) {
+                        t
+                            .setActive(true)
+                            .setVisible(true);
+
+                    }
+                }
+            ), 700);
+        }
+
+        hideStart() {
+            if (this.startView) {
+                this.startView.forEach(t =>
+                    t
+                        .setActive(false)
+                        .setVisible(false)
+                );
+            }
+        }
 
         updateScore(resp) {
             if (!this.scoreView) {
@@ -401,10 +464,13 @@ const Players = (function () {
                 .add('PLAYER_JOINED', resp => {
                     this.create(resp);
 
-                    if (queues.move) {
-                        this.getControllablePlayer(resp.playerId)
-                            .ifPresent(p => p.setMoveQueue(queues.move));
-                    }
+                    this.getControllablePlayer(resp.playerId)
+                        .ifPresent(p => {
+                            if (queues.move) {
+                                p.setMoveQueue(queues.move);
+                            }
+                            p.showStart();
+                        });
 
                     if (this.playerToFollow === resp.playerId) {
                         this._setCameraToFollow();
@@ -417,9 +483,20 @@ const Players = (function () {
                         this.get(resp.playerId).ship.moveTo(move.x, move.y, resp.angle, resp.thrustAngle);
                     }
                 })
+                .add('PLAYER_SPAWNED', resp => {
+                    if (this.get(resp.playerId)) {
+                        const move = this.transform.view(resp.x, resp.y);
+
+                        this.get(resp.playerId).ship.spawned(move.x, move.y, resp.angle, resp.thrustAngle);
+                        this.getControllablePlayer(resp.playerId)
+                            .ifPresent(p => p.hideStart());
+                    }
+                })
                 .add('PLAYER_DESTROYED', resp => {
                     if (this.get(resp.playerId)) {
-                        this.get(resp.playerId).ship.explosion.generate();
+                        this.get(resp.playerId).ship.destroyed();
+                        this.getControllablePlayer(resp.playerId)
+                            .ifPresent(p => p.showStart());
                     }
                 })
                 .add('PLAYER_LEFT', resp => {

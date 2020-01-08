@@ -49,12 +49,18 @@ const SCENE_MOCK = {
                     'x': x,
                     'y': y,
                     'rotation': 0,
+                    'active': true,
                     'destroy': () => {
                     },
                     'setRotation': (r) => {
                         sprite.rotation = r;
                         return sprite;
                     },
+                    'setActive': (v) => {
+                        sprite.active = v;
+                        return sprite;
+                    },
+                    'setVisible': setterMock,
                     'setTint': setterMock,
                     'setBounce': setterMock,
                     'setScale': setterMock,
@@ -81,6 +87,8 @@ const SCENE_MOCK = {
                 return text;
             };
             const text = {
+                'setActive': setterMock,
+                'setVisible': setterMock,
                 'setScrollFactor': setterMock,
                 'setDepth': setterMock,
                 'setAlpha': setterMock,
