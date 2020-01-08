@@ -64,32 +64,38 @@ class AiBot {
             setInterval(() => {
                 this.players.getControllablePlayer(this.userId)
                     .ifPresent(p => {
-                        const m = {
-                            "command": "MOVE_PLAYER",
-                            "moveX": 0,
-                            "moveY": 0,
-                        };
+                        if (p.ship.sprite.active) {
+                            const m = {
+                                "command": "MOVE_PLAYER",
+                                "moveX": 0,
+                                "moveY": 0,
+                            };
 
-                        const ship = p.ship;
+                            const ship = p.ship;
 
-                        const moveX = this.x;
-                        const moveY = this.y;
+                            const moveX = this.x;
+                            const moveY = this.y;
 
-                        const x = ship.x + moveX;
-                        const y = ship.y + moveY;
+                            const x = ship.x + moveX;
+                            const y = ship.y + moveY;
 
-                        const move = this.transform.model(moveX, moveY);
-                        m.moveX = move.x;
-                        m.moveY = move.y;
-                        let hasAngle = false;
-                        if (Math.abs(ship.x - x) > 2 || Math.abs(ship.y - y) > 2) {
-                            m.angle = Math.atan2(y - ship.y, x - ship.x) + this.forwardDir;
-                            m.thrustAngle = this.forwardDir;
-                            hasAngle = true;
-                        }
+                            const move = this.transform.model(moveX, moveY);
+                            m.moveX = move.x;
+                            m.moveY = move.y;
+                            let hasAngle = false;
+                            if (Math.abs(ship.x - x) > 2 || Math.abs(ship.y - y) > 2) {
+                                m.angle = Math.atan2(y - ship.y, x - ship.x) + this.forwardDir;
+                                m.thrustAngle = this.forwardDir;
+                                hasAngle = true;
+                            }
 
-                        if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
-                            this.server.sendMessage(m);
+                            if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
+                                this.server.sendMessage(m);
+                            }
+                        } else {
+                            this.server.sendMessage({
+                                "command": "SPAWN_PLAYER"
+                            })
                         }
                     });
 

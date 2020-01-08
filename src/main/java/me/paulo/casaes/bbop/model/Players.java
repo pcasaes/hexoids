@@ -6,7 +6,7 @@ import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.EventType;
 import me.paulo.casaes.bbop.dto.PlayerDestroyedEventDto;
 import me.paulo.casaes.bbop.dto.PlayerJoinedEventDto;
-import me.paulo.casaes.bbop.dto.PlayerMovedEventDto;
+import me.paulo.casaes.bbop.dto.PlayerMovedOrSpawnedEventDto;
 import me.paulo.casaes.bbop.dto.PlayersListCommandDto;
 import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
 import me.paulo.casaes.bbop.util.concurrent.SingleMutatorMultipleAccessorConcurrentHashMap;
@@ -103,11 +103,15 @@ public class Players implements Iterable<Player> {
     public void consumeFromPlayerActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_MOVED)) {
             get(domainEvent.getKey())
-                    .ifPresent(p -> p.moved((PlayerMovedEventDto) domainEvent.getEvent()));
+                    .ifPresent(p -> p.moved((PlayerMovedOrSpawnedEventDto) domainEvent.getEvent()));
         }
         if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_DESTROYED)) {
             get(domainEvent.getKey())
                     .ifPresent(p -> p.destroyed((PlayerDestroyedEventDto) domainEvent.getEvent()));
+        }
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_SPAWNED)) {
+            get(domainEvent.getKey())
+                    .ifPresent(p -> p.spawned((PlayerMovedOrSpawnedEventDto) domainEvent.getEvent()));
         }
     }
 
