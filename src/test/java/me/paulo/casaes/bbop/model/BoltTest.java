@@ -49,7 +49,6 @@ class BoltTest {
 
         when(clock.getTime()).thenReturn(0L);
 
-        Config.get().setEnv(Config.Environment.DEV.name());
         Config.get().setBoltMaxDuration(10_000L);
         Config.get().setBoltSpeed(0.01f);
         Config.get().setBoltCollisionRadius(0.001f);

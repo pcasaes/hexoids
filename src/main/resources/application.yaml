@@ -1,17 +1,25 @@
 "%dev":
-   bbop:
-     config:
-       environment: DEV
+  bbop:
+    config:
+      player:
+        reset:
+          position: 0,0
 
 "%test":
-   bbop:
-     config:
-       environment: DEV
+  bbop:
+    config:
+      player:
+        reset:
+          position: 0,0
+        max:
+          move: 1
 
 "%prod":
    bbop:
      config:
-       environment: PRODUCTION
+       player:
+         reset:
+           position: rng
 
 bbop:
   config:
@@ -19,6 +27,7 @@ bbop:
       move: 0.000000001
     player:
       max:
+        move: 10
         bolts: 10
         angle:
           divisor: 4

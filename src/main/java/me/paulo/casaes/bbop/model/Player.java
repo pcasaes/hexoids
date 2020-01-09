@@ -85,6 +85,8 @@ public interface Player {
 
         private final ScoreBoard scoreBoard;
 
+        private final ResetPosition resetPosition;
+
         private Implementation(UUID id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
@@ -95,6 +97,7 @@ public interface Player {
 
             this.ship = RNG.nextInt(6);
             this.spawned = false;
+            this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
         }
 
         @Override
@@ -149,13 +152,8 @@ public interface Player {
         }
 
         private void resetPosition() {
-            if (Config.get().getEnv() == Config.Environment.DEV) {
-                this.x = 0f;
-                this.y = 0f;
-            } else {
-                this.x = RNG.nextFloat();
-                this.y = RNG.nextFloat();
-            }
+            this.x = resetPosition.getNextX();
+            this.y = resetPosition.getNextY();
             this.angle = 0f;
         }
 

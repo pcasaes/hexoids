@@ -4,15 +4,10 @@ import me.paulo.casaes.bbop.util.TrigUtil;
 
 public class Config {
 
-    public enum Environment {
-        PRODUCTION,
-        DEV
-    }
-
-    private Environment env;
     private float minMove;
     private float playerMaxMove;
     private float playerMaxAngle;
+    private String playerResetPosition;
     private int maxBolts;
     private long boltMaxDuration;
     private float boltSpeed;
@@ -25,14 +20,6 @@ public class Config {
 
     public static Config get() {
         return ConfigHolder.INSTANCE;
-    }
-
-    public Environment getEnv() {
-        return env;
-    }
-
-    public void setEnv(String env) {
-        this.env = Environment.valueOf(env);
     }
 
     public int getMaxBolts() {
@@ -61,6 +48,14 @@ public class Config {
 
     public void setPlayerMaxMove(float playerMaxMove) {
         this.playerMaxMove = playerMaxMove;
+    }
+
+    public String getPlayerResetPosition() {
+        return playerResetPosition;
+    }
+
+    public void setPlayerResetPosition(String playerResetPosition) {
+        this.playerResetPosition = playerResetPosition;
     }
 
     public void setMaxBolts(int maxBolts) {
