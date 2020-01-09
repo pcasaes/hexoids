@@ -16,12 +16,12 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
 
-    private String environment;
     private int maxBolts;
     private long boltMaxDuration;
     private float minMove;
     private float playerMaxMove;
     private float playerMaxAngleDivisor;
+    private String playerResetPosition;
     private float boltSpeed;
     private float boltCollisionRadius;
 
@@ -44,11 +44,6 @@ public class ConfigurationService {
     @Inject
     public ConfigurationService(
             @ConfigProperty(
-                    name = "bbop.config.environment",
-                    defaultValue = "PRODUCTION"
-            ) String environment,
-
-            @ConfigProperty(
                     name = "bbop.config.player.max.bolts",
                     defaultValue = "10"
             ) int maxBolts,
@@ -67,6 +62,11 @@ public class ConfigurationService {
                     name = "bbop.config.player.max.angle.divisor",
                     defaultValue = "4"
             ) float playerMaxAngleDivisor,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.reset.position",
+                    defaultValue = "rng"
+            ) String playerResetPosition,
 
             @ConfigProperty(
                     name = "bbop.config.bolt.max.duration",
@@ -113,10 +113,10 @@ public class ConfigurationService {
                     defaultValue = "17"
             ) int gameLoopMaxSizeExponent
     ) {
-        this.environment = environment;
         this.playerMaxMove = playerMaxMove;
         this.minMove = minMove;
         this.playerMaxAngleDivisor = playerMaxAngleDivisor;
+        this.playerResetPosition = playerResetPosition;
         this.maxBolts = maxBolts;
         this.boltMaxDuration = boltMaxDuration;
         this.boltSpeed = boltSpeed;
@@ -138,11 +138,11 @@ public class ConfigurationService {
 
     @PostConstruct
     public void start() {
-        LOGGER.info("bbop.config.environment=" + getEnvironment());
         LOGGER.info("bbop.config.min.min=" + getMinMove());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
         LOGGER.info("bbop.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
+        LOGGER.info("bbop.config.player.reset.position=" + getPlayerResetPosition());
         LOGGER.info("bbop.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
@@ -153,20 +153,16 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
-        Config.get().setEnv(getEnvironment());
         Config.get().setMaxBolts(getMaxBolts());
         Config.get().setMinMove(getMinMove());
         Config.get().setPlayerMaxMove(getPlayerMaxMove());
         Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor());
+        Config.get().setPlayerResetPosition(getPlayerResetPosition());
         Config.get().setBoltMaxDuration(getBoltMaxDuration());
         Config.get().setBoltSpeed(getBoltSpeed());
         Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
     }
 
-
-    public String getEnvironment() {
-        return environment;
-    }
 
     public float getMinMove() {
         return minMove;
@@ -178,6 +174,10 @@ public class ConfigurationService {
 
     public float getPlayerMaxAngleDivisor() {
         return playerMaxAngleDivisor;
+    }
+
+    public String getPlayerResetPosition() {
+        return playerResetPosition;
     }
 
     public int getMaxBolts() {
