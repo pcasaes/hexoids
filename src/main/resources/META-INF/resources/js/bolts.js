@@ -5,7 +5,6 @@ const Bolts = (function () {
 
     const POOL = [];
 
-
     class Bolt {
         constructor(data) {
             this.data = data;
@@ -14,6 +13,7 @@ const Bolts = (function () {
             this.pulsePos = 0;
             this.owner = null;
             this.color = null;
+            this.sound = null;
 
             this.isNew = true;
         }
@@ -24,6 +24,7 @@ const Bolts = (function () {
             if (this.isNew) {
                 this.sprite = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
                 this.bg = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
+                this.sound = this.data.scene.sound.add('fire');
             }
 
             this.owner = this.data.players.get(b.ownerPlayerId);
@@ -59,7 +60,15 @@ const Bolts = (function () {
 
             return this;
         }
-        
+
+        fired() {
+            if (this.owner) {
+                this.data.sounds.get('fire1').play3d(this.owner.ship.x, this.owner.ship.y, this.data.players.isControllablePlayer(this.owner.playerId));
+            }
+
+            return this;
+        }
+
         move(b) {
             const move = this.data.transform.view(b.x, b.y);
 
@@ -89,25 +98,47 @@ const Bolts = (function () {
     }
 
     class Bolts {
-        constructor(scene, players, gameConfig, transform) {
+        constructor(server, scene, players, gameConfig, transform, sounds) {
             this.data = {
+                'server': server,
                 'scene': scene,
                 'players': players,
                 'gameConfig': gameConfig,
                 'transform': transform,
+                'sounds': sounds,
             };
 
             this.bolts = {};
+            this.lastFire = 0;
+        }
+
+
+        fire() {
+            if (Date.now() - this.lastFire > this.data.gameConfig.bolt.debounce) {
+                this.lastFire = Date.now();
+                this.data.server.sendMessage({
+                    "command": "FIRE_BOLT"
+                });
+            }
         }
 
         move(b) {
             if (!this.bolts[b.boltId]) {
                 const bolt = POOL.pop();
 
-                this.bolts[b.boltId] = (!bolt ? new Bolt(this.data): bolt).create(b);
+                this.bolts[b.boltId] = (!bolt ? new Bolt(this.data) : bolt).create(b).fired();
             } else {
                 this.bolts[b.boltId].move(b);
             }
+        }
+
+        setupSounds() {
+            this.data.sounds.get('fire1').create(
+                this.data.gameConfig.bolt.sound.max,
+                this.data.gameConfig.bolt.sound.debounce,
+                this.data.gameConfig.bolt.sound.distanceThreshold
+            );
+            return this;
         }
 
         setupQueues(queues) {
@@ -134,9 +165,11 @@ const Bolts = (function () {
     let instance;
 
     return {
-        'get': (scene, players, gameConfig, transform, queues) => {
+        'get': (server, scene, players, gameConfig, transform, sounds, queues) => {
             if (!instance) {
-                instance = new Bolts(scene, players, gameConfig, transform).setupQueues(queues);
+                instance = new Bolts(server, scene, players, gameConfig, transform, sounds)
+                    .setupSounds()
+                    .setupQueues(queues);
             }
             return instance;
         }
