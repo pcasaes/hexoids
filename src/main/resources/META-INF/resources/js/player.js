@@ -39,9 +39,16 @@ const Players = (function () {
             this.fireBolt = null;
             this.explosion = null;
             this.color = null;
+            this.deathSound = false;
         }
 
-        create(p) {
+        create(p, sounds) {
+            sounds.get('explosion1').create(
+                this.gameConfig.bolt.sound.max,
+                this.gameConfig.bolt.sound.debounce,
+                this.gameConfig.bolt.sound.distanceThreshold
+            );
+
             this.sprite = this.scene.physics.add.sprite(-100, -100, 'ship');
             const color = getColorFromShip(p.ship);
             this.sprite.setTint(color | 0x555555, color, color | 0x555555, color);
@@ -102,7 +109,9 @@ const Players = (function () {
 
                 generate: () => {
                     fireBolt.follow();
-                    fireBolt.sprite.anims.play('fire-bolt');
+                    if (fireBolt.sprite && fireBolt.sprite.anims) {
+                        fireBolt.sprite.anims.play('fire-bolt');
+                    }
                 },
 
                 follow: () => {
@@ -138,6 +147,7 @@ const Players = (function () {
                     explosion.spriteFG.y = this.sprite.y;
                     explosion.spriteFG.setRotation(this.sprite.rotation);
                     explosion.spriteFG.anims.play("fire-bolt");
+                    sounds.get('explosion1').play3d(this.sprite.x, this.sprite.y);
                 },
 
                 destroy: () => {
@@ -154,11 +164,17 @@ const Players = (function () {
             return this;
         }
 
-        destroyed() {
+        destroyed(isControledPlayer) {
             this.explosion.generate();
             this.sprite
                 .setActive(false)
                 .setVisible(false);
+            if (isControledPlayer) {
+                if (!this.deathSound) {
+                    this.deathSound = this.scene.sound.add('death1');
+                }
+                this.deathSound.play({'volume': 2});
+            }
         }
 
         spawned(x, y, angle, thrustAngle) {
@@ -222,12 +238,13 @@ const Players = (function () {
             this.ship = null;
             this.scoreView = null;
             this.startView = null;
+            this.controlled = false;
         }
 
-        create(p) {
+        create(p, sounds) {
             this.playerId = p.playerId;
 
-            this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p);
+            this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p, sounds);
 
             return this;
         }
@@ -336,8 +353,9 @@ const Players = (function () {
     }
 
     class PlayersClass {
-        constructor(scene, gameConfig, transform) {
+        constructor(scene, sounds, gameConfig, transform) {
             this.scene = scene;
+            this.sounds = sounds;
             this.gameConfig = gameConfig;
             this.transform = transform;
 
@@ -351,7 +369,7 @@ const Players = (function () {
                 this.scene,
                 this.gameConfig,
                 this.transform
-            ).create(p);
+            ).create(p, this.sounds);
 
             this.players[p.playerId] = player;
 
@@ -360,6 +378,9 @@ const Players = (function () {
 
         addControllableUser(userId) {
             this.controllableUsers[userId] = userId;
+            if (this.players[userId]) {
+                this.players[userId].controlled = true;
+            }
             return this;
         }
 
@@ -368,6 +389,10 @@ const Players = (function () {
                 return Optional.of(this.players[userId])
             }
             return Optional.empty();
+        }
+
+        isControllablePlayer(userId) {
+            return !!this.controllableUsers[userId];
         }
 
         follow(userId) {
@@ -494,9 +519,9 @@ const Players = (function () {
                 })
                 .add('PLAYER_DESTROYED', resp => {
                     if (this.get(resp.playerId)) {
-                        this.get(resp.playerId).ship.destroyed();
-                        this.getControllablePlayer(resp.playerId)
-                            .ifPresent(p => p.showStart());
+                        const ctrlPlayer = this.getControllablePlayer(resp.playerId);
+                        this.get(resp.playerId).ship.destroyed(ctrlPlayer.map(p => true).orElse(false));
+                        ctrlPlayer.ifPresent(p => p.showStart());
                     }
                 })
                 .add('PLAYER_LEFT', resp => {
@@ -525,9 +550,11 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, gameConfig, transform, queues) => {
+        'get': (scene, sounds, gameConfig, transform, queues) => {
             if (!instance) {
-                instance = new PlayersClass(scene, gameConfig, transform).createAnims().setupQueues(queues);
+                instance = new PlayersClass(scene, sounds, gameConfig, transform)
+                    .createAnims()
+                    .setupQueues(queues);
             }
             return instance;
         }
