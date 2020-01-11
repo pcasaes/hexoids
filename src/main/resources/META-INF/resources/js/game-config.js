@@ -14,6 +14,19 @@ const GameConfig = (function () {
         'ship': {
             'depth': 100,
             'effectsDepth': DEPTH_BG_EFFECTS,
+            'sound': {
+                'max': 10,
+                'distanceThreshold': 0.5,
+                'debounce': 100,
+            }
+        },
+        'bolt': {
+          'debounce': 100,
+          'sound': {
+              'max': 10,
+              'distanceThreshold': 0.5,
+              'debounce': 100,
+          }
         },
         'background': {
             'depth': DEPTH_BG,
