@@ -10,6 +10,7 @@
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
+    <script src="js/sounds.js"></script>
     <script src="js/server.js"></script>
     <script src="js/transform.js"></script>
     <script src="js/player.js"></script>
@@ -37,16 +38,19 @@
         return game.scene.scenes[0];
     }
 
+    function getSounds() {
+        return Sounds.get(gameScene(), GameConfig.get());
+    }
 
     const getPlayers = (function () {
         let userSet = false;
 
         return function() {
             if (userSet) {
-                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES);
+                return Players.get(gameScene(), getSounds(), GameConfig.get(), transform, QUEUES);
             } else {
                 userSet = true;
-                return Players.get(gameScene(), GameConfig.get(), transform, QUEUES)
+                return Players.get(gameScene(), getSounds(), GameConfig.get(), transform, QUEUES)
                     .follow(USER.get())
                     .addControllableUser(USER.get());
             }
@@ -58,7 +62,7 @@
     }
 
     function getBolts() {
-        return Bolts.get(gameScene(), getPlayers(), GameConfig.get(), transform, QUEUES);
+        return Bolts.get(getServer(), gameScene(), getPlayers(), GameConfig.get(), transform, getSounds(), QUEUES);
     }
 
     function getServer() {
@@ -106,6 +110,15 @@
 
         this.load.image('gridf', 'assets/gridf.png');
         this.load.image('gridb', 'assets/gridb.png');
+
+        this.load.audio('death', 'assets/sound/death1.mp3');
+        this.load.audio('explosion', 'assets/sound/explosion1.mp3');
+        this.load.audio('fire', 'assets/sound/fire1.mp3');
+
+        getSounds().get('fire1').preload();
+        getSounds().get('explosion1').preload();
+        this.load.audio(`death1`, `assets/sound/death1.mp3`);
+
     }
 
     const transform = Transform.get(GameConfig.get());
@@ -210,9 +223,7 @@
         }, this);
 
         this.input.keyboard.on('keydown_C', function (event) {
-            sendMessage({
-                "command": "FIRE_BOLT"
-            })
+            getBolts().fire();
         }, this);
 
 
