@@ -39,6 +39,13 @@ const SCENE_MOCK = {
             },
         },
     },
+    'sound': {
+        'add': (s) => {
+            return {
+                'play': () => {}
+            }
+        }
+    },
     'physics': {
         'add': {
             'sprite': (x, y) => {
@@ -108,8 +115,25 @@ const SCENE_MOCK = {
 
 const transform = Transform.get(GameConfig.get());
 
+function getSounds() {
+    return {
+        'get': () => {
+            return {
+                'preload': () => {
+                },
+                'create': () => {
+                },
+                'play3d': () => {
+                },
+                'play': () => {
+                },
+            }
+        }
+    }
+}
+
 function getPlayers() {
-    return Players.get(SCENE_MOCK, GameConfig.get(), transform, QUEUES);
+    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), transform, QUEUES);
 }
 
 function getServer(uuid) {
@@ -119,7 +143,6 @@ function getServer(uuid) {
 for (let i = 0; i < settings.bots; i++) {
     const UUID = genUuid();
     console.log("user id " + UUID);
-
 
 
     getPlayers()
