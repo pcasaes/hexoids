@@ -164,12 +164,12 @@ const Players = (function () {
             return this;
         }
 
-        destroyed(isControledPlayer) {
+        destroyed(isControlledPlayer) {
             this.explosion.generate();
             this.sprite
                 .setActive(false)
                 .setVisible(false);
-            if (isControledPlayer) {
+            if (isControlledPlayer) {
                 if (!this.deathSound) {
                     this.deathSound = this.scene.sound.add('death1');
                 }
