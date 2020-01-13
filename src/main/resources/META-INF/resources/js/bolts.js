@@ -13,7 +13,6 @@ const Bolts = (function () {
             this.pulsePos = 0;
             this.owner = null;
             this.color = null;
-            this.sound = null;
 
             this.isNew = true;
         }
@@ -24,7 +23,6 @@ const Bolts = (function () {
             if (this.isNew) {
                 this.sprite = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
                 this.bg = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
-                this.sound = this.data.scene.sound.add('fire');
             }
 
             this.owner = this.data.players.get(b.ownerPlayerId);
