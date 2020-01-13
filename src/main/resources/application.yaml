@@ -18,6 +18,7 @@
    bbop:
      config:
        player:
+         expungeSinceLastSpawnTimeout: 180000
          reset:
            position: rng
 
@@ -26,6 +27,7 @@ bbop:
     min:
       move: 0.000000001
     player:
+      expungeSinceLastSpawnTimeout: 60000
       max:
         move: 10
         bolts: 10

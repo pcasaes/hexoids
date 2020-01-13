@@ -42,7 +42,8 @@ const SCENE_MOCK = {
     'sound': {
         'add': (s) => {
             return {
-                'play': () => {}
+                'play': () => {
+                }
             }
         }
     },
@@ -132,8 +133,17 @@ function getSounds() {
     }
 }
 
+function getHud() {
+    return {
+        'showCenterMessage': () => {
+        },
+        'hideCenterMessage': () => {
+        },
+    }
+}
+
 function getPlayers() {
-    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), transform, QUEUES);
+    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), getHud(), transform, QUEUES);
 }
 
 function getServer(uuid) {

@@ -10,6 +10,7 @@
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
+    <script src="js/hud.js"></script>
     <script src="js/sounds.js"></script>
     <script src="js/server.js"></script>
     <script src="js/transform.js"></script>
@@ -42,15 +43,19 @@
         return Sounds.get(gameScene(), GameConfig.get());
     }
 
+    function getHud() {
+        return Hud.get(gameScene(), GameConfig.get());
+    }
+
     const getPlayers = (function () {
         let userSet = false;
 
         return function() {
             if (userSet) {
-                return Players.get(gameScene(), getSounds(), GameConfig.get(), transform, QUEUES);
+                return Players.get(gameScene(), getSounds(), GameConfig.get(), getHud(), transform, QUEUES);
             } else {
                 userSet = true;
-                return Players.get(gameScene(), getSounds(), GameConfig.get(), transform, QUEUES)
+                return Players.get(gameScene(), getSounds(), GameConfig.get(), getHud(), transform, QUEUES)
                     .follow(USER.get())
                     .addControllableUser(USER.get());
             }

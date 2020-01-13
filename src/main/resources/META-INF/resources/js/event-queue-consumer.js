@@ -5,14 +5,17 @@ class QueueConsumer {
     }
 
     add(type, consumer) {
-        this.events[type] = consumer;
+        if (!this.events[type]) {
+            this.events[type] = [];
+        }
+        this.events[type].push(consumer);
         return this;
     }
 
     consume(resp) {
         const event = this.events[resp[this.typeProperty]];
         if (event) {
-            event(resp);
+            event.forEach(ev => ev(resp));
         }
     }
 }
