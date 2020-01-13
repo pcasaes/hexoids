@@ -22,6 +22,14 @@ const Server = (function () {
                 this.queues.event.consume(lastMessageReceived);
                 this.queues.command.consume(lastMessageReceived);
             };
+
+            this.queues.event.add('PLAYER_LEFT', resp => {
+                if (resp.playerId === this.userId) {
+                    console.log('Player left or booted. Disconnecting');
+                    this.socket.close();
+                }
+            });
+
             return this;
         }
 

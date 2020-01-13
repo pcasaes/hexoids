@@ -21,6 +21,7 @@ public class ConfigurationService {
     private float minMove;
     private float playerMaxMove;
     private float playerMaxAngleDivisor;
+    private long expungeSinceLastSpawnTimeout;
     private String playerResetPosition;
     private float boltSpeed;
     private float boltCollisionRadius;
@@ -57,6 +58,11 @@ public class ConfigurationService {
                     name = "bbop.config.player.max.move",
                     defaultValue = "10"
             ) float playerMaxMove,
+
+            @ConfigProperty(
+                    name = "bbop.config.player.expungeSinceLastSpawnTimeout",
+                    defaultValue = "60000"
+            ) long expungeSinceLastSpawnTimeout,
 
             @ConfigProperty(
                     name = "bbop.config.player.max.angle.divisor",
@@ -114,6 +120,7 @@ public class ConfigurationService {
             ) int gameLoopMaxSizeExponent
     ) {
         this.playerMaxMove = playerMaxMove;
+        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
         this.minMove = minMove;
         this.playerMaxAngleDivisor = playerMaxAngleDivisor;
         this.playerResetPosition = playerResetPosition;
@@ -139,6 +146,7 @@ public class ConfigurationService {
     @PostConstruct
     public void start() {
         LOGGER.info("bbop.config.min.min=" + getMinMove());
+        LOGGER.info("bbop.config.player.expungeSinceLastSpawnTimeout=" + getExpungeSinceLastSpawnTimeout());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
         LOGGER.info("bbop.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
@@ -155,6 +163,7 @@ public class ConfigurationService {
 
         Config.get().setMaxBolts(getMaxBolts());
         Config.get().setMinMove(getMinMove());
+        Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout());
         Config.get().setPlayerMaxMove(getPlayerMaxMove());
         Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor());
         Config.get().setPlayerResetPosition(getPlayerResetPosition());
@@ -218,5 +227,9 @@ public class ConfigurationService {
 
     public int getGameLoopMaxSizeExponent() {
         return gameLoopMaxSizeExponent;
+    }
+
+    public long getExpungeSinceLastSpawnTimeout() {
+        return expungeSinceLastSpawnTimeout;
     }
 }

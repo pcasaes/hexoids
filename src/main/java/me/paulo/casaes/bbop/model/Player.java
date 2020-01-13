@@ -53,6 +53,8 @@ public interface Player {
 
     void spawned(PlayerMovedOrSpawnedEventDto event);
 
+    void expungeIfStalled();
+
     class Implementation implements Player {
 
         private static final Random RNG = new Random();
@@ -64,6 +66,8 @@ public interface Player {
         private int ship;
 
         private boolean spawned;
+
+        private long lastSpawnOrUnspawnTimestamp;
 
         private float x = 0f;
 
@@ -96,8 +100,13 @@ public interface Player {
             this.idStr = id.toString();
 
             this.ship = RNG.nextInt(6);
-            this.spawned = false;
+            setSpawned(false);
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
+        }
+
+        private void setSpawned(boolean spawned) {
+            this.spawned = spawned;
+            this.lastSpawnOrUnspawnTimestamp = clock.getTime();
         }
 
         @Override
@@ -170,7 +179,7 @@ public interface Player {
         @Override
         public void joined(PlayerJoinedEventDto event) {
             this.ship = event.getShip();
-            this.spawned = false;
+            setSpawned(false);
             GameEvents.getClientEvents().register(event);
         }
 
@@ -276,7 +285,7 @@ public interface Player {
                             this.id,
                             PlayerDestroyedEventDto.of(this.id, byPlayerId))
             );
-            this.spawned = false;
+            setSpawned(false);
             this.scoreBoard.updateScore(byPlayerId, 1);
         }
 
@@ -294,7 +303,7 @@ public interface Player {
         @Override
         public void spawn() {
             if (!this.spawned) {
-                this.spawned = true;
+                setSpawned(true);
                 resetPosition();
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
@@ -312,8 +321,16 @@ public interface Player {
         @Override
         public void spawned(PlayerMovedOrSpawnedEventDto event) {
             if (event.getTimestamp() > this.movedTimestamp) {
-                this.spawned = true;
+                setSpawned(true);
                 moved(event);
+            }
+        }
+
+        @Override
+        @IsThreadSafe
+        public void expungeIfStalled() {
+            if (!spawned && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
+                leave();
             }
         }
 

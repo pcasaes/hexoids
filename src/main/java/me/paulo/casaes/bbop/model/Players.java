@@ -71,6 +71,7 @@ public class Players implements Iterable<Player> {
     }
 
     @Override
+    @IsThreadSafe
     public Iterator<Player> iterator() {
         return playerMap
                 .values()

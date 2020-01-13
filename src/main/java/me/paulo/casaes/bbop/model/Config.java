@@ -12,6 +12,7 @@ public class Config {
     private long boltMaxDuration;
     private float boltSpeed;
     private float boltCollisionRadius;
+    private long expungeSinceLastSpawnTimeout;
 
 
     private static class ConfigHolder {
@@ -86,4 +87,11 @@ public class Config {
         this.boltCollisionRadius = boltCollisionRadius;
     }
 
+    public long getExpungeSinceLastSpawnTimeout() {
+        return expungeSinceLastSpawnTimeout;
+    }
+
+    public void setExpungeSinceLastSpawnTimeout(long expungeSinceLastSpawnTimeout) {
+        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
+    }
 }

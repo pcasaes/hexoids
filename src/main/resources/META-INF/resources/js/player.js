@@ -178,13 +178,13 @@ const Players = (function () {
         }
 
         spawned(x, y, angle, thrustAngle) {
-            this.sprite
-                .setActive(true)
-                .setVisible(true);
             this.moveTo(x, y, angle, thrustAngle)
         }
 
         moveTo(x, y, angle, thrustAngle) {
+            this.sprite
+                .setActive(true)
+                .setVisible(true);
             this.wake.generate();
 
 
@@ -228,16 +228,16 @@ const Players = (function () {
     }
 
     class PlayerClass {
-        constructor(scene, gameConfig, transform) {
+        constructor(scene, gameConfig, hud, transform) {
             this.scene = scene;
             this.gameConfig = gameConfig;
+            this.hud = hud;
             this.transform = transform;
             this.moveQueue = null;
 
             this.playerId = null;
             this.ship = null;
             this.scoreView = null;
-            this.startView = null;
             this.controlled = false;
         }
 
@@ -254,51 +254,16 @@ const Players = (function () {
             return this;
         }
 
+        showExpunged() {
+            this.hud.showCenterMessage('You have been booted for inactivity.\nRefresh to rejoin', this.ship.color);
+        }
 
         showStart() {
-            if (!this.startView) {
-                this.startView = [];
-                this.startView.push(this.scene.add.bitmapText(-100, -100, 'font', 'Press SPACEBAR to START', 16));
-                this.startView.push(this.scene.add.bitmapText(-100, -100, 'font', 'Press SPACEBAR to START', 16));
-
-                this.startView.forEach(text => {
-                    text.setScrollFactor(0)
-                        .setTintFill(this.ship.color);
-
-                    text.x = (this.scene.game.config.width / 2) - (text.width / 2);
-                    text.y = (this.scene.game.config.height / 2) - (text.height);
-                });
-
-                this.startView[0]
-                    .setAlpha(this.gameConfig.hud.alpha)
-                    .setDepth(this.gameConfig.hud.depth);
-
-                this.startView[1]
-                    .setAlpha(1)
-                    .setDepth(this.gameConfig.background.effectsDepth);
-
-
-            }
-
-            setTimeout(() => this.startView.forEach(t => {
-                    if (!this.ship.sprite.active) {
-                        t
-                            .setActive(true)
-                            .setVisible(true);
-
-                    }
-                }
-            ), 700);
+            this.hud.showCenterMessage('Press SPACEBAR to START', this.ship.color, () => !this.ship.sprite.active);
         }
 
         hideStart() {
-            if (this.startView) {
-                this.startView.forEach(t =>
-                    t
-                        .setActive(false)
-                        .setVisible(false)
-                );
-            }
+            this.hud.hideCenterMessage();
         }
 
         updateScore(resp) {
@@ -353,10 +318,11 @@ const Players = (function () {
     }
 
     class PlayersClass {
-        constructor(scene, sounds, gameConfig, transform) {
+        constructor(scene, sounds, gameConfig, hud, transform) {
             this.scene = scene;
             this.sounds = sounds;
             this.gameConfig = gameConfig;
+            this.hud = hud;
             this.transform = transform;
 
             this.players = {};
@@ -368,6 +334,7 @@ const Players = (function () {
             const player = new PlayerClass(
                 this.scene,
                 this.gameConfig,
+                this.hud,
                 this.transform
             ).create(p, this.sounds);
 
@@ -528,6 +495,9 @@ const Players = (function () {
                     const p = this.get(resp.playerId);
                     if (p) {
                         p.destroy(resp.playerId);
+                        if (this.isControllablePlayer(resp.playerId)) {
+                            p.showExpunged();
+                        }
                     }
                 });
 
@@ -550,9 +520,9 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, sounds, gameConfig, transform, queues) => {
+        'get': (scene, sounds, gameConfig, hud, transform, queues) => {
             if (!instance) {
-                instance = new PlayersClass(scene, sounds, gameConfig, transform)
+                instance = new PlayersClass(scene, sounds, gameConfig, hud, transform)
                     .createAnims()
                     .setupQueues(queues);
             }
