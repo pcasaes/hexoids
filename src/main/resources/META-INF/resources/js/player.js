@@ -44,9 +44,9 @@ const Players = (function () {
 
         create(p, sounds) {
             sounds.get('explosion1').create(
-                this.gameConfig.bolt.sound.max,
-                this.gameConfig.bolt.sound.debounce,
-                this.gameConfig.bolt.sound.distanceThreshold
+                this.gameConfig.ship.sound.max,
+                this.gameConfig.ship.sound.debounce,
+                this.gameConfig.ship.sound.distanceThreshold
             );
 
             this.sprite = this.scene.physics.add.sprite(-100, -100, 'ship');

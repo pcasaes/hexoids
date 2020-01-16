@@ -15,7 +15,7 @@ const GameConfig = (function () {
             'depth': 100,
             'effectsDepth': DEPTH_BG_EFFECTS,
             'sound': {
-                'max': 10,
+                'max': 3,
                 'distanceThreshold': 0.5,
                 'debounce': 100,
             }
@@ -23,7 +23,7 @@ const GameConfig = (function () {
         'bolt': {
           'debounce': 100,
           'sound': {
-              'max': 10,
+              'max': 3,
               'distanceThreshold': 0.5,
               'debounce': 100,
           }
