@@ -8,6 +8,7 @@ import me.paulo.casaes.bbop.service.DtoProcessorService;
 import me.paulo.casaes.bbop.service.SessionService;
 import me.paulo.casaes.bbop.service.eventqueue.EventQueueService;
 import me.paulo.casaes.bbop.service.eventqueue.GameLoopService;
+import me.paulo.casaes.bbop.service.kafka.KafkaService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -18,7 +19,9 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ServerEndpoint("/game/{userId}")
@@ -33,25 +36,50 @@ public class GameSocket {
 
     private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
+    private final KafkaService kafkaService;
+
     public GameSocket() {
         this.sessionService = null;
         this.dtoProcessorService = null;
         this.gameLoopService = null;
+        this.kafkaService = null;
     }
 
     @Inject
     public GameSocket(SessionService sessionService,
                       DtoProcessorService dtoProcessorService,
-                      EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+                      EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                      KafkaService kafkaService) {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
+        this.kafkaService = kafkaService;
     }
 
     @OnOpen
     public void onOpen(Session session, @PathParam("userId") String userId) {
+        if (!this.kafkaService.hasStarted()) {
+            LOGGER.warning("Not ready for new connections");
+            try {
+                session.close();
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, "could not reject connection", ex);
+            }
+            return;
+        }
+
         this.sessionService.add(userId, session);
-        this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).join());
+        this.gameLoopService.enqueue(() -> {
+            Optional<Player> player = Game.get()
+                    .getPlayers()
+                    .createPlayer(userId);
+
+            if (player.isPresent()) {
+                player.get().join();
+            } else {
+                Game.get().getPlayers().requestListOfPlayers(userId);
+            }
+        });
 
     }
 

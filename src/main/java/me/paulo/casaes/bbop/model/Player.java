@@ -10,6 +10,7 @@ import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
 import me.paulo.casaes.bbop.util.TrigUtil;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -131,17 +132,25 @@ public interface Player {
         }
 
         public void fired(BoltFiredEventDto event) {
-            if (this.liveBolts < Config.get().getMaxBolts()) {
-                this.bolts.fired(
-                        players,
-                        UUID.fromString(event.getBoltId()),
-                        this.id,
-                        event.getX(),
-                        event.getY(),
-                        event.getAngle(),
-                        event.getStartTimestamp())
-                        .ifPresent(b -> this.liveBolts++);
+            long now = clock.getTime();
+            if (Bolt.isExpired(now, event.getStartTimestamp())) {
+                toBolt(event)
+                        .flatMap(b -> b.updateTimestamp(now))
+                        .ifPresent(Bolt::tackleBoltExhaustion);
+            } else if (this.liveBolts < Config.get().getMaxBolts()) {
+                toBolt(event).ifPresent(b -> this.liveBolts++);
             }
+        }
+
+        private Optional<Bolt> toBolt(BoltFiredEventDto event) {
+            return this.bolts.fired(
+                    players,
+                    UUID.fromString(event.getBoltId()),
+                    this.id,
+                    event.getX(),
+                    event.getY(),
+                    event.getAngle(),
+                    event.getStartTimestamp());
         }
 
 
@@ -179,7 +188,6 @@ public interface Player {
         @Override
         public void joined(PlayerJoinedEventDto event) {
             this.ship = event.getShip();
-            setSpawned(false);
             GameEvents.getClientEvents().register(event);
         }
 

@@ -125,12 +125,15 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
 
     @Override
     public boolean containsKey(Object key) {
-        return false;
+        return get(key) != null;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return false;
+        if (value == null) {
+            return false;
+        }
+        return this.values().stream().anyMatch(value::equals);
     }
 
     /**

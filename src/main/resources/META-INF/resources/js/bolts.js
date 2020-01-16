@@ -95,7 +95,7 @@ const Bolts = (function () {
         }
     }
 
-    class Bolts {
+    class BoltsClass {
         constructor(server, scene, players, gameConfig, transform, sounds) {
             this.data = {
                 'server': server,
@@ -147,6 +147,9 @@ const Bolts = (function () {
                 })
                 .add('BOLT_EXHAUSTED', resp => {
                     this.destroyById(resp.boltId);
+                })
+                .add('DISCONNECTED', resp => {
+                    Object.keys(this.bolts).forEach((boltId) => this.destroyById(boltId));
                 });
 
             return this;
@@ -165,7 +168,7 @@ const Bolts = (function () {
     return {
         'get': (server, scene, players, gameConfig, transform, sounds, queues) => {
             if (!instance) {
-                instance = new Bolts(server, scene, players, gameConfig, transform, sounds)
+                instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds)
                     .setupSounds()
                     .setupQueues(queues);
             }

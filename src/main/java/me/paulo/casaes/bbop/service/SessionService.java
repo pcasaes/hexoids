@@ -1,9 +1,11 @@
 package me.paulo.casaes.bbop.service;
 
+import io.quarkus.runtime.ShutdownEvent;
 import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.model.Player;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.websocket.Session;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
@@ -43,7 +45,7 @@ public class SessionService {
         session.getAsyncRemote().sendObject(message, result -> {
             if (result.getException() instanceof ClosedChannelException) {
                 LOGGER.warning("Session closed: " + result.getException());
-                if (sessions.remove(userId) != null) {
+                if (this.remove(userId)) {
                     Game.get().getPlayers().get(userId).ifPresent(Player::leave);
                 }
             } else if (result.getException() != null) {
@@ -52,5 +54,7 @@ public class SessionService {
         });
     }
 
-
+    void stop(@Observes ShutdownEvent event) {
+        sessions.clear();
+    }
 }

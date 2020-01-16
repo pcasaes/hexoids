@@ -84,7 +84,7 @@ public class EventQueueServiceLoader {
         Class<?> eventType = getPropertyType(injectionPoint);
 
         if (eventType != null) {
-            EventQueueService<T> service =  eventQueueServiceMap.get(eventType);
+            EventQueueService<T> service = eventQueueServiceMap.get(eventType);
             if (service == null) {
                 throw new IllegalStateException("No EventQueuService for type " + eventType);
             }

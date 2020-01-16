@@ -39,6 +39,23 @@ public class Players implements Iterable<Player> {
         this.scoreBoard = scoreBoard;
     }
 
+    /**
+     * If the player hasn't been created will do so and return the player
+     *
+     * @param id
+     * @return
+     */
+    public Optional<Player> createPlayer(UUID id) {
+        if (playerMap.containsKey(id)) {
+            return Optional.empty();
+        }
+        return Optional.of(createOrGet(id));
+    }
+
+    public Optional<Player> createPlayer(String id) {
+        return createPlayer(UUID.fromString(id));
+    }
+
     public Player createOrGet(UUID id) {
         return playerMap.computeIfAbsent(id, this::create);
     }
@@ -58,16 +75,24 @@ public class Players implements Iterable<Player> {
     }
 
     private Player create(UUID id) {
-        GameEvents.getClientEvents().register(DirectedCommandDto.of(id.toString(), this.requestListOfPlayers()));
+        requestListOfPlayers(id.toString());
         return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
     }
 
-    public PlayersListCommandDto requestListOfPlayers() {
-        return PlayersListCommandDto.of(playerMap
-                .values()
-                .stream()
-                .map(Player::toDto)
-                .collect(Collectors.toList()));
+    @IsThreadSafe
+    public void requestListOfPlayers(String requesterId) {
+        GameEvents.getClientEvents().register(
+                DirectedCommandDto.of(
+                        requesterId,
+                        PlayersListCommandDto.of(
+                                playerMap
+                                        .values()
+                                        .stream()
+                                        .map(Player::toDto)
+                                        .collect(Collectors.toList())
+                        )
+                )
+        );
     }
 
     @Override

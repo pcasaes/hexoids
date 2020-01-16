@@ -2,6 +2,7 @@ package me.paulo.casaes.bbop.service.kafka.topics;
 
 import me.paulo.casaes.bbop.model.Topics;
 import me.paulo.casaes.bbop.service.kafka.TopicInfo;
+import me.paulo.casaes.bbop.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;
 
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @Named("BoltActionTopic")
 @Dependent
+@TopicInfoPriority(TopicInfoPriority.Priority.TWO)
 public class BoltActionTopic implements TopicInfo {
 
     @Override

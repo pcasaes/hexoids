@@ -6,6 +6,7 @@ import me.paulo.casaes.bbop.model.Game;
 import me.paulo.casaes.bbop.model.Topics;
 import me.paulo.casaes.bbop.service.ConfigurationService;
 import me.paulo.casaes.bbop.service.kafka.TopicInfo;
+import me.paulo.casaes.bbop.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
 
 @Named("BoltLifeCycleTopic")
 @Dependent
+@TopicInfoPriority(TopicInfoPriority.Priority.TWO)
 public class BoltLifeCycleTopic implements TopicInfo {
 
     private static final Logger LOGGER = Logger.getLogger(BoltLifeCycleTopic.class.getName());

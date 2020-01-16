@@ -3,6 +3,7 @@ package me.paulo.casaes.bbop.model;
 import me.paulo.casaes.bbop.dto.BoltFiredEventDto;
 import me.paulo.casaes.bbop.dto.BoltMovedEventDto;
 import me.paulo.casaes.bbop.dto.CommandType;
+import me.paulo.casaes.bbop.dto.DirectedCommandDto;
 import me.paulo.casaes.bbop.dto.Dto;
 import me.paulo.casaes.bbop.dto.EventDto;
 import me.paulo.casaes.bbop.dto.EventType;
@@ -169,12 +170,20 @@ class PlayerTest {
 
     @Test
     void testRequestListOfPlayers() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
+
         UUID one = UUID.randomUUID();
         UUID two = UUID.randomUUID();
         this.players.createOrGet(one).join();
         this.players.createOrGet(two).join();
 
-        PlayersListCommandDto command = this.players.requestListOfPlayers();
+        this.players.requestListOfPlayers(one.toString());
+
+        DirectedCommandDto directedCommandDto = (DirectedCommandDto) eventReference.get();
+        assertNotNull(directedCommandDto);
+
+        PlayersListCommandDto command = (PlayersListCommandDto) directedCommandDto.getCommand();
 
         assertNotNull(command);
         assertEquals(CommandType.LIST_PLAYERS, command.getCommand());

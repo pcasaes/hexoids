@@ -3,6 +3,7 @@ package me.paulo.casaes.bbop.service.kafka.topics;
 import me.paulo.casaes.bbop.model.DomainEvent;
 import me.paulo.casaes.bbop.model.Topics;
 import me.paulo.casaes.bbop.service.kafka.TopicInfo;
+import me.paulo.casaes.bbop.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -18,6 +19,7 @@ import java.util.Properties;
 
 @Dependent
 @Named("ScoreBoardControlTopic")
+@TopicInfoPriority(TopicInfoPriority.Priority.TWO)
 public class ScoreBoardControlTopic implements TopicInfo {
 
     private final Collection<ConsumerInfo> consumerInfos = Collections.singleton(new ConsumerInfo() {
