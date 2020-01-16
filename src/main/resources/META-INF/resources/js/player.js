@@ -331,16 +331,16 @@ const Players = (function () {
         }
 
         create(p) {
-            const player = new PlayerClass(
-                this.scene,
-                this.gameConfig,
-                this.hud,
-                this.transform
-            ).create(p, this.sounds);
+            if (!this.players[p.playerId]) {
+                this.players[p.playerId] = new PlayerClass(
+                    this.scene,
+                    this.gameConfig,
+                    this.hud,
+                    this.transform
+                ).create(p, this.sounds);
+            }
 
-            this.players[p.playerId] = player;
-
-            return player;
+            return this.players[p.playerId];
         }
 
         addControllableUser(userId) {
@@ -492,13 +492,15 @@ const Players = (function () {
                     }
                 })
                 .add('PLAYER_LEFT', resp => {
-                    const p = this.get(resp.playerId);
-                    if (p) {
-                        p.destroy(resp.playerId);
-                        if (this.isControllablePlayer(resp.playerId)) {
-                            p.showExpunged();
+                    this.destroyById(resp.playerId);
+                })
+                .add('DISCONNECTED', resp => {
+                    Object.keys(this.players).forEach((playerId) => {
+                        const p = this.get(playerId);
+                        if (p && !this.isControllablePlayer(playerId)) {
+                            this.destroyById(playerId);
                         }
-                    }
+                    });
                 });
 
             return this;
@@ -509,10 +511,14 @@ const Players = (function () {
         }
 
         destroyById(id) {
-            if (this.get(resp.playerId)) {
-                this.destroy();
-                delete this.players[id];
+            const p = this.get(id);
+            if (p) {
+                p.destroy(id);
+                if (this.isControllablePlayer(id)) {
+                    p.showExpunged();
+                }
             }
+            delete this.players[id];
         }
 
     }

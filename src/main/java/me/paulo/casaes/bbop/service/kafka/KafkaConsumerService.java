@@ -27,7 +27,6 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.StreamSupport;
 
 @Dependent
 public class KafkaConsumerService {
@@ -39,6 +38,10 @@ public class KafkaConsumerService {
     private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     private List<KafkaThreadedConsumer> threads = Collections.synchronizedList(new ArrayList<>());
+
+    private long startedAt;
+
+    private boolean started = false;
 
     @Inject
     public KafkaConsumerService(KafkaConfiguration configuration,
@@ -54,6 +57,7 @@ public class KafkaConsumerService {
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, UUIDBytesDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventDtoDeserializer.class.getName());
 
+        this.startedAt = System.currentTimeMillis();
         topicInfo
                 .consumerInfos()
                 .forEach(consumerInfo -> {
@@ -61,8 +65,7 @@ public class KafkaConsumerService {
                             .ifPresent(properties::putAll);
 
                     if (consumerInfo.useSubscription()) {
-                        threads.add(KafkaThreadedConsumer.startWithSubscription(
-                                gameLoopService,
+                        threads.add(startWithSubscription(
                                 properties,
                                 topicInfo.topic().name(),
                                 consumerInfo
@@ -72,26 +75,72 @@ public class KafkaConsumerService {
                             kafkaConsumer.partitionsFor(topicInfo.topic().name())
                                     .stream()
                                     .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
-                                    .map(topicPartition -> KafkaThreadedConsumer
-                                            .startWithoutSubscription(
-                                                    gameLoopService,
-                                                    properties,
-                                                    topicPartition,
-                                                    consumerInfo))
+                                    .map(topicPartition -> startWithoutSubscription(
+                                            properties,
+                                            topicPartition,
+                                            consumerInfo))
                                     .forEach(threads::add);
                         }
                     }
                 });
-
     }
 
     @PreDestroy
     void stop() {
+        this.started = true;
         threads
                 .forEach(KafkaThreadedConsumer::stop);
     }
 
-    private static class KafkaThreadedConsumer {
+    boolean isStarted() {
+        return started;
+    }
+
+    private KafkaThreadedConsumer startWithoutSubscription(
+            Properties properties,
+            TopicPartition topicPartition,
+            TopicInfo.ConsumerInfo consumerInfo) {
+
+        Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
+
+
+        Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
+        kafkaConsumer.assign(partitions);
+        kafkaConsumer.seekToBeginning(partitions);
+
+        KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
+                consumerInfo,
+                kafkaConsumer,
+                gameLoopService);
+
+        kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topicPartition.topic());
+        kafkaThreadedConsumer.thread.start();
+
+        return kafkaThreadedConsumer;
+    }
+
+    private KafkaThreadedConsumer startWithSubscription(
+            Properties properties,
+            String topic,
+            TopicInfo.ConsumerInfo consumerInfo) {
+
+        Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
+
+        kafkaConsumer.subscribe(Collections.singletonList(topic));
+
+
+        KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
+                consumerInfo,
+                kafkaConsumer,
+                gameLoopService);
+
+        kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topic);
+        kafkaThreadedConsumer.thread.start();
+
+        return kafkaThreadedConsumer;
+    }
+
+    private class KafkaThreadedConsumer {
 
         private final TopicInfo.ConsumerInfo consumerInfo;
 
@@ -103,6 +152,8 @@ public class KafkaConsumerService {
 
         private boolean running;
 
+        private long latestRecordTimestamp;
+
         private KafkaThreadedConsumer(TopicInfo.ConsumerInfo consumerInfo,
                                       Consumer<UUID, EventDto> kafkaConsumer,
                                       EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
@@ -111,51 +162,6 @@ public class KafkaConsumerService {
             this.gameLoopService = gameLoopService;
         }
 
-        static KafkaThreadedConsumer startWithoutSubscription(
-                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
-                Properties properties,
-                TopicPartition topicPartition,
-                TopicInfo.ConsumerInfo consumerInfo) {
-
-            Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
-
-
-            Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
-            kafkaConsumer.assign(partitions);
-            kafkaConsumer.seekToBeginning(partitions);
-
-            KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    consumerInfo,
-                    kafkaConsumer,
-                    gameLoopService);
-
-            kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topicPartition.topic());
-            kafkaThreadedConsumer.thread.start();
-
-            return kafkaThreadedConsumer;
-        }
-
-        static KafkaThreadedConsumer startWithSubscription(
-                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
-                Properties properties,
-                String topic,
-                TopicInfo.ConsumerInfo consumerInfo) {
-
-            Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
-
-            kafkaConsumer.subscribe(Collections.singletonList(topic));
-
-
-            KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                    consumerInfo,
-                    kafkaConsumer,
-                    gameLoopService);
-
-            kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topic);
-            kafkaThreadedConsumer.thread.start();
-
-            return kafkaThreadedConsumer;
-        }
 
         void stop() {
             this.running = false;
@@ -182,11 +188,12 @@ public class KafkaConsumerService {
             while (this.running) {
                 ConsumerRecords<UUID, EventDto> records = kafkaConsumer.poll(pollDuration);
                 if (!records.isEmpty()) {
-                    StreamSupport
-                            .stream(
-                                    records.spliterator(),
-                                    false)
-                            .forEach(this::process);
+                    records.forEach(this::process);
+                    if (!started && this.latestRecordTimestamp >= startedAt) {
+                        started = true;
+                    }
+                } else if (!started) {
+                    started = true;
                 }
             }
         }
@@ -201,6 +208,7 @@ public class KafkaConsumerService {
 
         private void process(ConsumerRecord<UUID, EventDto> record) {
             try {
+                this.latestRecordTimestamp = record.timestamp();
                 DomainEvent domainEvent;
                 if (record.value() == null) {
                     domainEvent = DomainEvent.deleted(record.key());

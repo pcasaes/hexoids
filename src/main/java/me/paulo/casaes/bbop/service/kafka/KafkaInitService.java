@@ -1,5 +1,6 @@
 package me.paulo.casaes.bbop.service.kafka;
 
+import io.quarkus.runtime.StartupEvent;
 import me.paulo.casaes.bbop.model.Topics;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -9,8 +10,8 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -29,6 +31,8 @@ public class KafkaInitService {
 
 
     private static final Logger LOGGER = Logger.getLogger(KafkaInitService.class.getName());
+
+    private KafkaService kafkaService;
 
     private Instance<TopicInfo> topicsFactory;
 
@@ -42,16 +46,18 @@ public class KafkaInitService {
     }
 
     @Inject
-    public KafkaInitService(Instance<TopicInfo> topicsFactory,
+    public KafkaInitService(KafkaService kafkaService,
+                            @Any Instance<TopicInfo> topicsFactory,
                             KafkaAdmin kafkaAdmin,
                             Instance<KafkaConsumerService> kafkaConsumerServiceFactory) {
+        this.kafkaService = kafkaService;
         this.topicsFactory = topicsFactory;
         this.kafkaAdmin = kafkaAdmin;
         this.kafkaConsumerServiceFactory = kafkaConsumerServiceFactory;
     }
 
-    public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        //eager load
+    public void startup(@Observes StartupEvent event) {
+        // eager load
     }
 
     @PostConstruct
@@ -63,16 +69,39 @@ public class KafkaInitService {
             LOGGER.log(Level.WARNING, "Error while initializing topics", ex);
         }
 
-        this.topicsFactory
-                .forEach(topic -> {
-                    KafkaConsumerService service = kafkaConsumerServiceFactory.get();
-                    kafkaConsumerServiceMap.put(topic.topic(), service);
-                    service.start(topic);
+        for (TopicInfoPriority.Priority priority : TopicInfoPriority.Priority.values()) {
+            List<BooleanSupplier> starting = this.topicsFactory
+                    .select(TopicInfoPriority.Literal.of(priority))
+                    .stream()
+                    .map(topic -> {
+                        KafkaConsumerService service = kafkaConsumerServiceFactory.get();
+                        kafkaConsumerServiceMap.put(topic.topic(), service);
+                        service.start(topic);
 
-                    this.topicsFactory.destroy(topic);
-                });
+                        this.topicsFactory.destroy(topic);
+
+                        return (BooleanSupplier) service::isStarted;
+                    })
+                    .collect(Collectors.toList());
+
+            this.finishStarting(starting);
+        }
         LOGGER.info("Finished starting up kafka consumers");
+        this.kafkaService.setOkToConnect(true);
 
+    }
+
+    private void finishStarting(List<BooleanSupplier> starting) {
+        starting
+                .forEach(s -> {
+                    for (int i = 0; !s.getAsBoolean() && i < 100; i++) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                });
     }
 
     @PreDestroy

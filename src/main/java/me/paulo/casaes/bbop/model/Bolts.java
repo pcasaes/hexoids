@@ -1,6 +1,7 @@
 package me.paulo.casaes.bbop.model;
 
 import me.paulo.casaes.bbop.dto.EventType;
+import me.paulo.casaes.bbop.model.annotations.IsThreadSafe;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,6 +65,7 @@ public class Bolts implements Iterable<Bolt> {
         return StreamSupport.stream(spliterator(), false);
     }
 
+    @IsThreadSafe
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
                 (domainEvent.getEvent().isEvent(EventType.BOLT_MOVED) || domainEvent.getEvent().isEvent(EventType.BOLT_EXHAUSTED))) {

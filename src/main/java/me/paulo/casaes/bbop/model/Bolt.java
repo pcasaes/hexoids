@@ -149,8 +149,13 @@ public class Bolt {
     }
 
     boolean isExpired() {
-        return this.timestamp - this.startTimestamp > Config.get().getBoltMaxDuration();
+        return isExpired(this.timestamp, this.startTimestamp);
     }
+
+    static boolean isExpired(long now, long startTimestamp) {
+        return now - startTimestamp > Config.get().getBoltMaxDuration();
+    }
+
 
     boolean isActive() {
         return !isExhausted();
