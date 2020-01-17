@@ -7,25 +7,27 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/triangle-game-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t me.pcasaes/bbop-mmo-arcade-jvm .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/triangle-game-jvm
+# docker run -i --rm -p 8080:8080 me.pcasaes/bbop-mmo-arcade-jvm
 #
 ###
 FROM fabric8/java-alpine-openjdk8-jre
-ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djava.security.egd=file:/dev/./urandom"
 ENV AB_ENABLED=jmx_exporter
 COPY target/lib/* /deployments/lib/
 COPY target/*-runner.jar /deployments/app.jar
+COPY src/main/docker/docker-entrypoint.sh /deployments/docker-entrypoint.sh
 EXPOSE 8080
 
 # run with user 1001 and be prepared for be running in OpenShift too
 RUN adduser -G root --no-create-home --disabled-password 1001 \
   && chown -R 1001 /deployments \
   && chmod -R "g+rwX" /deployments \
-  && chown -R 1001:root /deployments
+  && chown -R 1001:root /deployments \
+  && chmod a+x /deployments/docker-entrypoint.sh
 USER 1001
 
-ENTRYPOINT [ "/deployments/run-java.sh" ]
+ENTRYPOINT [ "/deployments/docker-entrypoint.sh" ]
