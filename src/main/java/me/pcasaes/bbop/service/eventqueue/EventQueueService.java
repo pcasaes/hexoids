@@ -14,6 +14,7 @@ public class EventQueueService<T> {
     private Thread thread;
     private boolean running = true;
     private EventQueueConsumerService<T> eventQueueExecutorService;
+    private final QueueMetric metric;
 
 
     public void enqueue(T event) {
@@ -23,8 +24,10 @@ public class EventQueueService<T> {
     }
 
 
-    EventQueueService(EventQueueConsumerService<T> eventQueueExecutorService) {
+    EventQueueService(EventQueueConsumerService<T> eventQueueExecutorService, QueueMetric metric) {
         this.eventQueueExecutorService = eventQueueExecutorService;
+        this.metric = metric;
+        this.metric.setName(eventQueueExecutorService.getName());
 
     }
 
@@ -61,6 +64,7 @@ public class EventQueueService<T> {
 
 
     private void run() {
+        this.metric.running();
         while (running) {
             T event;
             while ((event = eventQueue.consume()) != null) {
@@ -82,11 +86,13 @@ public class EventQueueService<T> {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.fine("Sleeping " + time + " for event queue " + eventQueueExecutorService.getName());
                 }
+                this.metric.sleeping();
                 Thread.sleep(time);
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, e.getMessage(), e);
                 Thread.currentThread().interrupt();
             }
+            this.metric.running();
         }
     }
 }

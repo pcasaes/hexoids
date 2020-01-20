@@ -1,5 +1,7 @@
 package me.pcasaes.bbop.service.eventqueue;
 
+import io.quarkus.scheduler.Scheduled;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
@@ -27,6 +29,8 @@ public class EventQueueServiceLoader {
     private Instance<EventQueueConsumerService<?>> eventQueueExecutorServiceFactory;
     private List<EventQueueConsumerService<?>> eventQueueExecutorServiceList = Collections.synchronizedList(new ArrayList<>());
     private Map<Class<?>, EventQueueService> eventQueueServiceMap = new ConcurrentHashMap<>();
+    private List<QueueMetric> metrics = Collections.synchronizedList(new ArrayList<>());
+
 
     public EventQueueServiceLoader() {
     }
@@ -49,7 +53,9 @@ public class EventQueueServiceLoader {
 
     private void init(EventQueueConsumerService eventQueueExecutorService) {
         this.eventQueueExecutorServiceList.add(eventQueueExecutorService);
-        EventQueueService eventQueueService = new EventQueueService(eventQueueExecutorService);
+        QueueMetric metric = new QueueMetric();
+        EventQueueService eventQueueService = new EventQueueService(eventQueueExecutorService, metric);
+        this.metrics.add(metric);
         eventQueueService.start();
         this.eventQueueServiceMap.put(eventQueueExecutorService.getEventType(), eventQueueService);
     }
@@ -91,5 +97,10 @@ public class EventQueueServiceLoader {
             return service;
         }
         throw new IllegalStateException("Could not find generic for EventQueuService injection");
+    }
+
+    @Scheduled(every = "10s")
+    public void reportMetrics() {
+        this.metrics.forEach(QueueMetric::report);
     }
 }
