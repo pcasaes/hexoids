@@ -7,14 +7,21 @@ import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerType;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Used to generate domain events. Domain events are used to keep server nodes in sync
  */
 @ApplicationScoped
-public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent> {
+public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent>, Closeable {
+
+    private static final Logger LOGGER = Logger.getLogger(DomainEventProducerService.class.getName());
 
     private ThreadService threadService;
 
@@ -25,6 +32,8 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     private ConfigurationService configurationService;
 
     private GameLoopService.SleepDto sleepDto = null;
+
+    private DtoProcessorService.JsonWriter jsonWriter;
 
     DomainEventProducerService() {
     }
@@ -38,6 +47,32 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
         this.producerService = producerService;
         this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
+        this.jsonWriter = dtoProcessorService.createJsonWriter();
+    }
+
+    @PreDestroy
+    @Override
+    public void close() {
+        close(jsonWriter);
+    }
+
+    private void close(Closeable closeable) {
+        try {
+            closeable.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
+        }
+    }
+
+    private String serialize(Object value) {
+        if (threadService.isInGameLoop()) {
+            try {
+                return jsonWriter.writeValue(value);
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        return dtoProcessorService.serializeToString(value);
     }
 
     @Override
@@ -55,7 +90,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
             if (event.getEvent() != null && event.getEvent().getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
                 this.sleepDto = (GameLoopService.SleepDto) event.getEvent();
             } else {
-                String message = event.getEvent() == null ? null : dtoProcessorService.serializeToString(event.getEvent());
+                String message = event.getEvent() == null ? null : serialize(event.getEvent());
                 this.producerService.send(event.getTopic(), event.getKey(), message);
             }
         }

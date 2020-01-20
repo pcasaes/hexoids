@@ -1,6 +1,7 @@
 package me.pcasaes.bbop.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +10,10 @@ import me.pcasaes.bbop.dto.CommandType;
 import me.pcasaes.bbop.dto.EventType;
 
 import javax.enterprise.context.Dependent;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -64,6 +68,47 @@ public class DtoProcessorService {
         } catch (IOException | RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
             return Optional.empty();
+        }
+    }
+
+
+    /**
+     * Creates a Json Writer with a reusable buffer. Not thread safe.
+     * @return
+     */
+    public JsonWriter createJsonWriter() {
+        return JsonWriter.create();
+    }
+
+    public static class JsonWriter implements Closeable {
+
+        private final JsonGenerator jsonGenerator;
+        private final ByteArrayOutputStream outputStream;
+
+        private JsonWriter(JsonGenerator jsonGenerator, ByteArrayOutputStream outputStream) {
+            this.jsonGenerator = jsonGenerator;
+            this.outputStream = outputStream;
+        }
+
+        private static JsonWriter create() {
+            try {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                return new JsonWriter(SERIALIZER.getFactory().createGenerator(outputStream), outputStream);
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            jsonGenerator.close();
+            outputStream.close();
+        }
+
+        public String writeValue(Object value) throws IOException {
+            outputStream.reset();
+            SERIALIZER.writeValue(jsonGenerator, value);
+            return outputStream.toString(StandardCharsets.UTF_8.name());
         }
     }
 
