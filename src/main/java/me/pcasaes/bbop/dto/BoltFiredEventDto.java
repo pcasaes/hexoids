@@ -3,17 +3,19 @@ package me.pcasaes.bbop.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.UUID;
+
 public class BoltFiredEventDto implements EventDto {
 
-    private final String boltId;
-    private final String ownerPlayerId;
+    private final UUID boltId;
+    private final UUID ownerPlayerId;
     private final float x;
     private final float y;
     private final float angle;
     private final long startTimestamp;
 
-    private BoltFiredEventDto(String boltId,
-                              String ownerPlayerId,
+    private BoltFiredEventDto(UUID boltId,
+                              UUID ownerPlayerId,
                               float x,
                               float y,
                               float angle,
@@ -28,8 +30,8 @@ public class BoltFiredEventDto implements EventDto {
 
     @JsonCreator
     public static BoltFiredEventDto of(
-            @JsonProperty("boltId") String boltId,
-            @JsonProperty("ownerPlayerId") String ownerPlayerId,
+            @JsonProperty("boltId") UUID boltId,
+            @JsonProperty("ownerPlayerId") UUID ownerPlayerId,
             @JsonProperty("x") float x,
             @JsonProperty("y") float y,
             @JsonProperty("angle") float angle,
@@ -42,11 +44,11 @@ public class BoltFiredEventDto implements EventDto {
                 startTimestamp);
     }
 
-    public String getBoltId() {
+    public UUID getBoltId() {
         return boltId;
     }
 
-    public String getOwnerPlayerId() {
+    public UUID getOwnerPlayerId() {
         return ownerPlayerId;
     }
 
