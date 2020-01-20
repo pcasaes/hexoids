@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.Dependent;
@@ -43,11 +44,18 @@ public class KafkaConsumerService {
 
     private boolean started = false;
 
+    private boolean subcriber;
+
     @Inject
     public KafkaConsumerService(KafkaConfiguration configuration,
-                                EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+                                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                                @ConfigProperty(
+                                        name = "bbop.config.service.kafka.subscriber",
+                                        defaultValue = "true"
+                                ) boolean subscriber) {
         this.configuration = configuration;
         this.gameLoopService = gameLoopService;
+        this.subcriber = subscriber;
     }
 
 
@@ -65,11 +73,15 @@ public class KafkaConsumerService {
                             .ifPresent(properties::putAll);
 
                     if (consumerInfo.useSubscription()) {
-                        threads.add(startWithSubscription(
-                                properties,
-                                topicInfo.topic().name(),
-                                consumerInfo
-                        ));
+                        if (this.subcriber) {
+                            threads.add(startWithSubscription(
+                                    properties,
+                                    topicInfo.topic().name(),
+                                    consumerInfo
+                            ));
+                        } else {
+                            this.started = true;
+                        }
                     } else {
                         try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
                             kafkaConsumer.partitionsFor(topicInfo.topic().name())
