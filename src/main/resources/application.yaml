@@ -25,7 +25,7 @@
         kafka:
           topics:
             bolt_life_cycle:
-              partitions: 2
+              partitions: 1
 
 
 bbop:
@@ -49,6 +49,7 @@ bbop:
     service:
       client:
         broadcast:
+          enabled: true
           eventqueue:
             linkedlist: false
             exponent: 17

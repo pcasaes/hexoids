@@ -7,6 +7,7 @@ import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
 import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.SessionService;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +27,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
 
     private final SessionService sessionService;
     private final ConfigurationService configurationService;
+    private final boolean enabled;
 
     private GameLoopService.SleepDto sleepDto = null;
 
@@ -35,6 +37,22 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
         this.sessionService = null;
         this.configurationService = null;
         this.jsonWriter = null;
+        this.enabled = false;
+    }
+
+
+    @Inject
+    public ClientBroadcastService(SessionService sessionService,
+                                  DtoProcessorService dtoProcessorService,
+                                  ConfigurationService configurationService,
+                                  @ConfigProperty(
+                                          name = "bbop.config.service.client.broadcast.enabled",
+                                          defaultValue = "true"
+                                  ) boolean enabled) {
+        this.sessionService = sessionService;
+        this.configurationService = configurationService;
+        this.enabled = enabled;
+        this.jsonWriter = dtoProcessorService.createJsonWriter();
     }
 
     @PreDestroy
@@ -59,14 +77,6 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
         }
     }
 
-    @Inject
-    public ClientBroadcastService(SessionService sessionService,
-                                  DtoProcessorService dtoProcessorService,
-                                  ConfigurationService configurationService) {
-        this.sessionService = sessionService;
-        this.configurationService = configurationService;
-        this.jsonWriter = dtoProcessorService.createJsonWriter();
-    }
 
     @Override
     public void accept(ClientEvent event) {
@@ -122,6 +132,11 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     @Override
     public Class<?> getEventType() {
         return ClientEvent.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public static class ClientEvent {
