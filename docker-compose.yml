@@ -1,11 +1,13 @@
 version: '3.5'
 services:
+
   bbop-zookeeper:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
     networks:
       - service-network
+
   bbop-kafka:
     image: 'wurstmeister/kafka:2.12-2.2.1'
     ports:
@@ -19,20 +21,42 @@ services:
       - bbop-zookeeper
     networks:
       - service-network
-  bbop-kafka-manager:
-    container_name: kafka-manager
-    hostname: kafka-manager
-    image: solsson/kafka-manager:latest
-    restart: always
-    environment:
-      - ZK_HOSTS=bbop-zookeeper:2181
+
+  bbop-nginx-proxy:
+    image: jwilder/nginx-proxy
     ports:
-      - "9000:9000"
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - service-network
+
+  bbop-mmo-arcade:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.jvm
+    image: me.pcasaes/bbop-mmo-arcade
+    environment:
+      - VIRTUAL_HOST=${BBOP_HOST}
+      - VIRTUAL_PORT=8080
+      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=false
     depends_on:
-      - bbop-zookeeper
       - bbop-kafka
     networks:
       - service-network
+
+  bbop-mmo-arcade-subscriber:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.jvm
+    image: me.pcasaes/bbop-mmo-arcade
+    environment:
+      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=true
+    depends_on:
+      - bbop-kafka
+    networks:
+      - service-network
+
 networks:
   service-network:
     name: bbop-mmo-arcade-network

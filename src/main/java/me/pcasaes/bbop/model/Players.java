@@ -143,7 +143,8 @@ public class Players implements Iterable<Player> {
 
     public void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.BOLT_FIRED)) {
-            get(domainEvent.getKey())
+            BoltFiredEventDto boltFiredEventDto = (BoltFiredEventDto) domainEvent.getEvent();
+            get(boltFiredEventDto.getOwnerPlayerId())
                     .ifPresent(p -> p.fired((BoltFiredEventDto) domainEvent.getEvent()));
         }
     }

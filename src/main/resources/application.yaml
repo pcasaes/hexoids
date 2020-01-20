@@ -15,12 +15,18 @@
           move: 1
 
 "%prod":
-   bbop:
-     config:
-       player:
-         expungeSinceLastSpawnTimeout: 180000
-         reset:
-           position: rng
+  bbop:
+    config:
+      player:
+        expungeSinceLastSpawnTimeout: 180000
+        reset:
+          position: rng
+      service:
+        kafka:
+          topics:
+            bolt_life_cycle:
+              partitions: 2
+
 
 bbop:
   config:
@@ -56,3 +62,8 @@ bbop:
           eventqueue:
             linkedlist: false
             exponent: 17
+      kafka:
+        subscriber: true
+        topics:
+          bolt_life_cycle:
+            partitions: 1
