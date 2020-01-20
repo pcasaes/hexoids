@@ -52,6 +52,8 @@ public class BoltLifeCycleTopic implements TopicInfo {
         this.configurationService = configurationService;
         this.partitions = partitions;
 
+        LOGGER.info("BoltLifeCycleTopic partitions " + this.partitions);
+
         consumerInfos = Collections.singleton(new ConsumerInfo() {
 
 
