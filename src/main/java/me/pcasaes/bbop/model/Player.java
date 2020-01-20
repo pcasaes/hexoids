@@ -122,8 +122,8 @@ public interface Player {
                             Topics.BOLT_LIFECYCLE_TOPIC.name(),
                             boltId,
                             BoltFiredEventDto.of(
-                                    boltId.toString(),
-                                    this.idStr,
+                                    boltId,
+                                    this.id,
                                     this.x,
                                     this.y,
                                     this.angle,
@@ -146,7 +146,7 @@ public interface Player {
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {
             return this.bolts.fired(
                     players,
-                    UUID.fromString(event.getBoltId()),
+                    event.getBoltId(),
                     this.id,
                     event.getX(),
                     event.getY(),
