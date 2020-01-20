@@ -68,6 +68,7 @@ public class EventQueueService<T> {
         while (running) {
             T event;
             while ((event = eventQueue.consume()) != null) {
+                this.metric.calculateLoadFactor();
                 try {
                     this.eventQueueExecutorService.accept(event);
                 } catch (RuntimeException ex) {
@@ -80,6 +81,7 @@ public class EventQueueService<T> {
     }
 
     private void sleep() {
+        this.metric.calculateLoadFactor();
         long time = this.eventQueueExecutorService.getWaitTime();
         if (time > 0L) {
             try {
