@@ -15,7 +15,9 @@ const Server = (function () {
         }
 
         createSocket() {
-            this.socket = new WebSocket("ws://" + this.host + "/game/" + this.userId);
+            const endpoint = "ws://" + this.host + "/game/" + this.userId;
+            console.log(endpoint);
+            this.socket = new WebSocket(endpoint);
             this.socket.onopen = () => {
                 console.log("Connected to the web socket");
             };

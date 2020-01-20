@@ -42,13 +42,13 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     public void accept(ClientEvent event) {
         if (event != null) {
             Dto dto = event.getDto();
-            if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
+            if (dto.getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
+                this.sleepDto = (GameLoopService.SleepDto) dto;
+            } else if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
                 this.sessionService.broadcast(dtoProcessorService.serializeToString(dto));
             } else if (dto.getDtoType() == DirectedCommandDto.DtoType.DIRECTED_COMMAND_DTO) {
                 DirectedCommandDto command = (DirectedCommandDto) dto;
                 this.sessionService.direct(command.getPlayerId(), dtoProcessorService.serializeToString(command.getCommand()));
-            } else {
-                this.sleepDto = (GameLoopService.SleepDto) dto;
             }
         }
     }
