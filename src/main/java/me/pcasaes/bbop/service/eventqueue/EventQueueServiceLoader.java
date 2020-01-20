@@ -99,7 +99,7 @@ public class EventQueueServiceLoader {
         throw new IllegalStateException("Could not find generic for EventQueuService injection");
     }
 
-    @Scheduled(every = "10s")
+    @Scheduled(every = "3s")
     public void reportMetrics() {
         this.metrics.forEach(QueueMetric::report);
     }
