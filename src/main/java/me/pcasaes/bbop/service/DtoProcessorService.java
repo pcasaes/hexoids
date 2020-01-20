@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import me.pcasaes.bbop.dto.CommandType;
 import me.pcasaes.bbop.dto.EventType;
@@ -26,6 +27,8 @@ public class DtoProcessorService {
     private static final ObjectMapper SERIALIZER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .configure(SerializationFeature.INDENT_OUTPUT, false);
+
+    private static final ObjectWriter WRITER = SERIALIZER.writer();
 
     private static final ObjectMapper DESERIALIZER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -107,7 +110,7 @@ public class DtoProcessorService {
 
         public String writeValue(Object value) throws IOException {
             outputStream.reset();
-            SERIALIZER.writeValue(jsonGenerator, value);
+            WRITER.writeValue(jsonGenerator, value);
             return outputStream.toString(StandardCharsets.UTF_8.name());
         }
     }
