@@ -35,3 +35,6 @@ pom.xml.versionsBackup
 release.properties
 
 bots/settings.local.js
+
+# docker-compose
+.env

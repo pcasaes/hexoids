@@ -116,13 +116,14 @@ public interface Player {
             if (!spawned) {
                 return;
             }
+            final UUID boltId = UUID.randomUUID();
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
                             Topics.BOLT_LIFECYCLE_TOPIC.name(),
-                            this.id,
+                            boltId,
                             BoltFiredEventDto.of(
-                                    UUID.randomUUID().toString(),
-                                    this.idStr,
+                                    boltId,
+                                    this.id,
                                     this.x,
                                     this.y,
                                     this.angle,
@@ -145,7 +146,7 @@ public interface Player {
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {
             return this.bolts.fired(
                     players,
-                    UUID.fromString(event.getBoltId()),
+                    event.getBoltId(),
                     this.id,
                     event.getX(),
                     event.getY(),
