@@ -86,7 +86,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
                 int partition = record.partition();
                 if (recordToOffset[partition] == null) {
                     recordToOffset[partition] = record;
-                } else if (recordToOffset[partition].timestamp() + (configurationService.getBoltMaxDuration() + 10L) < Game.get().getClock().getTime()) {
+                } else if (recordToOffset[partition].timestamp() + (configurationService.getBoltMaxDuration() + 10_000L) < Game.get().getClock().getTime()) {
                     Map<TopicPartition, OffsetAndMetadata> commitData = Collections
                             .singletonMap(new TopicPartition(recordToOffset[partition].topic(), partition),
                                     new OffsetAndMetadata(recordToOffset[partition].offset())
