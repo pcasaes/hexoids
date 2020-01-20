@@ -42,7 +42,7 @@ public class SessionService {
     }
 
     private void asyncSend(String userId, Session session, String message) {
-        session.getAsyncRemote().sendObject(message, result -> {
+        session.getAsyncRemote().sendText(message, result -> {
             if (result.getException() instanceof ClosedChannelException) {
                 LOGGER.warning("Session closed: " + result.getException());
                 if (this.remove(userId)) {
