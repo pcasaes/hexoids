@@ -8,25 +8,55 @@ import me.pcasaes.bbop.service.ConfigurationService;
 import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.SessionService;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Used to broadcast events to the game clients
  */
 @ApplicationScoped
-public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent> {
+public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent>, Closeable {
+
+    private static final Logger LOGGER = Logger.getLogger(ClientBroadcastService.class.getName());
 
     private final SessionService sessionService;
-    private final DtoProcessorService dtoProcessorService;
     private final ConfigurationService configurationService;
 
     private GameLoopService.SleepDto sleepDto = null;
 
+    private final DtoProcessorService.JsonWriter jsonWriter;
+
     ClientBroadcastService() {
         this.sessionService = null;
-        this.dtoProcessorService = null;
         this.configurationService = null;
+        this.jsonWriter = null;
+    }
+
+    @PreDestroy
+    @Override
+    public void close() {
+        close(jsonWriter);
+    }
+
+    private void close(Closeable closeable) {
+        try {
+            closeable.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
+        }
+    }
+
+    private String serialize(Object value) {
+        try {
+            return jsonWriter.writeValue(value);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     @Inject
@@ -34,8 +64,8 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
                                   DtoProcessorService dtoProcessorService,
                                   ConfigurationService configurationService) {
         this.sessionService = sessionService;
-        this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
+        this.jsonWriter = dtoProcessorService.createJsonWriter();
     }
 
     @Override
@@ -45,10 +75,10 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
             if (dto.getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
                 this.sleepDto = (GameLoopService.SleepDto) dto;
             } else if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
-                this.sessionService.broadcast(dtoProcessorService.serializeToString(dto));
+                this.sessionService.broadcast(serialize(dto));
             } else if (dto.getDtoType() == DirectedCommandDto.DtoType.DIRECTED_COMMAND_DTO) {
                 DirectedCommandDto command = (DirectedCommandDto) dto;
-                this.sessionService.direct(command.getPlayerId(), dtoProcessorService.serializeToString(command.getCommand()));
+                this.sessionService.direct(command.getPlayerId(), serialize(command.getCommand()));
             }
         }
     }
