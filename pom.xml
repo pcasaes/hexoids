@@ -39,10 +39,6 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-undertow-websockets</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jackson</artifactId>
     </dependency>
     <dependency>
@@ -84,6 +80,18 @@
       <artifactId>netty-transport-native-kqueue</artifactId>
       <version>${netty.version}</version>
       <classifier>osx-x86_64</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-vertx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-vertx-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-undertow</artifactId>
     </dependency>
   </dependencies>
   <build>

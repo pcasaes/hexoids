@@ -1,5 +1,9 @@
 package me.pcasaes.bbop;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.ext.web.Router;
 import me.pcasaes.bbop.dto.CommandType;
 import me.pcasaes.bbop.dto.MoveCommandDto;
 import me.pcasaes.bbop.model.Game;
@@ -11,20 +15,12 @@ import me.pcasaes.bbop.service.eventqueue.GameLoopService;
 import me.pcasaes.bbop.service.kafka.KafkaService;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.PathParam;
-import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@ServerEndpoint("/game/{userId}")
 @ApplicationScoped
 public class GameSocket {
 
@@ -38,31 +34,53 @@ public class GameSocket {
 
     private final KafkaService kafkaService;
 
+    private final Vertx vertx;
+
     public GameSocket() {
         this.sessionService = null;
         this.dtoProcessorService = null;
         this.gameLoopService = null;
         this.kafkaService = null;
+        this.vertx = null;
     }
 
     @Inject
     public GameSocket(SessionService sessionService,
                       DtoProcessorService dtoProcessorService,
                       EventQueueService<GameLoopService.GameRunnable> gameLoopService,
-                      KafkaService kafkaService) {
+                      KafkaService kafkaService,
+                      Vertx vertx) {
         this.sessionService = sessionService;
         this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
         this.kafkaService = kafkaService;
+        this.vertx = vertx;
     }
 
-    @OnOpen
-    public void onOpen(Session session, @PathParam("userId") String userId) {
+    public void startup(@Observes Router router) {
+        router.route("/game/:id").handler(rc -> {
+            String userId = rc.pathParam("id");
+            HttpServerRequest request = rc.request();
+            ServerWebSocket ctx = request.upgrade();
+
+            onOpen(ctx, userId);
+
+            ctx.closeHandler(n -> this.onClose(userId));
+            ctx.exceptionHandler(n -> this.onClose(userId));
+
+            ctx.handler(buff -> onMessage(buff.toString(), userId));
+
+            ctx.accept();
+        });
+    }
+
+
+    public void onOpen(ServerWebSocket session, String userId) {
         if (!this.kafkaService.hasStarted()) {
             LOGGER.warning("Not ready for new connections");
             try {
                 session.close();
-            } catch (IOException ex) {
+            } catch (RuntimeException ex) {
                 LOGGER.log(Level.SEVERE, "could not reject connection", ex);
             }
             return;
@@ -83,8 +101,7 @@ public class GameSocket {
 
     }
 
-    @OnClose
-    public void onClose(Session session, @PathParam("userId") String userId) {
+    public void onClose(String userId) {
         if (sessionService.remove(userId)) {
             Optional<Player> player = Game.get().getPlayers().get(userId);
             if (player.isPresent()) {
@@ -95,13 +112,7 @@ public class GameSocket {
         }
     }
 
-    @OnError
-    public void onError(Session session, @PathParam("userId") String userId, Throwable throwable) {
-        onClose(session, userId);
-    }
-
-    @OnMessage
-    public void onMessage(String message, @PathParam("userId") String userId) {
+    public void onMessage(String message, String userId) {
         try {
             dtoProcessorService.getCommand(message)
                     .ifPresent(command -> {
