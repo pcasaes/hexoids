@@ -63,4 +63,8 @@ public interface EventQueueConsumerService<T> extends Consumer<T> {
     default boolean bypassEnqueue(T event) {
         return false;
     }
+
+    default boolean isEnabled() {
+        return true;
+    }
 }

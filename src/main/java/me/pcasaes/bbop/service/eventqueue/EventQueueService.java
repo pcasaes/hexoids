@@ -18,7 +18,7 @@ public class EventQueueService<T> {
 
 
     public void enqueue(T event) {
-        if (!eventQueueExecutorService.bypassEnqueue(event)) {
+        if (eventQueueExecutorService.isEnabled() && !eventQueueExecutorService.bypassEnqueue(event)) {
             eventQueue.produce(event);
         }
     }
@@ -32,22 +32,24 @@ public class EventQueueService<T> {
     }
 
     public void start() {
-        if (eventQueueExecutorService.useSingleProducer()) {
-            this.eventQueue = EventQueue.Factory.createSingleProducerSingleConsumerEventQueue(
-                    eventQueueExecutorService.useLinkedList(),
-                    eventQueueExecutorService.getMaxSizeExponent()
-            );
-        } else {
-            this.eventQueue = EventQueue.Factory.createMultipleProducerSingleConsumerEventQueue(
-                    eventQueueExecutorService.useLinkedList(),
-                    eventQueueExecutorService.getMaxSizeExponent()
-            );
-        }
+        if (eventQueueExecutorService.isEnabled()) {
+            if (eventQueueExecutorService.useSingleProducer()) {
+                this.eventQueue = EventQueue.Factory.createSingleProducerSingleConsumerEventQueue(
+                        eventQueueExecutorService.useLinkedList(),
+                        eventQueueExecutorService.getMaxSizeExponent()
+                );
+            } else {
+                this.eventQueue = EventQueue.Factory.createMultipleProducerSingleConsumerEventQueue(
+                        eventQueueExecutorService.useLinkedList(),
+                        eventQueueExecutorService.getMaxSizeExponent()
+                );
+            }
 
-        thread = new Thread(this::run);
-        thread.setName(this.eventQueueExecutorService.getName());
-        thread.setDaemon(true);
-        thread.start();
+            this.thread = new Thread(this::run);
+            thread.setName(this.eventQueueExecutorService.getName());
+            thread.setDaemon(true);
+            thread.start();
+        }
     }
 
     void destroy() {
