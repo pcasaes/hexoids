@@ -1,11 +1,11 @@
 package me.pcasaes.bbop.service.eventqueue;
 
+import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
@@ -41,7 +41,7 @@ public class EventQueueServiceLoader {
         this.eventQueueExecutorServiceFactory = eventQueueExecutorServiceFactory;
     }
 
-    public void startup(@Observes @Initialized(ApplicationScoped.class) Object evet) {
+    public void startup(@Observes StartupEvent event) {
         LOGGER.info("Eager load " + this.getClass().getName());
     }
 
