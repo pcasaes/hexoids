@@ -3,7 +3,7 @@
     config:
       player:
         reset:
-          position: 0,0
+          position: rng
 
 "%test":
   bbop:
