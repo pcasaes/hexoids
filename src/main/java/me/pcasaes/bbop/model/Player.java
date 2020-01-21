@@ -294,12 +294,12 @@ public interface Player {
                             this.id,
                             PlayerDestroyedEventDto.of(this.id, byPlayerId))
             );
-            setSpawned(false);
             this.scoreBoard.updateScore(byPlayerId, 1);
         }
 
         @Override
         public void destroyed(PlayerDestroyedEventDto event) {
+            setSpawned(false);
             this.scoreBoard.resetScore(event.getPlayerId());
             GameEvents.getClientEvents().register(event);
         }
