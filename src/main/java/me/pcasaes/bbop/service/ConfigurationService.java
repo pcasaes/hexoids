@@ -1,12 +1,12 @@
 package me.pcasaes.bbop.service;
 
 
+import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.bbop.model.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.util.logging.Logger;
@@ -139,7 +139,7 @@ public class ConfigurationService {
         this.gameLoopMaxSizeExponent = gameLoopMaxSizeExponent;
     }
 
-    public void startup(@Observes @Initialized(ApplicationScoped.class) Object env) {
+    public void startup(@Observes StartupEvent event) {
         LOGGER.info("Eager load Configuration");
     }
 

@@ -1,5 +1,6 @@
 package me.pcasaes.bbop.service;
 
+import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.GameEvents;
 import me.pcasaes.bbop.service.eventqueue.ClientBroadcastService;
@@ -7,7 +8,6 @@ import me.pcasaes.bbop.service.eventqueue.EventQueueService;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.util.logging.Logger;
@@ -32,7 +32,7 @@ public class ModelInitializer {
     }
 
 
-    public void startup(@Observes @Initialized(ApplicationScoped.class) Object event) {
+    public void startup(@Observes StartupEvent event) {
         LOGGER.info("Eager load " + this.getClass().getName());
     }
 
