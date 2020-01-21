@@ -10,6 +10,7 @@ import javax.enterprise.event.Observes;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ApplicationScoped
@@ -43,13 +44,18 @@ public class SessionService {
     private void asyncSend(String userId, ServerWebSocket session, String message) {
         session.writeTextMessage(message, result -> {
             if (result.failed()) {
-                LOGGER.warning("Session closed: " + userId);
+                boolean removed = this.remove(userId);
+                if (removed && LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.warning("Session closed: " + userId + ", " + result.cause());
+                }
                 try {
                     session.close();
                 } catch (RuntimeException ex) {
-                    LOGGER.warning("Already closed " + ex.getMessage());
+                    if (removed && LOGGER.isLoggable(Level.WARNING)) {
+                        LOGGER.warning("Already closed " + ex.getMessage());
+                    }
                 }
-                if (this.remove(userId)) {
+                if (removed) {
                     Game.get().getPlayers().get(userId).ifPresent(Player::leave);
                 }
             }
