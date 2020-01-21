@@ -1,7 +1,10 @@
 package me.pcasaes.bbop.dto;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.util.Collection;
 
+@RegisterForReflection
 public class PlayersListCommandDto implements CommandDto {
 
     private final Collection<PlayerDto> players;

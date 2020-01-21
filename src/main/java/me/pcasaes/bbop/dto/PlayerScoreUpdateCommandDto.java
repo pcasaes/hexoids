@@ -1,5 +1,8 @@
 package me.pcasaes.bbop.dto;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class PlayerScoreUpdateCommandDto implements CommandDto {
 
     private final long score;

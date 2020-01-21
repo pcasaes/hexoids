@@ -2,9 +2,11 @@ package me.pcasaes.bbop.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.UUID;
 
+@RegisterForReflection
 public class BoltFiredEventDto implements EventDto {
 
     private final UUID boltId;

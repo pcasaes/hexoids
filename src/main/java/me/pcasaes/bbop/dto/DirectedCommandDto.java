@@ -1,7 +1,9 @@
 package me.pcasaes.bbop.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
 public class DirectedCommandDto implements Dto {
     private final String playerId;
     private final CommandDto command;
