@@ -1,8 +1,11 @@
 package me.pcasaes.bbop.dto;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@RegisterForReflection
 public class ScoreBoardUpdatedEventDto implements EventDto {
 
     private final List<Entry> scores = new ArrayList<>();
@@ -27,6 +30,7 @@ public class ScoreBoardUpdatedEventDto implements EventDto {
         return EventType.SCOREBOARD_UPDATED;
     }
 
+    @RegisterForReflection
     public static class Entry {
         private final String playerId;
         private final long score;
