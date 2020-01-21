@@ -39,7 +39,7 @@ services:
     environment:
       - VIRTUAL_HOST=${BBOP_HOST}
       - VIRTUAL_PORT=8080
-      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=false -Dio.netty.availableProcessors=${BBOP_PROCESSORS_PER_SERVICE}
+      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=false
     depends_on:
       - bbop-kafka
     networks:
@@ -51,7 +51,7 @@ services:
       dockerfile: src/main/docker/Dockerfile.jvm
     image: me.pcasaes/bbop-mmo-arcade
     environment:
-      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=true -Dbbop.config.service.client.broadcast.enabled=false -Dio.netty.availableProcessors=${BBOP_PROCESSORS_PER_SERVICE}
+      - JAVA_EXTRA_OPTS=-Dbbop.config.service.kafka.subscriber=true -Dbbop.config.service.client.broadcast.enabled=false
     depends_on:
       - bbop-kafka
     networks:
