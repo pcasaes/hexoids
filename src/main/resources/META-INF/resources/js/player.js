@@ -178,13 +178,16 @@ const Players = (function () {
         }
 
         spawned(x, y, angle, thrustAngle) {
+            this.sprite
+                .setActive(true)
+                .setVisible(true);
             this.moveTo(x, y, angle, thrustAngle)
         }
 
         moveTo(x, y, angle, thrustAngle) {
-            this.sprite
-                .setActive(true)
-                .setVisible(true);
+            if (!this.sprite.active) {
+                return;
+            }
             this.wake.generate();
 
 

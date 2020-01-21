@@ -9,6 +9,7 @@ class AiBot {
         this.x = 0;
         this.y = 0;
         this.forwardDir = 0;
+        this.waitingToSpawn = true;
     }
 
     start() {
@@ -92,10 +93,14 @@ class AiBot {
                             if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
                                 this.server.sendMessage(m);
                             }
-                        } else {
-                            this.server.sendMessage({
-                                "command": "SPAWN_PLAYER"
-                            })
+                        } else if (this.waitingToSpawn) {
+                            this.waitingToSpawn = false;
+                            setTimeout(() => {
+                                this.waitingToSpawn = true;
+                                this.server.sendMessage({
+                                    "command": "SPAWN_PLAYER"
+                                })
+                            }, 1000);
                         }
                     });
 
