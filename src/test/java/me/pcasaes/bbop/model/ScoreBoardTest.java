@@ -1,20 +1,21 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.Dto;
-import me.pcasaes.bbop.dto.ScoreBoardUpdatedEventDto;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import pcasaes.bbop.proto.Dto;
+import pcasaes.bbop.proto.ScoreBoardUpdatedEventDto;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 
 class ScoreBoardTest {
@@ -34,14 +35,14 @@ class ScoreBoardTest {
         scoreBoard = ScoreBoard.create(Clock.create());
         doReturn(scoreBoard).when(game).getScoreBoard();
 
-        GameEvents.getDomainEvents().setConsumer(domainEvent -> {
-            Topics.valueOf(domainEvent.getTopic()).consume(domainEvent);
-        });
+        GameEvents.getDomainEvents().setConsumer(domainEvent ->
+                Topics.valueOf(domainEvent.getTopic()).consume(domainEvent)
+        );
     }
 
     @Test
     void testNotEnoughTime() {
-        AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         scoreBoard.fixedUpdate(500L);
@@ -51,7 +52,7 @@ class ScoreBoardTest {
 
     @Test
     void testEmptyLeaderBoard() {
-        AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         scoreBoard.fixedUpdate(1000L);
@@ -61,11 +62,11 @@ class ScoreBoardTest {
 
     @Test
     void testSimpleReset() {
-        AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
 
-        UUID one = UUID.randomUUID();
+        EntityId one = EntityId.newId();
         scoreBoard.updateScore(one, 100);
 
         scoreBoard.fixedUpdate(1000L);
@@ -75,24 +76,26 @@ class ScoreBoardTest {
 
         scoreBoard.fixedUpdate(2000L);
 
-        ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
+        assertTrue(eventReference.get().hasEvent());
+        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
+        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
         assertNotNull(event);
 
-        assertEquals(1, event.getScores().size());
+        assertEquals(1, event.getScoresCount());
 
-        assertEquals(one.toString(), event.getScores().get(0).getPlayerId());
-        assertEquals(0, event.getScores().get(0).getScore());
+        assertEquals(one.getGuid(), event.getScoresList().get(0).getPlayerId());
+        assertEquals(0, event.getScoresList().get(0).getScore());
     }
 
     @Test
     void testSimpleFull() {
-        AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        List<UUID> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
+        List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            ids.add(UUID.randomUUID());
+            ids.add(EntityId.newId());
         }
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
@@ -101,27 +104,29 @@ class ScoreBoardTest {
 
         scoreBoard.fixedUpdate(1000L);
 
-        ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
+        assertTrue(eventReference.get().hasEvent());
+        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
+        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
         assertNotNull(event);
 
-        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScores().size());
+        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScoresCount());
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            assertEquals(ids.get(i).toString(), event.getScores().get(i).getPlayerId());
-            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScores().get(i).getScore());
+            assertEquals(ids.get(i).getGuid(), event.getScoresList().get(i).getPlayerId());
+            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScoresList().get(i).getScore());
         }
 
     }
 
     @Test
     void testSimplePastFull() {
-        AtomicReference<Dto> eventReference = new AtomicReference<Dto>(null);
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        List<UUID> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
+        List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            ids.add(UUID.randomUUID());
+            ids.add(EntityId.newId());
         }
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
@@ -130,32 +135,36 @@ class ScoreBoardTest {
 
         scoreBoard.fixedUpdate(1000L);
 
-        ScoreBoardUpdatedEventDto event = (ScoreBoardUpdatedEventDto) eventReference.get();
+        assertTrue(eventReference.get().hasEvent());
+        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
+        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
         assertNotNull(event);
 
-        UUID a = UUID.randomUUID();
-        UUID b = UUID.randomUUID();
-        UUID c = UUID.randomUUID();
+        EntityId a = EntityId.newId();
+        EntityId b = EntityId.newId();
+        EntityId c = EntityId.newId();
         scoreBoard.updateScore(a, 100);
         scoreBoard.updateScore(b, 3);
         scoreBoard.updateScore(c, -1);
 
         scoreBoard.fixedUpdate(2000L);
 
-        event = (ScoreBoardUpdatedEventDto) eventReference.get();
+        assertTrue(eventReference.get().hasEvent());
+        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
+        event = eventReference.get().getEvent().getScoreBoardUpdated();
         assertNotNull(event);
 
-        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScores().size());
+        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScoresCount());
 
-        assertEquals(a.toString(), event.getScores().get(0).getPlayerId());
-        assertEquals(100, event.getScores().get(0).getScore());
+        assertEquals(a.getGuid(), event.getScoresList().get(0).getPlayerId());
+        assertEquals(100, event.getScoresList().get(0).getScore());
 
-        assertEquals(b.toString(), event.getScores().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getPlayerId());
-        assertEquals(3, event.getScores().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getScore());
+        assertEquals(b.getGuid(), event.getScoresList().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getPlayerId());
+        assertEquals(3, event.getScoresList().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getScore());
 
         for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE - 2; i++) {
-            assertEquals(ids.get(i).toString(), event.getScores().get(i + 1).getPlayerId());
-            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScores().get(i + 1).getScore());
+            assertEquals(ids.get(i).getGuid(), event.getScoresList().get(i + 1).getPlayerId());
+            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScoresList().get(i + 1).getScore());
         }
 
     }

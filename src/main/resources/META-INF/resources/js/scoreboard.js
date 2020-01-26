@@ -17,7 +17,7 @@ const Scoreboard = (function () {
         }
 
         setupEventQueue(eventQueue) {
-            eventQueue.add('SCOREBOARD_UPDATED', resp => {
+            eventQueue.add('scoreBoardUpdated', resp => {
                 this.process(resp);
             });
             return this;
@@ -49,9 +49,9 @@ const Scoreboard = (function () {
                     text.setDepth(this.depth);
                     this.entries.push(text);
                 }
-                this.entries[i].setText(entry.playerId.substr(0, 7) + ": " + entry.score);
-                if (this.players.get(entry.playerId)) {
-                    this.entries[i].setTintFill(this.players.get(entry.playerId).ship.color);
+                this.entries[i].setText(entry.playerId.guid.substr(0, 7) + ": " + entry.score);
+                if (this.players.get(entry.playerId.guid)) {
+                    this.entries[i].setTintFill(this.players.get(entry.playerId.guid).ship.color);
                 } else {
                     this.entries[i].setTintFill(0xffffff);
                 }

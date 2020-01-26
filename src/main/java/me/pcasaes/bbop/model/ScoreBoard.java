@@ -1,11 +1,8 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.DirectedCommandDto;
-import me.pcasaes.bbop.dto.EventType;
-import me.pcasaes.bbop.dto.PlayerScoreIncreasedEventDto;
-import me.pcasaes.bbop.dto.PlayerScoreUpdateCommandDto;
-import me.pcasaes.bbop.dto.PlayerScoreUpdatedEventDto;
-import me.pcasaes.bbop.dto.ScoreBoardUpdatedEventDto;
+import pcasaes.bbop.proto.PlayerScoreIncreasedEventDto;
+import pcasaes.bbop.proto.ScoreBoardUpdatedEventDto;
+import pcasaes.bbop.proto.ScoreEntry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,14 +10,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
-import java.util.UUID;
 import java.util.stream.IntStream;
+
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_SCORE_INCREASED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_SCORE_UPDATED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_SCORE_UPDATE_COMMAND_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.SCORE_BOARD_ENTRY_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.SCORE_BOARD_UPDATE_BUILDER;
 
 public interface ScoreBoard {
 
-    void updateScore(UUID playerId, int deltaScore);
+    void updateScore(EntityId playerId, int deltaScore);
 
-    void resetScore(UUID playerId);
+    void resetScore(EntityId playerId);
 
     void fixedUpdate(long timestamp);
 
@@ -39,9 +41,9 @@ public interface ScoreBoard {
 
         static final int SCORE_BOARD_SIZE = 10;
 
-        private final Map<UUID, Integer> scores = new HashMap<>();
-        private final Map<UUID, Long> scoresTimestamps = new HashMap<>();
-        private final Map<UUID, Integer> updatedScores = new HashMap<>();
+        private final Map<EntityId, Integer> scores = new HashMap<>();
+        private final Map<EntityId, Long> scoresTimestamps = new HashMap<>();
+        private final Map<EntityId, Integer> updatedScores = new HashMap<>();
         private final List<Entry> rankedScoreBoard = new ArrayList<>();
 
         private long lastFixedUpdateTimestamp = 0L;
@@ -53,64 +55,92 @@ public interface ScoreBoard {
         }
 
         @Override
-        public void updateScore(UUID playerId, int deltaScore) {
+        public void updateScore(EntityId playerId, int deltaScore) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
                             Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
-                            playerId,
-                            PlayerScoreIncreasedEventDto.increased(playerId, deltaScore, clock.getTime())
+                            playerId.getId(),
+                            DtoUtils
+                                    .newEvent()
+                                    .setPlayerScoreIncreased(
+                                            PLAYER_SCORE_INCREASED_BUILDER
+                                                    .clear()
+                                                    .setPlayerId(playerId.getGuid())
+                                                    .setGained(deltaScore)
+                                                    .setTimestamp(clock.getTime())
+                                    )
+                                    .build()
                     )
             );
         }
 
         private void scoreIncreased(PlayerScoreIncreasedEventDto event) {
-            Long currentTimestamp = this.scoresTimestamps.get(event.getPlayerId());
+            EntityId playerId = EntityId.of(event.getPlayerId());
+            Long currentTimestamp = this.scoresTimestamps.get(playerId);
             if (currentTimestamp == null || currentTimestamp <= event.getTimestamp()) {
-                this.scoresTimestamps.put(event.getPlayerId(), event.getTimestamp());
-                int score = this.scores.getOrDefault(event.getPlayerId(), 0) + event.getGained();
-                this.scores.put(event.getPlayerId(), score);
+                this.scoresTimestamps.put(playerId, event.getTimestamp());
+                int score = this.scores.getOrDefault(playerId, 0) + event.getGained();
+                this.scores.put(playerId, score);
 
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(
                                 Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
-                                event.getPlayerId(),
-                                PlayerScoreUpdatedEventDto.updated(event.getPlayerId(), score)
+                                playerId.getId(),
+                                DtoUtils
+                                        .newEvent()
+                                        .setPlayerScoreUpdated(
+                                                PLAYER_SCORE_UPDATED_BUILDER
+                                                        .clear()
+                                                        .setPlayerId(playerId.getGuid())
+                                                        .setScore(score)
+                                        )
+                                        .build()
                         )
                 );
             }
         }
 
-        private void scoreReset(UUID playerId) {
+        private void scoreReset(EntityId playerId) {
             this.scores.remove(playerId);
             this.scoresTimestamps.remove(playerId);
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
                             Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
-                            playerId
+                            playerId.getId()
                     )
             );
         }
 
-        private void scoreUpdated(PlayerScoreUpdatedEventDto event) {
-            if (event.getScore() <= 0) {
-                this.scores.remove(event.getPlayerId());
-                this.scoresTimestamps.remove(event.getPlayerId());
+        private void scoreUpdated(EntityId playerId, int score) {
+            if (score <= 0) {
+                this.scores.remove(playerId);
+                this.scoresTimestamps.remove(playerId);
             } else {
-                this.scores.compute(event.getPlayerId(), (k, v) ->
-                        Math.max(v == null ? 0 : v, event.getScore())
+                this.scores.compute(playerId, (k, v) ->
+                        Math.max(v == null ? 0 : v, score)
                 );
             }
-            this.updatedScores.put(event.getPlayerId(), event.getScore());
-            GameEvents.getClientEvents().register(DirectedCommandDto.of(event.getPlayerId().toString(), PlayerScoreUpdateCommandDto.ofScore(event.getScore())));
+            this.updatedScores.put(playerId, score);
+            GameEvents
+                    .getClientEvents()
+                    .register(
+                            DtoUtils.newDtoDirectedCommand(playerId.getGuid(), cmd ->
+                                    cmd.setPlayerScoreUpdate(
+                                            PLAYER_SCORE_UPDATE_COMMAND_BUILDER
+                                                    .clear()
+                                                    .setScore(score)
+                                    )
+                            )
+                    );
         }
 
         @Override
-        public void resetScore(UUID playerId) {
+        public void resetScore(EntityId playerId) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
                             Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
-                            playerId
+                            playerId.getId()
                     )
             );
         }
@@ -118,18 +148,20 @@ public interface ScoreBoard {
         @Override
         public void consumeFromScoreBoardControlTopic(DomainEvent domainEvent) {
             if (domainEvent.getEvent() == null) {
-                scoreReset(domainEvent.getKey());
-            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_SCORE_INCREASED)) {
-                scoreIncreased((PlayerScoreIncreasedEventDto) domainEvent.getEvent());
+                scoreReset(EntityId.of(domainEvent.getKey()));
+            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerScoreIncreased()) {
+                scoreIncreased(domainEvent.getEvent().getPlayerScoreIncreased());
             }
         }
 
         @Override
         public void consumeFromScoreBoardUpdateTopic(DomainEvent domainEvent) {
             if (domainEvent.getEvent() == null) {
-                scoreUpdated(PlayerScoreUpdatedEventDto.updated(domainEvent.getKey(), 0));
-            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().isEvent(EventType.PLAYER_SCORE_UPDATED)) {
-                scoreUpdated((PlayerScoreUpdatedEventDto) domainEvent.getEvent());
+                scoreUpdated(EntityId.of(domainEvent.getKey()), 0);
+            } else if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerScoreUpdated()) {
+                EntityId playerId = EntityId.of(domainEvent.getEvent().getPlayerScoreUpdated().getPlayerId());
+                int score = domainEvent.getEvent().getPlayerScoreUpdated().getScore();
+                scoreUpdated(playerId, score);
             }
         }
 
@@ -146,23 +178,28 @@ public interface ScoreBoard {
                 updatedScores.clear();
                 if (!rankedScoreBoard.isEmpty()) {
                     rankedScoreBoard.sort(Entry::compare);
+                    GameEvents.getClientEvents().register(
+                            DtoUtils
+                                    .newDtoEvent(evt -> {
+                                        ScoreBoardUpdatedEventDto.Builder scoreBuilder = SCORE_BOARD_UPDATE_BUILDER
+                                                .clear();
 
-                    ScoreBoardUpdatedEventDto event = ScoreBoardUpdatedEventDto.newInstance();
+                                        while (rankedScoreBoard.size() > SCORE_BOARD_SIZE) {
+                                            rankedScoreBoard.remove(rankedScoreBoard.size() - 1);
+                                        }
 
-                    while (rankedScoreBoard.size() > SCORE_BOARD_SIZE) {
-                        rankedScoreBoard.remove(rankedScoreBoard.size() - 1);
-                    }
-
-                    rankedScoreBoard
-                            .forEach(entry -> event.add(entry.getPlayerId().toString(), entry.getScore()));
-
-
-                    GameEvents.getClientEvents().register(event);
+                                        rankedScoreBoard
+                                                .stream()
+                                                .map(Entry::toDto)
+                                                .forEach(scoreBuilder::addScores);
+                                        evt.setScoreBoardUpdated(scoreBuilder);
+                                    })
+                    );
                 }
             }
         }
 
-        private void tryAddToScoreBoard(Map.Entry<UUID, Integer> mapEntry) {
+        private void tryAddToScoreBoard(Map.Entry<EntityId, Integer> mapEntry) {
             OptionalInt index = IntStream
                     .range(0, rankedScoreBoard.size())
                     .filter(i -> rankedScoreBoard.get(i).getPlayerId().equals(mapEntry.getKey()))
@@ -176,24 +213,32 @@ public interface ScoreBoard {
 
         private static class Entry implements Comparable<Entry> {
 
-            private final UUID playerId;
-            private long score;
+            private final EntityId playerId;
+            private int score;
 
-            public Entry(UUID playerId) {
+            public Entry(EntityId playerId) {
                 this.playerId = playerId;
             }
 
-            public UUID getPlayerId() {
+            public EntityId getPlayerId() {
                 return playerId;
             }
 
-            public long getScore() {
+            public int getScore() {
                 return score;
             }
 
-            public Entry setScore(long score) {
+            public Entry setScore(int score) {
                 this.score = score;
                 return this;
+            }
+
+            ScoreEntry toDto() {
+                return SCORE_BOARD_ENTRY_BUILDER
+                        .clear()
+                        .setPlayerId(playerId.getGuid())
+                        .setScore(score)
+                        .build();
             }
 
             @Override

@@ -1,6 +1,5 @@
 package me.pcasaes.bbop.service.kafka.topics;
 
-import me.pcasaes.bbop.dto.EventDto;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.Topics;
@@ -15,6 +14,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.TopicConfig;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pcasaes.bbop.proto.Event;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -59,7 +59,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
         consumerInfos = Collections.singleton(new ConsumerInfo() {
 
 
-            private final ConsumerRecord<UUID, EventDto>[] recordToOffset = new ConsumerRecord[partitions];
+            private final ConsumerRecord<UUID, Event>[] recordToOffset = new ConsumerRecord[partitions];
 
             @Override
             public boolean useSubscription() {
@@ -82,7 +82,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
             }
 
             @Override
-            public void postConsume(Consumer<UUID, EventDto> kafkaConsumer, ConsumerRecord<UUID, EventDto> record) {
+            public void postConsume(Consumer<UUID, Event> kafkaConsumer, ConsumerRecord<UUID, Event> record) {
                 int partition = record.partition();
                 if (recordToOffset[partition] == null) {
                     recordToOffset[partition] = record;

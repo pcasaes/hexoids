@@ -1,17 +1,14 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.BoltExhaustedEventDto;
-import me.pcasaes.bbop.dto.BoltMovedEventDto;
-
 import java.util.Optional;
-import java.util.UUID;
+
+import static me.pcasaes.bbop.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.BOLT_MOVED_BUILDER;
 
 public class Bolt {
 
-    private UUID id;
-    private String idString;
-    private UUID ownerPlayerId;
-    private String ownerPlayerIdStr;
+    private EntityId id;
+    private EntityId ownerPlayerId;
     private float prevX;
     private float x;
     private float prevY;
@@ -28,8 +25,8 @@ public class Bolt {
     private final Players players;
 
     private Bolt(Players players,
-                 UUID boltId,
-                 UUID ownerPlayerId,
+                 EntityId boltId,
+                 EntityId ownerPlayerId,
                  float x,
                  float y,
                  float angle,
@@ -37,9 +34,7 @@ public class Bolt {
                  long startTimestamp) {
         this.players = players;
         this.id = boltId;
-        this.idString = this.id.toString();
         this.ownerPlayerId = ownerPlayerId;
-        this.ownerPlayerIdStr = ownerPlayerId.toString();
         this.x = x;
         this.y = y;
         this.prevX = x;
@@ -55,8 +50,8 @@ public class Bolt {
     }
 
     static Bolt create(Players players,
-                       UUID boltId,
-                       UUID ownerPlayerId,
+                       EntityId boltId,
+                       EntityId ownerPlayerId,
                        float x,
                        float y,
                        float angle,
@@ -72,11 +67,11 @@ public class Bolt {
                 startTimestamp);
     }
 
-    UUID getId() {
+    EntityId getId() {
         return id;
     }
 
-    boolean is(UUID id) {
+    boolean is(EntityId id) {
         return this.id.equals(id);
     }
 
@@ -187,8 +182,19 @@ public class Bolt {
         return DomainEvent
                 .create(
                         Topics.BOLT_ACTION_TOPIC.name(),
-                        this.id,
-                        BoltMovedEventDto.of(this.idString, this.ownerPlayerIdStr, this.x, this.y, this.angle)
+                        this.id.getId(),
+                        DtoUtils
+                                .newEvent()
+                                .setBoltMoved(
+                                        BOLT_MOVED_BUILDER
+                                                .clear()
+                                                .setBoltId(id.getGuid())
+                                                .setOwnerPlayerId(ownerPlayerId.getGuid())
+                                                .setX(x)
+                                                .setY(y)
+                                                .setAngle(angle)
+                                )
+                                .build()
                 );
     }
 
@@ -196,13 +202,21 @@ public class Bolt {
         return DomainEvent
                 .create(
                         Topics.BOLT_ACTION_TOPIC.name(),
-                        this.id,
-                        BoltExhaustedEventDto.of(this.idString, this.ownerPlayerIdStr)
+                        this.id.getId(),
+                        DtoUtils
+                                .newEvent()
+                                .setBoltExhausted(
+                                        BOLT_EXHAUSTED_BUILDER
+                                                .clear()
+                                                .setBoltId(id.getGuid())
+                                                .setOwnerPlayerId(ownerPlayerId.getGuid())
+                                )
+                                .build()
                 );
     }
 
 
-    boolean isOwnedBy(UUID playerId) {
+    boolean isOwnedBy(EntityId playerId) {
         return this.ownerPlayerId.equals(playerId);
     }
 

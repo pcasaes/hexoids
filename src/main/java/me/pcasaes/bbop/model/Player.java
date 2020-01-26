@@ -1,22 +1,29 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.BoltFiredEventDto;
-import me.pcasaes.bbop.dto.PlayerDestroyedEventDto;
-import me.pcasaes.bbop.dto.PlayerDto;
-import me.pcasaes.bbop.dto.PlayerJoinedEventDto;
-import me.pcasaes.bbop.dto.PlayerLeftEventDto;
-import me.pcasaes.bbop.dto.PlayerMovedOrSpawnedEventDto;
 import me.pcasaes.bbop.model.annotations.IsThreadSafe;
 import me.pcasaes.bbop.util.TrigUtil;
+import pcasaes.bbop.proto.BoltFiredEventDto;
+import pcasaes.bbop.proto.PlayerDestroyedEventDto;
+import pcasaes.bbop.proto.PlayerDto;
+import pcasaes.bbop.proto.PlayerJoinedEventDto;
+import pcasaes.bbop.proto.PlayerMovedEventDto;
+import pcasaes.bbop.proto.PlayerSpawnedEventDto;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
+
+import static me.pcasaes.bbop.model.DtoUtils.BOLT_FIRED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_DESTROYED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_JOINED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_LEFT_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_MOVED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.PLAYER_SPAWNED_BUILDER;
+import static me.pcasaes.bbop.model.DtoUtils.newDtoEvent;
 
 public interface Player {
 
-    static Player create(UUID id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+    static Player create(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
         return new Implementation(id, players, bolts, clock, scoreBoard);
     }
 
@@ -26,9 +33,9 @@ public interface Player {
 
     int getActiveBoltCount();
 
-    boolean is(UUID playerId);
+    boolean is(EntityId playerId);
 
-    PlayerDto toDto();
+    PlayerDto toDto(PlayerDto.Builder builder);
 
     void join();
 
@@ -36,7 +43,7 @@ public interface Player {
 
     void move(float moveX, float moveY, Float angle, Float thrustAngle);
 
-    void moved(PlayerMovedOrSpawnedEventDto event);
+    void moved(PlayerMovedEventDto event);
 
     void leave();
 
@@ -44,7 +51,7 @@ public interface Player {
 
     boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
 
-    void destroy(UUID playerId);
+    void destroy(EntityId playerId);
 
     void destroyed(PlayerDestroyedEventDto event);
 
@@ -52,17 +59,16 @@ public interface Player {
 
     void spawn();
 
-    void spawned(PlayerMovedOrSpawnedEventDto event);
+    void spawned(PlayerSpawnedEventDto event);
 
     void expungeIfStalled();
 
     class Implementation implements Player {
 
+
         private static final Random RNG = new Random();
 
-        private final UUID id;
-
-        private final String idStr;
+        private final EntityId id;
 
         private int ship;
 
@@ -92,13 +98,12 @@ public interface Player {
 
         private final ResetPosition resetPosition;
 
-        private Implementation(UUID id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        private Implementation(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
             this.clock = clock;
             this.scoreBoard = scoreBoard;
             this.id = id;
-            this.idStr = id.toString();
 
             this.ship = RNG.nextInt(6);
             setSpawned(false);
@@ -111,24 +116,27 @@ public interface Player {
         }
 
         @Override
-        @IsThreadSafe
         public void fire() {
             if (!spawned) {
                 return;
             }
-            final UUID boltId = UUID.randomUUID();
+            final EntityId boltId = EntityId.newId();
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
                             Topics.BOLT_LIFECYCLE_TOPIC.name(),
-                            boltId,
-                            BoltFiredEventDto.of(
-                                    boltId,
-                                    this.id,
-                                    this.x,
-                                    this.y,
-                                    this.angle,
-                                    this.clock.getTime()
-                            )
+                            boltId.getId(),
+                            DtoUtils
+                                    .newEvent()
+                                    .setBoltFired(BOLT_FIRED_BUILDER
+                                            .clear()
+                                            .setBoltId(boltId.getGuid())
+                                            .setOwnerPlayerId(id.getGuid())
+                                            .setX(x)
+                                            .setY(y)
+                                            .setAngle(angle)
+                                            .setStartTimestamp(clock.getTime())
+                                    )
+                                    .build()
                     ));
         }
 
@@ -146,7 +154,7 @@ public interface Player {
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {
             return this.bolts.fired(
                     players,
-                    event.getBoltId(),
+                    EntityId.of(event.getBoltId()),
                     this.id,
                     event.getX(),
                     event.getY(),
@@ -161,13 +169,20 @@ public interface Player {
         }
 
         @Override
-        public boolean is(UUID playerId) {
+        public boolean is(EntityId playerId) {
             return id.equals(playerId);
         }
 
         @Override
-        public PlayerDto toDto() {
-            return PlayerDto.of(idStr, ship, x, y, angle);
+        public PlayerDto toDto(PlayerDto.Builder builder) {
+            return builder
+                    .clear()
+                    .setPlayerId(id.getGuid())
+                    .setShip(ship)
+                    .setX(x)
+                    .setY(y)
+                    .setAngle(angle)
+                    .build();
         }
 
         private void resetPosition() {
@@ -181,15 +196,24 @@ public interface Player {
             GameEvents.getDomainEvents().register(
                     DomainEvent
                             .create(Topics.JOIN_GAME_TOPIC.name(),
-                                    this.id,
-                                    PlayerJoinedEventDto.of(idStr, ship))
+                                    this.id.getId(),
+                                    DtoUtils
+                                            .newEvent()
+                                            .setPlayerJoined(PLAYER_JOINED_BUILDER
+                                                    .clear()
+                                                    .setPlayerId(id.getGuid())
+                                                    .setShip(ship))
+                                            .build()
+                            )
             );
         }
 
         @Override
         public void joined(PlayerJoinedEventDto event) {
             this.ship = event.getShip();
-            GameEvents.getClientEvents().register(event);
+            GameEvents
+                    .getClientEvents()
+                    .register(newDtoEvent(ev -> ev.setPlayerJoined(event)));
         }
 
         @Override
@@ -227,40 +251,62 @@ public interface Player {
         }
 
         @Override
-        public void moved(PlayerMovedOrSpawnedEventDto event) {
-            if (event.getTimestamp() > this.movedTimestamp) {
-                this.x = event.getX();
-                this.y = event.getY();
-                this.angle = event.getAngle();
-                this.movedTimestamp = event.getTimestamp();
-                GameEvents.getClientEvents().register(event);
+        public void moved(PlayerMovedEventDto event) {
+            movedOrSpawned(event, null);
+        }
+
+        private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
+            if (movedEvent.getTimestamp() > this.movedTimestamp) {
+                this.x = movedEvent.getX();
+                this.y = movedEvent.getY();
+                this.angle = movedEvent.getAngle();
+                this.movedTimestamp = movedEvent.getTimestamp();
+                GameEvents
+                        .getClientEvents()
+                        .register(newDtoEvent(ev -> {
+                            if (spawnedEvent != null) {
+                                ev.setPlayerSpawned(spawnedEvent);
+                            } else {
+                                ev.setPlayerMoved(movedEvent);
+                            }
+                        }));
             }
         }
 
         private void fireMoveDomainEvent() {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
-                            this.id,
-                            PlayerMovedOrSpawnedEventDto.moved(
-                                    this.idStr,
-                                    this.x,
-                                    this.y,
-                                    this.angle,
-                                    this.thrustAngle,
-                                    this.clock.getTime())));
+                            this.id.getId(),
+                            DtoUtils
+                                    .newEvent()
+                                    .setPlayerMoved(PLAYER_MOVED_BUILDER
+                                            .clear()
+                                            .setPlayerId(id.getGuid())
+                                            .setX(x)
+                                            .setY(y)
+                                            .setAngle(angle)
+                                            .setThrustAngle(thrustAngle)
+                                            .setTimestamp(clock.getTime())
+                                    )
+                                    .build())
+            );
         }
 
         @Override
         @IsThreadSafe
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JOIN_GAME_TOPIC.name(), this.id));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PLAYER_ACTION_TOPIC.name(), this.id));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JOIN_GAME_TOPIC.name(), this.id.getId()));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
         }
 
         @Override
         public void left() {
             scoreBoard.resetScore(this.id);
-            GameEvents.getClientEvents().register(PlayerLeftEventDto.of(this.idStr));
+            GameEvents.getClientEvents().register(
+                    newDtoEvent(ev -> ev.setPlayerLeft(PLAYER_LEFT_BUILDER
+                            .clear()
+                            .setPlayerId(id.getGuid())))
+            );
         }
 
         @Override
@@ -287,12 +333,20 @@ public interface Player {
         }
 
         @Override
-        public void destroy(UUID byPlayerId) {
+        public void destroy(EntityId byPlayerId) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
                             Topics.PLAYER_ACTION_TOPIC.name(),
-                            this.id,
-                            PlayerDestroyedEventDto.of(this.id, byPlayerId))
+                            this.id.getId(),
+                            DtoUtils
+                                    .newEvent()
+                                    .setPlayerDestroyed(PLAYER_DESTROYED_BUILDER
+                                            .clear()
+                                            .setPlayerId(this.id.getGuid())
+                                            .setDestroyedByPlayerId(byPlayerId.getGuid())
+                                    )
+                                    .build()
+                    )
             );
             this.scoreBoard.updateScore(byPlayerId, 1);
         }
@@ -300,8 +354,10 @@ public interface Player {
         @Override
         public void destroyed(PlayerDestroyedEventDto event) {
             setSpawned(false);
-            this.scoreBoard.resetScore(event.getPlayerId());
-            GameEvents.getClientEvents().register(event);
+            this.scoreBoard.resetScore(this.id);
+            GameEvents.getClientEvents().register(
+                    newDtoEvent(ev -> ev.setPlayerDestroyed(event))
+            );
         }
 
         @Override
@@ -316,22 +372,34 @@ public interface Player {
                 resetPosition();
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
-                                this.id,
-                                PlayerMovedOrSpawnedEventDto.spawned(
-                                        this.idStr,
-                                        this.x,
-                                        this.y,
-                                        this.angle,
-                                        this.thrustAngle,
-                                        this.clock.getTime())));
+                                this.id.getId(),
+                                DtoUtils
+                                        .newEvent()
+                                        .setPlayerSpawned(
+                                                PLAYER_SPAWNED_BUILDER
+                                                        .clear()
+                                                        .setLocation(
+                                                                PLAYER_MOVED_BUILDER
+                                                                        .clear()
+                                                                        .setPlayerId(id.getGuid())
+                                                                        .setX(x)
+                                                                        .setY(y)
+                                                                        .setAngle(angle)
+                                                                        .setThrustAngle(thrustAngle)
+                                                                        .setTimestamp(clock.getTime())
+                                                        )
+                                        )
+                                        .build()
+                        )
+                );
             }
         }
 
         @Override
-        public void spawned(PlayerMovedOrSpawnedEventDto event) {
-            if (event.getTimestamp() > this.movedTimestamp) {
+        public void spawned(PlayerSpawnedEventDto event) {
+            if (event.getLocation().getTimestamp() > this.movedTimestamp) {
                 setSpawned(true);
-                moved(event);
+                movedOrSpawned(event.getLocation(), event);
             }
         }
 

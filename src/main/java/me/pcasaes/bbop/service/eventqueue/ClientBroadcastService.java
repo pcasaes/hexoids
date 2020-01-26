@@ -1,96 +1,110 @@
 package me.pcasaes.bbop.service.eventqueue;
 
-import me.pcasaes.bbop.dto.DirectedCommandDto;
-import me.pcasaes.bbop.dto.Dto;
-import me.pcasaes.bbop.dto.EventDto;
+import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
-import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.SessionService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pcasaes.bbop.proto.DirectedCommand;
+import pcasaes.bbop.proto.Dto;
+import pcasaes.bbop.proto.Events;
+import pcasaes.bbop.proto.Sleep;
 
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Used to broadcast events to the game clients
  */
 @ApplicationScoped
-public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent>, Closeable {
-
-    private static final Logger LOGGER = Logger.getLogger(ClientBroadcastService.class.getName());
+public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent> {
 
     private final SessionService sessionService;
     private final ConfigurationService configurationService;
     private final boolean enabled;
+    private final int batchSize;
+    private final int batchTimeout;
+    private final Dto.Builder dtoBuilder;
+    private final Events.Builder eventsBuilder;
 
-    private GameLoopService.SleepDto sleepDto = null;
-
-    private final DtoProcessorService.JsonWriter jsonWriter;
+    private Sleep sleepDto = null;
+    private long flushTimestamp;
 
     ClientBroadcastService() {
         this.sessionService = null;
         this.configurationService = null;
-        this.jsonWriter = null;
         this.enabled = false;
+        this.eventsBuilder = null;
+        this.dtoBuilder = null;
+        this.batchSize = 0;
+        this.batchTimeout = 0;
     }
 
 
     @Inject
     public ClientBroadcastService(SessionService sessionService,
-                                  DtoProcessorService dtoProcessorService,
                                   ConfigurationService configurationService,
                                   @ConfigProperty(
                                           name = "bbop.config.service.client.broadcast.enabled",
                                           defaultValue = "true"
-                                  ) boolean enabled) {
+                                  ) boolean enabled,
+                                  @ConfigProperty(
+                                          name = "bbop.config.service.client.broadcast.batch.size",
+                                          defaultValue = "64"
+                                  ) int batchSize,
+                                  @ConfigProperty(
+                                          name = "bbop.config.service.client.broadcast.batch.timeout",
+                                          defaultValue = "20"
+                                  ) int batchTimeout) {
         this.sessionService = sessionService;
         this.configurationService = configurationService;
         this.enabled = enabled;
-        this.jsonWriter = dtoProcessorService.createJsonWriter();
-    }
-
-    @PreDestroy
-    @Override
-    public void close() {
-        close(jsonWriter);
-    }
-
-    private void close(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
+        this.batchSize = batchSize;
+        this.batchTimeout = batchTimeout;
+        if (enabled) {
+            this.eventsBuilder = Events.newBuilder();
+            this.dtoBuilder = Dto.newBuilder();
+        } else {
+            this.eventsBuilder = null;
+            this.dtoBuilder = null;
         }
     }
-
-    private String serialize(Object value) {
-        try {
-            return jsonWriter.writeValue(value);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
 
     @Override
     public void accept(ClientEvent event) {
+        long now = Game.get().getClock().getTime();
         if (event != null) {
             Dto dto = event.getDto();
-            if (dto.getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
-                this.sleepDto = (GameLoopService.SleepDto) dto;
-            } else if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
-                this.sessionService.broadcast(serialize(dto));
-            } else if (dto.getDtoType() == DirectedCommandDto.DtoType.DIRECTED_COMMAND_DTO) {
-                DirectedCommandDto command = (DirectedCommandDto) dto;
-                this.sessionService.direct(command.getPlayerId(), serialize(command.getCommand()));
+            if (dto.hasSleep()) {
+                this.sleepDto = dto.getSleep();
+                flushEvents(now);
+            } else if (dto.hasEvent()) {
+                eventsBuilder
+                        .addEvents(dto.getEvent());
+            } else if (dto.hasDirectedCommand()) {
+                DirectedCommand command = dto.getDirectedCommand();
+                this.sessionService.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
             }
         }
+        if (eventsBuilder.getEventsCount() > this.batchSize ||
+                now - this.flushTimestamp > this.batchTimeout) {
+            flushEvents(now);
+        }
+    }
+
+    private void flushEvents(long now) {
+        if (eventsBuilder.getEventsCount() > 0) {
+            this.sessionService.broadcast(dtoBuilder
+                    .setEvents(
+                            eventsBuilder
+                    )
+                    .build()
+                    .toByteArray());
+
+            dtoBuilder.clearEvents();
+            eventsBuilder.clear();
+        }
+        this.flushTimestamp = now;
     }
 
     @Override
