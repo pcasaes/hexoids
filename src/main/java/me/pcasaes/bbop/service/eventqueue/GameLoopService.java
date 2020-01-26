@@ -53,6 +53,10 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     @PostConstruct
     public void start() {
         this.lastTimestamp = Game.get().getClock().getTime();
+    }
+
+    @Override
+    public void executePreLoopTasks() {
         threadService.setGameLoopThread();
     }
 
