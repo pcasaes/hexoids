@@ -1,25 +1,27 @@
 package me.pcasaes.bbop;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
-import me.pcasaes.bbop.dto.CommandType;
-import me.pcasaes.bbop.dto.MoveCommandDto;
+import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.Player;
-import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.SessionService;
 import me.pcasaes.bbop.service.eventqueue.EventQueueService;
 import me.pcasaes.bbop.service.eventqueue.GameLoopService;
 import me.pcasaes.bbop.service.kafka.KafkaService;
+import pcasaes.bbop.proto.MoveCommandDto;
+import pcasaes.bbop.proto.RequestCommand;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static me.pcasaes.bbop.model.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
 
 @ApplicationScoped
 public class GameSocket {
@@ -28,38 +30,28 @@ public class GameSocket {
 
     private final SessionService sessionService;
 
-    private final DtoProcessorService dtoProcessorService;
-
     private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
     private final KafkaService kafkaService;
 
-    private final Vertx vertx;
-
     public GameSocket() {
         this.sessionService = null;
-        this.dtoProcessorService = null;
         this.gameLoopService = null;
         this.kafkaService = null;
-        this.vertx = null;
     }
 
     @Inject
     public GameSocket(SessionService sessionService,
-                      DtoProcessorService dtoProcessorService,
                       EventQueueService<GameLoopService.GameRunnable> gameLoopService,
-                      KafkaService kafkaService,
-                      Vertx vertx) {
+                      KafkaService kafkaService) {
         this.sessionService = sessionService;
-        this.dtoProcessorService = dtoProcessorService;
         this.gameLoopService = gameLoopService;
         this.kafkaService = kafkaService;
-        this.vertx = vertx;
     }
 
     public void startup(@Observes Router router) {
         router.route("/game/:id").handler(rc -> {
-            String userId = rc.pathParam("id");
+            EntityId userId = EntityId.of(rc.pathParam("id"));
             HttpServerRequest request = rc.request();
             ServerWebSocket ctx = request.upgrade();
 
@@ -68,14 +60,14 @@ public class GameSocket {
             ctx.closeHandler(n -> this.onClose(userId));
             ctx.exceptionHandler(n -> this.onClose(userId));
 
-            ctx.handler(buff -> onMessage(buff.toString(), userId));
+            ctx.handler(buff -> onMessage(buff.getBytes(), userId));
 
             ctx.accept();
         });
     }
 
 
-    public void onOpen(ServerWebSocket session, String userId) {
+    public void onOpen(ServerWebSocket session, EntityId userId) {
         if (!this.kafkaService.hasStarted()) {
             LOGGER.warning("Not ready for new connections");
             try {
@@ -101,7 +93,7 @@ public class GameSocket {
 
     }
 
-    public void onClose(String userId) {
+    public void onClose(EntityId userId) {
         if (sessionService.remove(userId)) {
             Optional<Player> player = Game.get().getPlayers().get(userId);
             if (player.isPresent()) {
@@ -112,35 +104,44 @@ public class GameSocket {
         }
     }
 
-    public void onMessage(String message, String userId) {
+    public void onMessage(byte[] message, EntityId userId) {
         try {
-            dtoProcessorService.getCommand(message)
-                    .ifPresent(command -> {
-                        if (command == CommandType.MOVE_PLAYER) {
-                            final MoveCommandDto moveCommandDto = dtoProcessorService.deserialize(message, MoveCommandDto.class);
-
-                            this.gameLoopService.enqueue(() -> Game.get().getPlayers()
-                                    .createOrGet(userId)
-                                    .move(moveCommandDto.getMoveX(),
-                                            moveCommandDto.getMoveY(),
-                                            moveCommandDto.getAngle(),
-                                            moveCommandDto.getThrustAngle()
-                                    )
-                            );
-                        } else if (command == CommandType.FIRE_BOLT) {
-                            Optional<Player> player = Game.get().getPlayers().get(userId);
-                            if (player.isPresent()) {
-                                player.get().fire();
-                            } else {
-                                gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
-                            }
-                        } else if (command == CommandType.SPAWN_PLAYER) {
-                            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
-                        }
-                    });
+            getCommand(message)
+                    .ifPresent(command -> onCommand(userId, command));
 
         } catch (RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
+        }
+    }
+
+    private void onCommand(EntityId userId, RequestCommand command) {
+        if (command.hasMove()) {
+            MoveCommandDto moveCommandDto = command.getMove();
+
+            this.gameLoopService.enqueue(() -> Game.get().getPlayers()
+                    .createOrGet(userId)
+                    .move(moveCommandDto.getMoveX(),
+                            moveCommandDto.getMoveY(),
+                            moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null,
+                            moveCommandDto.hasThrustAngle() ? moveCommandDto.getThrustAngle().getValue() : null
+                    )
+            );
+        } else if (command.hasFire()) {
+            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
+        } else if (command.hasSpawn()) {
+            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
+        }
+    }
+
+    private Optional<RequestCommand> getCommand(byte[] value) {
+        try {
+            RequestCommand.Builder builder = REQUEST_COMMAND_THREAD_SAFE_BUILDER.get();
+            builder.clear();
+            builder.mergeFrom(value);
+            return Optional.of(builder.build());
+        } catch (IOException | RuntimeException ex) {
+            LOGGER.warning(ex.getMessage());
+            return Optional.empty();
         }
     }
 }

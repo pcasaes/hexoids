@@ -18,6 +18,7 @@
     <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
     <quarkus.platform.version>1.1.1.Final</quarkus.platform.version>
+    <protobuf.version>3.11.1</protobuf.version>
     <surefire-plugin.version>2.22.1</surefire-plugin.version>
   </properties>
   <dependencyManagement>
@@ -93,6 +94,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-undertow</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-javalite</artifactId>
+      <version>${protobuf.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -121,6 +127,91 @@
           </systemProperties>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.github.os72</groupId>
+        <artifactId>protoc-jar-maven-plugin</artifactId>
+        <version>${protobuf.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <protocArtifact>com.google.protobuf:protoc:${protobuf.version}</protocArtifact>
+              <inputDirectories>
+                <include>src/main/proto</include>
+              </inputDirectories>
+              <outputTargets>
+                <outputTarget>
+                  <type>java</type>
+                  <outputOptions>lite</outputOptions>
+                </outputTarget>
+              </outputTargets>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.9.0</version>
+        <executions>
+          <execution>
+            <id>install node and npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+          </execution>
+
+          <execution>
+            <id>npm install</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+
+            <phase>generate-resources</phase>
+
+            <configuration>
+              <arguments>install</arguments>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>npm compile</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+
+            <phase>generate-resources</phase>
+
+            <configuration>
+              <arguments>run compile</arguments>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>npm build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+
+            <phase>generate-resources</phase>
+
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+
+        </executions>
+        <configuration>
+          <nodeVersion>v13.7.0</nodeVersion>
+          <workingDirectory>src/main/js-proto</workingDirectory>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
   <profiles>

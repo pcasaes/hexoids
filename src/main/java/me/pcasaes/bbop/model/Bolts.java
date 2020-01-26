@@ -1,17 +1,15 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.EventType;
-import me.pcasaes.bbop.model.annotations.IsThreadSafe;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static me.pcasaes.bbop.model.DtoUtils.DTO_BUILDER;
 
 public class Bolts implements Iterable<Bolt> {
 
@@ -19,13 +17,13 @@ public class Bolts implements Iterable<Bolt> {
         return new Bolts();
     }
 
-    private final Map<UUID, Bolt> activeBolts = new HashMap<>();
+    private final Map<EntityId, Bolt> activeBolts = new HashMap<>();
 
 
     Optional<Bolt> fired(
             Players players,
-            UUID boltId,
-            UUID ownerPlayerId,
+            EntityId boltId,
+            EntityId ownerPlayerId,
             float x,
             float y,
             float angle,
@@ -65,16 +63,19 @@ public class Bolts implements Iterable<Bolt> {
         return StreamSupport.stream(spliterator(), false);
     }
 
-    @IsThreadSafe
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
-                (domainEvent.getEvent().isEvent(EventType.BOLT_MOVED) || domainEvent.getEvent().isEvent(EventType.BOLT_EXHAUSTED))) {
-            GameEvents.getClientEvents().register(domainEvent.getEvent());
+                (domainEvent.getEvent().hasBoltMoved() || domainEvent.getEvent().hasBoltExhausted())) {
+            GameEvents.getClientEvents()
+                    .register(DTO_BUILDER
+                            .clear()
+                            .setEvent(domainEvent.getEvent())
+                            .build());
         }
     }
 
     private void cleanup() {
-        List<UUID> toRemove = activeBolts
+        List<EntityId> toRemove = activeBolts
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().isExhausted())

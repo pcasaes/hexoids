@@ -1,5 +1,6 @@
 const Bolts = (function () {
 
+    const EMPTY_OBJ = {};
 
     const PULSE = [0xfffff, 0x888888, 0x888888, 0x000000];
 
@@ -25,7 +26,7 @@ const Bolts = (function () {
                 this.bg = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
             }
 
-            this.owner = this.data.players.get(b.ownerPlayerId);
+            this.owner = this.data.players.get(b.ownerPlayerId.guid);
             if (this.owner) {
                 this.sprite.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
                 this.bg.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
@@ -115,18 +116,18 @@ const Bolts = (function () {
             if (Date.now() - this.lastFire > this.data.gameConfig.bolt.debounce) {
                 this.lastFire = Date.now();
                 this.data.server.sendMessage({
-                    "command": "FIRE_BOLT"
+                    "fire": EMPTY_OBJ
                 });
             }
         }
 
         move(b) {
-            if (!this.bolts[b.boltId]) {
+            if (!this.bolts[b.boltId.guid]) {
                 const bolt = POOL.pop();
 
-                this.bolts[b.boltId] = (!bolt ? new Bolt(this.data) : bolt).create(b).fired();
+                this.bolts[b.boltId.guid] = (!bolt ? new Bolt(this.data) : bolt).create(b).fired();
             } else {
-                this.bolts[b.boltId].move(b);
+                this.bolts[b.boltId.guid].move(b);
             }
         }
 
@@ -142,11 +143,11 @@ const Bolts = (function () {
         setupQueues(queues) {
 
             queues.event
-                .add('BOLT_MOVED', resp => {
+                .add('boltMoved', resp => {
                     this.move(resp)
                 })
-                .add('BOLT_EXHAUSTED', resp => {
-                    this.destroyById(resp.boltId);
+                .add('boltExhausted', resp => {
+                    this.destroyById(resp.boltId.guid);
                 })
                 .add('DISCONNECTED', resp => {
                     Object.keys(this.bolts).forEach((boltId) => this.destroyById(boltId));

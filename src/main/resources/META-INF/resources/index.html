@@ -20,6 +20,7 @@
     <script src="js/event-queue-consumer.js"></script>
     <script src="js/event-queue-producer.js"></script>
     <script src="js/ai.js"></script>
+    <script src="js/bbop.proto.js"></script>
 </head>
 <body>
 
@@ -30,8 +31,8 @@
 
 
     const QUEUES = {
-        'event': new QueueConsumer('event'),
-        'command': new QueueConsumer('command'),
+        'event': new QueueConsumer('event', 'event'),
+        'command': new QueueConsumer('directedCommand', 'command'),
         'move': new QueueProducer(sendMessage).start(),
     };
 
@@ -50,7 +51,7 @@
     const getPlayers = (function () {
         let userSet = false;
 
-        return function() {
+        return function () {
             if (userSet) {
                 return Players.get(gameScene(), getSounds(), GameConfig.get(), getHud(), transform, QUEUES);
             } else {
@@ -71,7 +72,7 @@
     }
 
     function getServer() {
-        return Server.get(USER.get(), QUEUES, location.host);
+        return Server.get(USER.get(), QUEUES, location.host, ProtoProcessor);
     }
 
     function sendMessage(value) {
@@ -157,75 +158,79 @@
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
 
 
-        // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
-        this.input.on('pointerdown', function (pointer) {
+        (function (game) {
+            const EMPTY_OBJ = {};
+            // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
+            game.input.on('pointerdown', function (pointer) {
 
-            this.input.mouse.requestPointerLock();
+                game.input.mouse.requestPointerLock();
 
-        }, this);
+            }, game);
 
 
-        // When locked, you will have to use the movementX and movementY properties of the pointer
-        // (since a locked cursor's xy position does not update)
-        this.input.on('pointermove', function (pointer) {
+            // When locked, you will have to use the movementX and movementY properties of the pointer
+            // (since a locked cursor's xy position does not update)
+            game.input.on('pointermove', function (pointer) {
 
-            if (this.input.mouse.locked) {
-                getMyPlayer().ifPresent(p => p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR));
-            }
-        }, this);
-
-        // Exit pointer lock when Q is pressed. Browsers will also exit pointer lock when escape is
-        // pressed.
-        this.input.keyboard.on('keydown_Q', function (event) {
-            if (this.input.mouse.locked) {
-                this.input.mouse.releasePointerLock();
-            }
-        }, this);
-
-        this.input.keyboard.on('keydown_SPACE', function (event) {
-            getMyPlayer().ifPresent(p => {
-                if (!p.ship.sprite.active) {
-                    sendMessage({
-                        "command": "SPAWN_PLAYER"
-                    })
+                if (game.input.mouse.locked) {
+                    getMyPlayer().ifPresent(p => p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR));
                 }
-            });
-        }, this);
+            }, game);
 
-        let MOVE_CARTESIAN = false;
-        let MOVE_RADIAL = false;
-        let FORWARD_DIR = 0;
+            // Exit pointer lock when Q is pressed. Browsers will also exit pointer lock when escape is
+            // pressed.
+            game.input.keyboard.on('keydown_Q', function (event) {
+                if (game.input.mouse.locked) {
+                    game.input.mouse.releasePointerLock();
+                }
+            }, game);
 
-        this.input.keyboard.on('keydown_W', function (event) {
-            FORWARD_DIR = 0;
-        }, this);
-        this.input.keyboard.on('keydown_D', function (event) {
-            FORWARD_DIR = Math.PI / 2;
-        }, this);
-        this.input.keyboard.on('keydown_S', function (event) {
-            FORWARD_DIR = Math.PI;
-        }, this);
-        this.input.keyboard.on('keydown_A', function (event) {
-            FORWARD_DIR = Math.PI / -2;
-        }, this);
+            game.input.keyboard.on('keydown_SPACE', function (event) {
+                getMyPlayer().ifPresent(p => {
+                    if (!p.ship.sprite.active) {
+                        sendMessage({
+                            "spawn": EMPTY_OBJ
+                        })
+                    }
+                });
+            }, game);
 
-        this.input.keyboard.on('keydown_Z', function (event) {
-            MOVE_CARTESIAN = true;
-        }, this);
-        this.input.keyboard.on('keyup_Z', function (event) {
-            MOVE_CARTESIAN = false;
-        }, this);
+            let MOVE_CARTESIAN = false;
+            let MOVE_RADIAL = false;
+            let FORWARD_DIR = 0;
 
-        this.input.keyboard.on('keydown_X', function (event) {
-            MOVE_RADIAL = true;
-        }, this);
-        this.input.keyboard.on('keyup_X', function (event) {
-            MOVE_RADIAL = false;
-        }, this);
+            game.input.keyboard.on('keydown_W', function (event) {
+                FORWARD_DIR = 0;
+            }, game);
+            game.input.keyboard.on('keydown_D', function (event) {
+                FORWARD_DIR = Math.PI / 2;
+            }, game);
+            game.input.keyboard.on('keydown_S', function (event) {
+                FORWARD_DIR = Math.PI;
+            }, game);
+            game.input.keyboard.on('keydown_A', function (event) {
+                FORWARD_DIR = Math.PI / -2;
+            }, game);
 
-        this.input.keyboard.on('keydown_C', function (event) {
-            getBolts().fire();
-        }, this);
+            game.input.keyboard.on('keydown_Z', function (event) {
+                MOVE_CARTESIAN = true;
+            }, game);
+            game.input.keyboard.on('keyup_Z', function (event) {
+                MOVE_CARTESIAN = false;
+            }, game);
+
+            game.input.keyboard.on('keydown_X', function (event) {
+                MOVE_RADIAL = true;
+            }, game);
+            game.input.keyboard.on('keyup_X', function (event) {
+                MOVE_RADIAL = false;
+            }, game);
+
+            game.input.keyboard.on('keydown_C', function (event) {
+                getBolts().fire();
+            }, game);
+
+        })(this);
 
 
         const AI = (function () {

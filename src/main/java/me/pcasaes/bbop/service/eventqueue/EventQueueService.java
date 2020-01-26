@@ -66,6 +66,7 @@ public class EventQueueService<T> {
 
 
     private void run() {
+        this.eventQueueExecutorService.executePreLoopTasks();
         this.metric.running();
         while (running) {
             T event;

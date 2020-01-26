@@ -1,5 +1,6 @@
 class QueueConsumer {
-    constructor(typeProperty) {
+    constructor(dtoTypeProperty, typeProperty) {
+        this.dtoTypeProperty = dtoTypeProperty;
         this.typeProperty = typeProperty;
         this.events = {};
     }
@@ -13,9 +14,11 @@ class QueueConsumer {
     }
 
     consume(resp) {
-        const event = this.events[resp[this.typeProperty]];
-        if (event) {
-            event.forEach(ev => ev(resp));
+        if (resp.dto === this.dtoTypeProperty) {
+            const event = this.events[resp[this.dtoTypeProperty][this.typeProperty]];
+            if (event) {
+                event.forEach(ev => ev(resp[this.dtoTypeProperty][resp[this.dtoTypeProperty][this.typeProperty]]));
+            }
         }
     }
 }
