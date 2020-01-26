@@ -7,15 +7,9 @@ import static me.pcasaes.bbop.model.DtoUtils.BOLT_MOVED_BUILDER;
 
 public class Bolt {
 
-    private EntityId id;
-    private EntityId ownerPlayerId;
-    private float prevX;
-    private float x;
-    private float prevY;
-    private float y;
-    private float angle;
-    private float speed;
-    private long previousUpdatesTimestamp;
+    private final EntityId id;
+    private final EntityId ownerPlayerId;
+    private final VelocityVector velocityVector;
     private long timestamp;
     private long startTimestamp;
     private boolean exhausted;
@@ -27,23 +21,14 @@ public class Bolt {
     private Bolt(Players players,
                  EntityId boltId,
                  EntityId ownerPlayerId,
-                 float x,
-                 float y,
-                 float angle,
-                 float speed,
+                 VelocityVector velocityVector,
                  long startTimestamp) {
         this.players = players;
         this.id = boltId;
         this.ownerPlayerId = ownerPlayerId;
-        this.x = x;
-        this.y = y;
-        this.prevX = x;
-        this.prevY = y;
-        this.angle = angle;
-        this.speed = speed;
+        this.velocityVector = velocityVector;
         this.timestamp = startTimestamp;
         this.startTimestamp = this.timestamp;
-        this.previousUpdatesTimestamp = this.timestamp;
         this.exhausted = false;
 
         this.optionalThis = Optional.of(this);
@@ -60,10 +45,12 @@ public class Bolt {
                 players,
                 boltId,
                 ownerPlayerId,
-                x,
-                y,
-                angle,
-                Config.get().getBoltSpeed(),
+                VelocityVector.of(
+                        x,
+                        y,
+                        angle,
+                        Config.get().getBoltSpeed(),
+                        startTimestamp),
                 startTimestamp);
     }
 
@@ -84,15 +71,15 @@ public class Bolt {
     Optional<Bolt> updateTimestamp(long timestamp) {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
         if (elapsed > 0L) {
-            this.previousUpdatesTimestamp = this.timestamp;
             this.timestamp = timestamp;
+            this.velocityVector.update(timestamp);
             return optionalThis;
         }
         return Optional.empty();
     }
 
     Bolt tackleBoltExhaustion() {
-        if (isOutOfBounds() || isExpired()) {
+        if (velocityVector.isOutOfBounds() || isExpired()) {
             this.exhausted = true;
             GameEvents.getDomainEvents().register(generateExhaustedEvent());
         }
@@ -101,29 +88,7 @@ public class Bolt {
 
     Bolt move() {
 
-        DomainEvent event = null;
-        this.prevX = this.x;
-        this.prevY = this.y;
-        long elapsed = this.timestamp - this.previousUpdatesTimestamp;
-        float r = speed * elapsed / 1000f;
-
-        float ox = this.x;
-        float oy = this.y;
-
-        float mx = (float) Math.cos(angle) * r;
-        float my = (float) Math.sin(angle) * r;
-
-        float minMove = Config.get().getMinMove();
-        if (Math.abs(mx) > minMove) {
-            this.x += mx;
-        }
-        if (Math.abs(my) > minMove) {
-            this.y += my;
-        }
-
-        if (ox != this.x || oy != this.y) {
-            event = generateMovedEvent();
-        }
+        DomainEvent event = generateMovedEvent();
 
         if (event != null) {
             GameEvents.getDomainEvents().register(
@@ -138,9 +103,8 @@ public class Bolt {
         return this.exhausted;
     }
 
-    boolean isOutOfBounds() {
-        return x < 0f || x > 1f ||
-                y < 0f || y > 1f;
+    VelocityVector getVelocityVector() {
+        return velocityVector;
     }
 
     boolean isExpired() {
@@ -164,7 +128,7 @@ public class Bolt {
 
     private void hit(Player player) {
         boolean isHit = !player.is(ownerPlayerId) &&
-                player.collision(prevX, prevY, x, y, Config.get().getBoltCollisionRadius());
+                player.collision(velocityVector, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
             player.destroy(this.ownerPlayerId);
@@ -190,9 +154,9 @@ public class Bolt {
                                                 .clear()
                                                 .setBoltId(id.getGuid())
                                                 .setOwnerPlayerId(ownerPlayerId.getGuid())
-                                                .setX(x)
-                                                .setY(y)
-                                                .setAngle(angle)
+                                                .setX(velocityVector.getX())
+                                                .setY(velocityVector.getY())
+                                                .setAngle(velocityVector.getAngle())
                                 )
                                 .build()
                 );

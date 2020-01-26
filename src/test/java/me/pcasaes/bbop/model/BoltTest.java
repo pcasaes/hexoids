@@ -309,9 +309,6 @@ class BoltTest {
         Config.get().setBoltMaxDuration(1_500L);
 
         Player player = mock(Player.class);
-        doReturn(true)
-                .when(player)
-                .collision(0.5f, 0.5f, 0.51f, 0.5f, Config.get().getBoltCollisionRadius());
 
         List<Player> playersList = Collections.singletonList(player);
         doAnswer(c -> playersList.iterator()).when(this.players).iterator();
@@ -328,6 +325,11 @@ class BoltTest {
         assertNotNull(bolt);
 
         doReturn(1_000L).when(clock).getTime();
+
+        doReturn(true)
+                .when(player)
+                .collision(bolt.getVelocityVector(), Config.get().getBoltCollisionRadius());
+
 
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(domainEvents::add);
@@ -364,9 +366,6 @@ class BoltTest {
         Config.get().setBoltMaxDuration(1_500L);
 
         Player player = mock(Player.class);
-        doReturn(false)
-                .when(player)
-                .collision(0.5f, 0.5f, 0.51f, 0.5f, Config.get().getBoltCollisionRadius());
 
         List<Player> playersList = Collections.singletonList(player);
         doAnswer(c -> playersList.iterator()).when(this.players).iterator();
@@ -379,6 +378,9 @@ class BoltTest {
 
 
         doReturn(1_000L).when(clock).getTime();
+        doReturn(false)
+                .when(player)
+                .collision(bolt.getVelocityVector(), Config.get().getBoltCollisionRadius());
 
         List<DomainEvent> events = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(events::add);
