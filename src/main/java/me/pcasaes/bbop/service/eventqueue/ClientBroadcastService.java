@@ -72,12 +72,10 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
 
     @Override
     public void accept(ClientEvent event) {
-        long now = Game.get().getClock().getTime();
         if (event != null) {
             Dto dto = event.getDto();
             if (dto.hasSleep()) {
                 this.sleepDto = dto.getSleep();
-                flushEvents(now);
             } else if (dto.hasEvent()) {
                 eventsBuilder
                         .addEvents(dto.getEvent());
@@ -86,6 +84,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
                 this.sessionService.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
             }
         }
+        long now = Game.get().getClock().getTime();
         if (eventsBuilder.getEventsCount() > this.batchSize ||
                 now - this.flushTimestamp > this.batchTimeout) {
             flushEvents(now);
@@ -109,7 +108,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
 
     @Override
     public void empty() {
-        // do nothing on empty
+        flushEvents(Game.get().getClock().getTime());
     }
 
     @Override
