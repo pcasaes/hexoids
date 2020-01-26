@@ -127,12 +127,7 @@ public class GameSocket {
                     )
             );
         } else if (command.hasFire()) {
-            Optional<Player> player = Game.get().getPlayers().get(userId);
-            if (player.isPresent()) {
-                player.get().fire();
-            } else {
-                gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
-            }
+            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
         } else if (command.hasSpawn()) {
             gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
         }

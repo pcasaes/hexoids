@@ -116,7 +116,6 @@ public interface Player {
         }
 
         @Override
-        @IsThreadSafe
         public void fire() {
             if (!spawned) {
                 return;

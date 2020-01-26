@@ -1,7 +1,5 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.model.annotations.IsThreadSafe;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -65,14 +63,14 @@ public class Bolts implements Iterable<Bolt> {
         return StreamSupport.stream(spliterator(), false);
     }
 
-    @IsThreadSafe
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
                 (domainEvent.getEvent().hasBoltMoved() || domainEvent.getEvent().hasBoltExhausted())) {
-            GameEvents.getClientEvents().register(DTO_BUILDER
-                    .clear()
-                    .setEvent(domainEvent.getEvent())
-                    .build());
+            GameEvents.getClientEvents()
+                    .register(DTO_BUILDER
+                            .clear()
+                            .setEvent(domainEvent.getEvent())
+                            .build());
         }
     }
 
