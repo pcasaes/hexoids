@@ -4,7 +4,8 @@
   "description": "bots to load test bbop",
   "main": "index.js",
   "dependencies": {
-    "ws": "^7.2.1"
+    "ws": "^7.2.1",
+    "pbf": "^3.2.1"
   },
   "devDependencies": {},
   "scripts": {

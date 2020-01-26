@@ -1,11 +1,11 @@
 package me.pcasaes.bbop.service.kafka;
 
-import me.pcasaes.bbop.dto.EventDto;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import pcasaes.bbop.proto.Event;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,7 +24,6 @@ public interface TopicInfo {
     }
 
 
-
     interface ConsumerInfo {
 
         default boolean useSubscription() {
@@ -39,10 +38,11 @@ public interface TopicInfo {
 
         /**
          * Called after consume. Note that consumer is async.
+         *
          * @param kafkaConsumer
          * @param record
          */
-        default void postConsume(Consumer<UUID, EventDto> kafkaConsumer, ConsumerRecord<UUID, EventDto> record) {
+        default void postConsume(Consumer<UUID, Event> kafkaConsumer, ConsumerRecord<UUID, Event> record) {
             //do nothing
         }
     }

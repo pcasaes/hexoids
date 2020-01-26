@@ -1,49 +1,38 @@
 package me.pcasaes.bbop.service.eventqueue;
 
-import me.pcasaes.bbop.dto.DirectedCommandDto;
-import me.pcasaes.bbop.dto.Dto;
-import me.pcasaes.bbop.dto.EventDto;
+import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
-import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.SessionService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pcasaes.bbop.proto.DirectedCommand;
+import pcasaes.bbop.proto.Dto;
+import pcasaes.bbop.proto.Sleep;
 
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Used to broadcast events to the game clients
  */
 @ApplicationScoped
-public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent>, Closeable {
-
-    private static final Logger LOGGER = Logger.getLogger(ClientBroadcastService.class.getName());
+public class ClientBroadcastService implements EventQueueConsumerService<ClientBroadcastService.ClientEvent> {
 
     private final SessionService sessionService;
     private final ConfigurationService configurationService;
     private final boolean enabled;
 
-    private GameLoopService.SleepDto sleepDto = null;
-
-    private final DtoProcessorService.JsonWriter jsonWriter;
+    private Sleep sleepDto = null;
 
     ClientBroadcastService() {
         this.sessionService = null;
         this.configurationService = null;
-        this.jsonWriter = null;
         this.enabled = false;
     }
 
 
     @Inject
     public ClientBroadcastService(SessionService sessionService,
-                                  DtoProcessorService dtoProcessorService,
                                   ConfigurationService configurationService,
                                   @ConfigProperty(
                                           name = "bbop.config.service.client.broadcast.enabled",
@@ -52,43 +41,19 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
         this.sessionService = sessionService;
         this.configurationService = configurationService;
         this.enabled = enabled;
-        this.jsonWriter = dtoProcessorService.createJsonWriter();
     }
-
-    @PreDestroy
-    @Override
-    public void close() {
-        close(jsonWriter);
-    }
-
-    private void close(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
-        }
-    }
-
-    private String serialize(Object value) {
-        try {
-            return jsonWriter.writeValue(value);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
 
     @Override
     public void accept(ClientEvent event) {
         if (event != null) {
             Dto dto = event.getDto();
-            if (dto.getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
-                this.sleepDto = (GameLoopService.SleepDto) dto;
-            } else if (dto.getDtoType() == EventDto.DtoType.EVENT_DTO) {
-                this.sessionService.broadcast(serialize(dto));
-            } else if (dto.getDtoType() == DirectedCommandDto.DtoType.DIRECTED_COMMAND_DTO) {
-                DirectedCommandDto command = (DirectedCommandDto) dto;
-                this.sessionService.direct(command.getPlayerId(), serialize(command.getCommand()));
+            if (dto.hasSleep()) {
+                this.sleepDto = dto.getSleep();
+            } else if (dto.hasEvent()) {
+                this.sessionService.broadcast(dto.toByteArray());
+            } else if (dto.hasDirectedCommand()) {
+                DirectedCommand command = dto.getDirectedCommand();
+                this.sessionService.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
             }
         }
     }

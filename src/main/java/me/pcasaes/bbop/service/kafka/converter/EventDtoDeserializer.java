@@ -1,15 +1,19 @@
 package me.pcasaes.bbop.service.kafka.converter;
 
-import me.pcasaes.bbop.dto.EventDto;
-import me.pcasaes.bbop.service.DtoProcessorService;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import pcasaes.bbop.proto.Event;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class EventDtoDeserializer implements Deserializer<EventDto> {
+import static me.pcasaes.bbop.model.DtoUtils.EVENT_THREAD_SAFE_BUILDER;
 
-    private final DtoProcessorService processor = new DtoProcessorService();
+public class EventDtoDeserializer implements Deserializer<Event> {
+
+    private static final Logger LOGGER = Logger.getLogger(EventDtoDeserializer.class.getName());
     private final StringDeserializer stringDeserializer = new StringDeserializer();
 
 
@@ -19,15 +23,20 @@ public class EventDtoDeserializer implements Deserializer<EventDto> {
     }
 
     @Override
-    public EventDto deserialize(String topic, byte[] data) {
+    public Event deserialize(String topic, byte[] data) {
         if (data == null) {
             return null;
         }
-        final String value = stringDeserializer.deserialize(topic, data);
-
-        return processor.getEventType(value)
-                .map(eventType -> processor.deserialize(value, eventType.getClassType()))
-                .orElse(null);
+        try {
+            return EVENT_THREAD_SAFE_BUILDER
+                    .get()
+                    .clear()
+                    .mergeFrom(data)
+                    .build();
+        } catch (InvalidProtocolBufferException ex) {
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        return null;
 
     }
 
