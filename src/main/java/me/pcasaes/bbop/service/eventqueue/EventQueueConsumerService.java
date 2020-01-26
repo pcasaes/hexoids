@@ -64,6 +64,13 @@ public interface EventQueueConsumerService<T> extends Consumer<T> {
         return false;
     }
 
+    /**
+     * This is run on the same thread where the event loops run before starting the event loop.
+     */
+    default void executePreLoopTasks() {
+        // do nothing
+    }
+
     default boolean isEnabled() {
         return true;
     }
