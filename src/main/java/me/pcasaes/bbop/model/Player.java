@@ -49,7 +49,7 @@ public interface Player {
 
     void left();
 
-    boolean collision(float x1, float y1, float x2, float y2, float collisionRadius);
+    boolean collision(VelocityVector velocityVector, float collisionRadius);
 
     void destroy(EntityId playerId);
 
@@ -310,26 +310,11 @@ public interface Player {
         }
 
         @Override
-        public boolean collision(float x1, float y1, float x2, float y2, float collisionRadius) {
+        public boolean collision(VelocityVector velocityVector, float collisionRadius) {
             if (!this.spawned) {
                 return false;
             }
-            float minx = Math.min(x1, x2);
-            float maxx = Math.max(x1, x2);
-            if (this.x - collisionRadius > maxx || this.x + collisionRadius < minx) {
-                return false;
-            }
-
-            float miny = Math.min(y1, y2);
-            float maxy = Math.max(y1, y2);
-            if (this.y - collisionRadius > maxy || this.y + collisionRadius < miny) {
-                return false;
-            }
-
-            //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-            float distance = TrigUtil.calculateShortestDistanceFromPointToLine(x1, y1, x2, y2, this.x, this.y);
-            return distance <= collisionRadius;
-
+            return velocityVector.intersectedWith(this.x, this.y, collisionRadius);
         }
 
         @Override

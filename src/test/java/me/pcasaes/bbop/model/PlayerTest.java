@@ -367,7 +367,15 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
         player.move(0.5f, 0.5f, null, null);
 
-        assertTrue(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
+        VelocityVector velocityVector = VelocityVector.of(
+                0.45f,
+                0.45f,
+                (float) (Math.PI / 4),
+                0.1f / (float) Math.cos(Math.PI / 4),
+                0L
+        ).update(1000L);
+
+        assertTrue(player.collision(velocityVector, 0.05f));
     }
 
     @Test
@@ -380,7 +388,15 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
         player.move(0.54f, 0.54f, null, null);
 
-        assertTrue(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
+        VelocityVector velocityVector = VelocityVector.of(
+                0.45f,
+                0.45f,
+                (float) (Math.PI / 4),
+                0.1f / (float) Math.cos(Math.PI / 4),
+                0L
+        ).update(1000L);
+
+        assertTrue(player.collision(velocityVector, 0.05f));
     }
 
     @Test
@@ -393,7 +409,15 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
         player.move(0.4f, 0.6f, null, null);
 
-        assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
+        VelocityVector velocityVector = VelocityVector.of(
+                0.45f,
+                0.45f,
+                (float) (Math.PI / 4),
+                0.1f / (float) Math.cos(Math.PI / 4),
+                0L
+        ).update(1000L);
+
+        assertFalse(player.collision(velocityVector, 0.05f));
     }
 
     @Test
@@ -406,7 +430,15 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
         player.move(0.2f, 0.2f, null, null);
 
-        assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
+        VelocityVector velocityVector = VelocityVector.of(
+                0.45f,
+                0.45f,
+                (float) (Math.PI / 4),
+                0.1f / (float) Math.cos(Math.PI / 4),
+                0L
+        ).update(1000L);
+
+        assertFalse(player.collision(velocityVector, 0.05f));
     }
 
     @Test
@@ -419,7 +451,15 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
         player.move(0.5f, 0.2f, null, null);
 
-        assertFalse(player.collision(0.45f, 0.45f, 0.55f, 0.55f, 0.05f));
+        VelocityVector velocityVector = VelocityVector.of(
+                0.45f,
+                0.45f,
+                (float) (Math.PI / 4),
+                0.1f / (float) Math.cos(Math.PI / 4),
+                0L
+        ).update(1000L);
+
+        assertFalse(player.collision(velocityVector, 0.05f));
     }
 
     @Test
