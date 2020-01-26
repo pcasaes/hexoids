@@ -4,6 +4,12 @@ const Server = (function () {
 
     let backOff = 50;
 
+    const synDto = {
+        "dto": "event",
+        "event": null
+    };
+
+
     class ServerClass {
         constructor(userId, queues, host, proto) {
             this.userId = userId;
@@ -45,8 +51,18 @@ const Server = (function () {
                 backOff = 50;
                 //console.log("Got message: " + m.data);
                 lastMessageReceived = this.proto.readDto(m.data);
-                this.queues.event.consume(lastMessageReceived);
-                this.queues.command.consume(lastMessageReceived);
+                if (lastMessageReceived.dto === 'events') {
+                    lastMessageReceived
+                        .events
+                        .events
+                        .forEach(ev => {
+                            synDto.event = ev;
+                            this.queues.event.consume(synDto);
+                        });
+                } else {
+                    this.queues.event.consume(lastMessageReceived);
+                    this.queues.command.consume(lastMessageReceived);
+                }
             };
         }
 

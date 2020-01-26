@@ -4,8 +4,11 @@ import pcasaes.bbop.proto.GUID;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class EntityId {
+
+    private static final Logger LOGGER = Logger.getLogger(EntityId.class.getName());
 
     private static final ThreadLocal<GUID.Builder> GUID_THREAD_SAFE_BUILDER = ThreadLocal.withInitial(GUID::newBuilder);
 
@@ -26,7 +29,7 @@ public class EntityId {
     }
 
     public static EntityId of(String uuid) {
-        return of(UUID.fromString(uuid));
+        return of(stringToUuid(uuid));
     }
 
     public static EntityId newId() {
@@ -55,8 +58,17 @@ public class EntityId {
         return Objects.hash(id);
     }
 
+    private static UUID stringToUuid(String uuid) {
+        try {
+            return UUID.fromString(uuid);
+        } catch (IllegalArgumentException ex) {
+            LOGGER.severe(() -> "Could not deserialize uuid: '" + uuid + "'");
+            throw ex;
+        }
+    }
+
     private static UUID guidToUuid(GUID guid) {
-        return UUID.fromString(guid.getGuid());
+        return stringToUuid(guid.getGuid());
     }
 
     private static GUID uuidToGuid(UUID uuid) {

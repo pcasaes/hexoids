@@ -112,6 +112,10 @@ message Event {
     }
 }
 
+message Events {
+    repeated Event events = 1;
+}
+
 // client to server commands
 
 message MoveCommandDto {
@@ -165,6 +169,7 @@ message Dto {
     oneof dto {
         DirectedCommand directedCommand = 1;
         Event event = 2;
-        Sleep sleep = 3;
+        Events events = 3;
+        Sleep sleep = 4;
     }
 }

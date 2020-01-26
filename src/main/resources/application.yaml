@@ -50,6 +50,9 @@ bbop:
       client:
         broadcast:
           enabled: true
+          batch:
+            size: 64
+            timeout: 20
           eventqueue:
             linkedlist: false
             exponent: 17
