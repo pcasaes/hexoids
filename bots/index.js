@@ -7,12 +7,13 @@ const GameConfig = require('../src/main/resources/META-INF/resources/js/game-con
 const Players = require('../src/main/resources/META-INF/resources/js/player');
 const Transform = require('../src/main/resources/META-INF/resources/js/transform');
 const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
+const ProtoProcessor = require('../src/main/js-proto/main');
 const settings = require('./settings');
 
 
 const QUEUES = {
-    'event': new QueueConsumer('event'),
-    'command': new QueueConsumer('command')
+    'event': new QueueConsumer('event', 'event'),
+    'command': new QueueConsumer('directedCommand', 'command')
 };
 
 function genUuid() {
@@ -147,7 +148,7 @@ function getPlayers() {
 }
 
 function getServer(uuid) {
-    return Server.get(uuid, QUEUES, settings.host);
+    return Server.get(uuid, QUEUES, settings.host, ProtoProcessor);
 }
 
 for (let i = 0; i < settings.bots; i++) {

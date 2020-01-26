@@ -1,16 +1,16 @@
 package me.pcasaes.bbop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import me.pcasaes.bbop.dto.EventDto;
+import pcasaes.bbop.proto.Event;
 
 import java.util.UUID;
 
 public class DomainEvent {
     private final UUID key;
-    private final EventDto event;
+    private final Event event;
     private final String topic;
 
-    private DomainEvent(String topic, UUID key, EventDto event) {
+    private DomainEvent(String topic, UUID key, Event event) {
         this.topic = topic;
         this.key = key;
         this.event = event;
@@ -19,16 +19,16 @@ public class DomainEvent {
 
     public static DomainEvent of(
             UUID key,
-            EventDto event) {
+            Event event) {
         return new DomainEvent(null, key, event);
     }
 
     public static DomainEvent withoutKey(
-            EventDto event) {
+            Event event) {
         return new DomainEvent(null, null, event);
     }
 
-    public static DomainEvent create(String topic, UUID key, EventDto event) {
+    public static DomainEvent create(String topic, UUID key, Event event) {
         return new DomainEvent(topic, key, event);
     }
 
@@ -44,7 +44,7 @@ public class DomainEvent {
         return key;
     }
 
-    public EventDto getEvent() {
+    public Event getEvent() {
         return event;
     }
 

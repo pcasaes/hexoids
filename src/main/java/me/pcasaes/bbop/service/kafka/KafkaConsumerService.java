@@ -1,6 +1,5 @@
 package me.pcasaes.bbop.service.kafka;
 
-import me.pcasaes.bbop.dto.EventDto;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.service.eventqueue.EventQueueService;
 import me.pcasaes.bbop.service.eventqueue.GameLoopService;
@@ -15,6 +14,7 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pcasaes.bbop.proto.Event;
 
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.Dependent;
@@ -113,7 +113,7 @@ public class KafkaConsumerService {
             TopicPartition topicPartition,
             TopicInfo.ConsumerInfo consumerInfo) {
 
-        Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
+        Consumer<UUID, Event> kafkaConsumer = new KafkaConsumer<>(properties);
 
 
         Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
@@ -136,7 +136,7 @@ public class KafkaConsumerService {
             String topic,
             TopicInfo.ConsumerInfo consumerInfo) {
 
-        Consumer<UUID, EventDto> kafkaConsumer = new KafkaConsumer<>(properties);
+        Consumer<UUID, Event> kafkaConsumer = new KafkaConsumer<>(properties);
 
         kafkaConsumer.subscribe(Collections.singletonList(topic));
 
@@ -156,7 +156,7 @@ public class KafkaConsumerService {
 
         private final TopicInfo.ConsumerInfo consumerInfo;
 
-        private final Consumer<UUID, EventDto> kafkaConsumer;
+        private final Consumer<UUID, Event> kafkaConsumer;
 
         private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
 
@@ -167,7 +167,7 @@ public class KafkaConsumerService {
         private long latestRecordTimestamp;
 
         private KafkaThreadedConsumer(TopicInfo.ConsumerInfo consumerInfo,
-                                      Consumer<UUID, EventDto> kafkaConsumer,
+                                      Consumer<UUID, Event> kafkaConsumer,
                                       EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
             this.consumerInfo = consumerInfo;
             this.kafkaConsumer = kafkaConsumer;
@@ -198,7 +198,7 @@ public class KafkaConsumerService {
 
         private void pollWhileRunning(Duration pollDuration) {
             while (this.running) {
-                ConsumerRecords<UUID, EventDto> records = kafkaConsumer.poll(pollDuration);
+                ConsumerRecords<UUID, Event> records = kafkaConsumer.poll(pollDuration);
                 if (!records.isEmpty()) {
                     records.forEach(this::process);
                     if (!started && this.latestRecordTimestamp >= startedAt) {
@@ -218,7 +218,7 @@ public class KafkaConsumerService {
             }
         }
 
-        private void process(ConsumerRecord<UUID, EventDto> record) {
+        private void process(ConsumerRecord<UUID, Event> record) {
             try {
                 this.latestRecordTimestamp = record.timestamp();
                 DomainEvent domainEvent;

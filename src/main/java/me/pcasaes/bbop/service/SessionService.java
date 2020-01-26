@@ -1,7 +1,9 @@
 package me.pcasaes.bbop.service;
 
 import io.quarkus.runtime.ShutdownEvent;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
+import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.Player;
 
@@ -18,48 +20,54 @@ public class SessionService {
 
     private static final Logger LOGGER = Logger.getLogger(SessionService.class.getName());
 
-    private final Map<String, ServerWebSocket> sessions = new ConcurrentHashMap<>();
+    private final Map<EntityId, ServerWebSocket> sessions = new ConcurrentHashMap<>();
 
-    public void add(String id, ServerWebSocket session) {
+    public void add(EntityId id, ServerWebSocket session) {
         this.sessions.put(id, session);
     }
 
-    public boolean remove(String id) {
+    public boolean remove(EntityId id) {
         return this.sessions.remove(id) != null;
     }
 
-    private Optional<ServerWebSocket> get(String id) {
+    private Optional<ServerWebSocket> get(EntityId id) {
         return Optional.ofNullable(sessions.get(id));
     }
 
-    public void direct(String id, String message) {
+    public void direct(EntityId id, byte[] message) {
+        Buffer buffer = Buffer.buffer(message);
         get(id)
-                .ifPresent(s -> asyncSend(id, s, message));
+                .ifPresent(s -> asyncSend(id, s, buffer));
     }
 
-    public void broadcast(String message) {
-        sessions.entrySet().forEach(s -> asyncSend(s.getKey(), s.getValue(), message));
+    public void broadcast(byte[] message) {
+        Buffer buffer = Buffer.buffer(message);
+        sessions.forEach((key, value) -> asyncSend(key, value, buffer));
     }
 
-    private void asyncSend(String userId, ServerWebSocket session, String message) {
-        session.writeTextMessage(message, result -> {
+    private void asyncSend(EntityId userId, ServerWebSocket session, Buffer message) {
+        session.write(message, result -> {
             if (result.failed()) {
                 boolean removed = this.remove(userId);
                 if (removed && LOGGER.isLoggable(Level.WARNING)) {
                     LOGGER.warning("Session closed: " + userId + ", " + result.cause());
                 }
-                try {
-                    session.close();
-                } catch (RuntimeException ex) {
-                    if (removed && LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.warning("Already closed " + ex.getMessage());
-                    }
-                }
+                close(removed, session);
                 if (removed) {
                     Game.get().getPlayers().get(userId).ifPresent(Player::leave);
                 }
             }
         });
+    }
+
+    private void close(boolean removed, ServerWebSocket session) {
+        try {
+            session.close();
+        } catch (RuntimeException ex) {
+            if (removed && LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.warning("Already closed " + ex.getMessage());
+            }
+        }
     }
 
     void stop(@Observes ShutdownEvent event) {

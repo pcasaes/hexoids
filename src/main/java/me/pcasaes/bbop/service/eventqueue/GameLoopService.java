@@ -1,12 +1,12 @@
 package me.pcasaes.bbop.service.eventqueue;
 
-import me.pcasaes.bbop.dto.Dto;
-import me.pcasaes.bbop.dto.EventDto;
-import me.pcasaes.bbop.dto.EventType;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.GameEvents;
 import me.pcasaes.bbop.service.ConfigurationService;
+import pcasaes.bbop.proto.Dto;
+import pcasaes.bbop.proto.Event;
+import pcasaes.bbop.proto.Sleep;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -27,18 +27,27 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     private final ThreadService threadService;
     private final ConfigurationService configurationService;
+    private final Sleep.Builder sleepBuilder;
+    private final Event.Builder eventBuilder;
+    private final Dto.Builder dtoBuilder;
 
     private long lastTimestamp;
 
     GameLoopService() {
         this.threadService = null;
         this.configurationService = null;
+        this.sleepBuilder = null;
+        this.eventBuilder = null;
+        this.dtoBuilder = null;
     }
 
     @Inject
     public GameLoopService(ThreadService threadService, ConfigurationService configurationService) {
         this.threadService = threadService;
         this.configurationService = configurationService;
+        this.sleepBuilder = Sleep.newBuilder();
+        this.eventBuilder = Event.newBuilder();
+        this.dtoBuilder = Dto.newBuilder();
     }
 
     @PostConstruct
@@ -78,9 +87,12 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     public void empty() {
         lastTimestamp = fixedUpdate(lastTimestamp);
 
-        SleepDto sleepDto = SleepDto.sleepUntil(Game.get().getClock().getTime() + getWaitTime());
-        GameEvents.getDomainEvents().register(DomainEvent.withoutKey(sleepDto));
-        GameEvents.getClientEvents().register(sleepDto);
+        Sleep sleepDto = sleepBuilder
+                .clear()
+                .setSleepUntil(Game.get().getClock().getTime() + getWaitTime())
+                .build();
+        GameEvents.getDomainEvents().register(DomainEvent.withoutKey(eventBuilder.clear().setSleep(sleepDto).build()));
+        GameEvents.getClientEvents().register(dtoBuilder.clear().setSleep(sleepDto).build());
     }
 
     @Override
@@ -109,41 +121,6 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     }
 
     public interface GameRunnable extends Runnable {
-
-    }
-
-    /**
-     * Special Dto that is not transmitted and instead is used to sleep dependent queues
-     */
-    static class SleepDto implements EventDto {
-
-        private final long sleepUntil;
-
-        public SleepDto(long sleepUntil) {
-            this.sleepUntil = sleepUntil;
-        }
-
-        public static SleepDto sleepUntil(long sleepUntil) {
-            return new SleepDto(sleepUntil);
-        }
-
-        public long getSleepUntil() {
-            return sleepUntil;
-        }
-
-        @Override
-        public EventType getEvent() {
-            return null;
-        }
-
-        @Override
-        public Type getDtoType() {
-            return DtoType.SLEEP_DTO;
-        }
-
-        enum DtoType implements Dto.Type {
-            SLEEP_DTO;
-        }
 
     }
 }

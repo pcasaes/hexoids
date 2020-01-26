@@ -2,7 +2,6 @@ package me.pcasaes.bbop.service.eventqueue;
 
 import me.pcasaes.bbop.model.Game;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class QueueMetric {
@@ -62,9 +61,17 @@ class QueueMetric {
 
 
     void report() {
-        if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info("LOAD FACTOR " + this.name + ": " + this.loadFactor);
+        if (this.loadFactor < 0.5) {
+            LOGGER.info(this::getMetricMessage);
+        } else if (this.loadFactor < 0.8) {
+            LOGGER.warning(this::getMetricMessage);
+        } else {
+            LOGGER.severe(this::getMetricMessage);
         }
+    }
+
+    private String getMetricMessage() {
+        return "LOAD FACTOR " + this.name + ": " + this.loadFactor;
     }
 
 

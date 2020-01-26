@@ -245,7 +245,7 @@ const Players = (function () {
         }
 
         create(p, sounds) {
-            this.playerId = p.playerId;
+            this.playerId = p.playerId.guid;
 
             this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p, sounds);
 
@@ -304,13 +304,17 @@ const Players = (function () {
                     command.angle = {
                         "value": Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) + forwardDir
                     };
-                    command.thrustAngle = forwardDir;
+                    command.thrustAngle = {
+                        "value": forwardDir
+                    };
                 }
             } else if (command.move) {
-                command.thrustAngle = Phaser.Math.Angle.ShortestBetween(
-                    this.ship.angle,
-                    Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) * CONV_RADIANS_TO_DEGREE
-                ) / -CONV_RADIANS_TO_DEGREE;
+                command.thrustAngle = {
+                    "value": Phaser.Math.Angle.ShortestBetween(
+                        this.ship.angle,
+                        Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) * CONV_RADIANS_TO_DEGREE
+                    ) / -CONV_RADIANS_TO_DEGREE
+                };
             }
             this.moveQueue.produce(command);
         }
@@ -334,8 +338,8 @@ const Players = (function () {
         }
 
         create(p) {
-            if (!this.players[p.playerId]) {
-                this.players[p.playerId] = new PlayerClass(
+            if (!this.players[p.playerId.guid]) {
+                this.players[p.playerId.guid] = new PlayerClass(
                     this.scene,
                     this.gameConfig,
                     this.hud,
@@ -343,7 +347,7 @@ const Players = (function () {
                 ).create(p, this.sounds);
             }
 
-            return this.players[p.playerId];
+            return this.players[p.playerId.guid];
         }
 
         addControllableUser(userId) {
@@ -450,16 +454,16 @@ const Players = (function () {
         setupQueues(queues) {
 
             queues.command
-                .add('LIST_PLAYERS', resp => {
+                .add('playersList', resp => {
                     resp.players.forEach(r => this.create(r));
                 })
-                .add('PLAYER_SCORE_UPDATE', r => this.getFollowedPlayer().ifPresent(p => p.updateScore(r)));
+                .add('playerScoreUpdate', r => this.getFollowedPlayer().ifPresent(p => p.updateScore(r)));
 
             queues.event
-                .add('PLAYER_JOINED', resp => {
+                .add('playerJoined', resp => {
                     this.create(resp);
 
-                    this.getControllablePlayer(resp.playerId)
+                    this.getControllablePlayer(resp.playerId.guid)
                         .ifPresent(p => {
                             if (queues.move) {
                                 p.setMoveQueue(queues.move);
@@ -467,35 +471,36 @@ const Players = (function () {
                             p.showStart();
                         });
 
-                    if (this.playerToFollow === resp.playerId) {
+                    if (this.playerToFollow === resp.playerId.guid) {
                         this._setCameraToFollow();
                     }
                 })
-                .add('PLAYER_MOVED', resp => {
-                    if (this.get(resp.playerId)) {
+                .add('playerMoved', resp => {
+                    if (this.get(resp.playerId.guid)) {
                         const move = this.transform.view(resp.x, resp.y);
 
-                        this.get(resp.playerId).ship.moveTo(move.x, move.y, resp.angle, resp.thrustAngle);
+                        this.get(resp.playerId.guid).ship.moveTo(move.x, move.y, resp.angle, resp.thrustAngle);
                     }
                 })
-                .add('PLAYER_SPAWNED', resp => {
-                    if (this.get(resp.playerId)) {
+                .add('playerSpawned', resp => {
+                    resp = resp.location;
+                    if (this.get(resp.playerId.guid)) {
                         const move = this.transform.view(resp.x, resp.y);
 
-                        this.get(resp.playerId).ship.spawned(move.x, move.y, resp.angle, resp.thrustAngle);
-                        this.getControllablePlayer(resp.playerId)
+                        this.get(resp.playerId.guid).ship.spawned(move.x, move.y, resp.angle, resp.thrustAngle);
+                        this.getControllablePlayer(resp.playerId.guid)
                             .ifPresent(p => p.hideStart());
                     }
                 })
-                .add('PLAYER_DESTROYED', resp => {
-                    if (this.get(resp.playerId)) {
-                        const ctrlPlayer = this.getControllablePlayer(resp.playerId);
-                        this.get(resp.playerId).ship.destroyed(ctrlPlayer.map(p => true).orElse(false));
+                .add('playerDestroyed', resp => {
+                    if (this.get(resp.playerId.guid)) {
+                        const ctrlPlayer = this.getControllablePlayer(resp.playerId.guid);
+                        this.get(resp.playerId.guid).ship.destroyed(ctrlPlayer.map(p => true).orElse(false));
                         ctrlPlayer.ifPresent(p => p.showStart());
                     }
                 })
-                .add('PLAYER_LEFT', resp => {
-                    this.destroyById(resp.playerId);
+                .add('playerLeft', resp => {
+                    this.destroyById(resp.playerId.guid);
                 })
                 .add('DISCONNECTED', resp => {
                     Object.keys(this.players).forEach((playerId) => {
