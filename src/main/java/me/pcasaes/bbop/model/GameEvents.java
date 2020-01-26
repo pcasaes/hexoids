@@ -1,6 +1,6 @@
 package me.pcasaes.bbop.model;
 
-import me.pcasaes.bbop.dto.Dto;
+import pcasaes.bbop.proto.Dto;
 
 import java.util.function.Consumer;
 

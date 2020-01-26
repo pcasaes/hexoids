@@ -1,39 +1,29 @@
 package me.pcasaes.bbop.service.eventqueue;
 
+import com.google.protobuf.GeneratedMessageLite;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
-import me.pcasaes.bbop.service.DtoProcessorService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerType;
+import pcasaes.bbop.proto.Sleep;
 
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Used to generate domain events. Domain events are used to keep server nodes in sync
  */
 @ApplicationScoped
-public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent>, Closeable {
-
-    private static final Logger LOGGER = Logger.getLogger(DomainEventProducerService.class.getName());
+public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent> {
 
     private ThreadService threadService;
 
     private KafkaProducerService producerService;
 
-    private DtoProcessorService dtoProcessorService;
-
     private ConfigurationService configurationService;
 
-    private GameLoopService.SleepDto sleepDto = null;
-
-    private DtoProcessorService.JsonWriter jsonWriter;
+    private Sleep sleepDto = null;
 
     DomainEventProducerService() {
     }
@@ -41,38 +31,14 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     @Inject
     public DomainEventProducerService(ThreadService threadService,
                                       @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService,
-                                      DtoProcessorService dtoProcessorService,
                                       ConfigurationService configurationService) {
         this.threadService = threadService;
         this.producerService = producerService;
-        this.dtoProcessorService = dtoProcessorService;
         this.configurationService = configurationService;
-        this.jsonWriter = dtoProcessorService.createJsonWriter();
     }
 
-    @PreDestroy
-    @Override
-    public void close() {
-        close(jsonWriter);
-    }
-
-    private void close(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
-        }
-    }
-
-    private String serialize(Object value) {
-        if (threadService.isInGameLoop()) {
-            try {
-                return jsonWriter.writeValue(value);
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-        }
-        return dtoProcessorService.serializeToString(value);
+    private byte[] serialize(GeneratedMessageLite<?, ?> value) {
+        return value.toByteArray();
     }
 
     @Override
@@ -87,10 +53,10 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     @Override
     public void accept(DomainEvent event) {
         if (event != null) {
-            if (event.getEvent() != null && event.getEvent().getDtoType() == GameLoopService.SleepDto.DtoType.SLEEP_DTO) {
-                this.sleepDto = (GameLoopService.SleepDto) event.getEvent();
+            if (event.getEvent() != null && event.getEvent().hasSleep()) {
+                this.sleepDto = event.getEvent().getSleep();
             } else {
-                String message = event.getEvent() == null ? null : serialize(event.getEvent());
+                byte[] message = event.getEvent() == null ? null : serialize(event.getEvent());
                 this.producerService.send(event.getTopic(), event.getKey(), message);
             }
         }

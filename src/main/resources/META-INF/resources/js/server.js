@@ -1,30 +1,39 @@
 const Server = (function () {
 
-    let lastMessageSent;
     let lastMessageReceived;
 
     let backOff = 50;
 
+    const synDto = {
+        "dto": "event",
+        "event": null
+    };
+
+
     class ServerClass {
-        constructor(userId, queues, host) {
+        constructor(userId, queues, host, proto) {
             this.userId = userId;
             this.queues = queues;
             this.socket = null;
             this.host = host;
             this.booted = false;
+            this.proto = proto;
         }
 
         createSocket() {
             const endpoint = "ws://" + this.host + "/game/" + this.userId;
             console.log(endpoint);
             this.socket = new WebSocket(endpoint);
+            this.socket.binaryType = "arraybuffer";
             this.socket.onopen = () => {
                 console.log("Connected to the web socket");
             };
             this.socket.onclose = () => {
                 console.log("web socket closed");
                 this.queues.event.consume({
-                    "event" : "DISCONNECTED"
+                    "event": {
+                        "type": "DISCONNECTED"
+                    }
                 });
                 setTimeout(() => {
                     if (!this.booted) {
@@ -41,17 +50,27 @@ const Server = (function () {
             this.socket.onmessage = (m) => {
                 backOff = 50;
                 //console.log("Got message: " + m.data);
-                lastMessageReceived = JSON.parse(m.data);
-                this.queues.event.consume(lastMessageReceived);
-                this.queues.command.consume(lastMessageReceived);
+                lastMessageReceived = this.proto.readDto(m.data);
+                if (lastMessageReceived.dto === 'events') {
+                    lastMessageReceived
+                        .events
+                        .events
+                        .forEach(ev => {
+                            synDto.event = ev;
+                            this.queues.event.consume(synDto);
+                        });
+                } else {
+                    this.queues.event.consume(lastMessageReceived);
+                    this.queues.command.consume(lastMessageReceived);
+                }
             };
         }
 
         setup() {
             this.createSocket();
 
-            this.queues.event.add('PLAYER_LEFT', resp => {
-                if (resp.playerId === this.userId) {
+            this.queues.event.add('playerLeft', resp => {
+                if (resp.playerId.guid === this.userId) {
                     console.log('Player left or booted. Disconnecting');
                     this.booted = true;
                     this.socket.close();
@@ -63,9 +82,8 @@ const Server = (function () {
 
         sendMessage(value) {
             if (this.socket.readyState === 1) {
-                lastMessageSent = JSON.stringify(value);
-                //console.log("Sending " + lastMessageSent);
-                this.socket.send(lastMessageSent);
+                const b = this.proto.writeRequestCommand(value);
+                this.socket.send(b);
             }
         }
     }
@@ -73,9 +91,9 @@ const Server = (function () {
     const instances = {};
 
     return {
-        'get': (userId, queues, host) => {
+        'get': (userId, queues, host, proto) => {
             if (!instances[userId]) {
-                instances[userId] = new ServerClass(userId, queues, host).setup();
+                instances[userId] = new ServerClass(userId, queues, host, proto).setup();
             }
             return instances[userId];
         }

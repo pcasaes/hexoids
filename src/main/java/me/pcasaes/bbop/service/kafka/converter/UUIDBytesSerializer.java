@@ -3,6 +3,7 @@ package me.pcasaes.bbop.service.kafka.converter;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,7 +18,9 @@ public class UUIDBytesSerializer implements Serializer<UUID> {
 
     @Override
     public byte[] serialize(String topic, UUID data) {
-        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+        ByteBuffer buffer = ByteBuffer
+                .allocate(BUFFER_SIZE)
+                .order(ByteOrder.BIG_ENDIAN);
         buffer.putLong(data.getMostSignificantBits());
         buffer.putLong(data.getLeastSignificantBits());
         return buffer.array();
