@@ -117,6 +117,8 @@ const SCENE_MOCK = {
 
 const transform = Transform.get(GameConfig.get());
 
+transform.inView = () => false;
+
 function getSounds() {
     return {
         'get': () => {

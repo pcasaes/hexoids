@@ -182,6 +182,7 @@ public interface Player {
                     .setX(x)
                     .setY(y)
                     .setAngle(angle)
+                    .setSpawned(spawned)
                     .build();
         }
 

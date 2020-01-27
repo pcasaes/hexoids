@@ -37,6 +37,7 @@ const GameConfig = (function () {
             'depth': DEPTH_HUD,
         },
         'world': {
+            'renderOffset': 128,
             'min': {
                 'x': 0,
                 'y': 0,

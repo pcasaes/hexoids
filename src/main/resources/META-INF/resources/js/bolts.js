@@ -16,6 +16,7 @@ const Bolts = (function () {
             this.color = null;
 
             this.isNew = true;
+            this.viewable = false;
         }
 
         create(b) {
@@ -56,6 +57,7 @@ const Bolts = (function () {
                     .setActive(true)
                     .setVisible(true);
             }
+            this.viewable = true;
 
             return this;
         }
@@ -71,17 +73,33 @@ const Bolts = (function () {
         move(b) {
             const move = this.data.transform.view(b.x, b.y);
 
-            this.sprite.x = move.x;
-            this.sprite.y = move.y;
-            this.bg.x = move.x;
-            this.bg.y = move.y;
-            this.sprite.setTint(
-                this.color | PULSE[this.pulsePos],
-                this.color | PULSE[(this.pulsePos + 1) & 3],
-                this.color | PULSE[(this.pulsePos + 2) & 3],
-                this.color | PULSE[(this.pulsePos + 3) & 3],
-            );
-            this.pulsePos++;
+            const newViewable = this.data.transform.inView(move.x, move.y, this.data.scene.cameras.main.worldView);
+            const viewableChanged = this.viewable !== newViewable;
+            this.viewable = newViewable;
+
+            if (viewableChanged) {
+                this.sprite
+                    .setActive(this.viewable)
+                    .setVisible(this.viewable);
+                this.bg
+                    .setActive(this.viewable)
+                    .setVisible(this.viewable);
+            }
+
+
+            if (this.viewable) {
+                this.sprite.x = move.x;
+                this.sprite.y = move.y;
+                this.bg.x = move.x;
+                this.bg.y = move.y;
+                this.sprite.setTint(
+                    this.color | PULSE[this.pulsePos],
+                    this.color | PULSE[(this.pulsePos + 1) & 3],
+                    this.color | PULSE[(this.pulsePos + 2) & 3],
+                    this.color | PULSE[(this.pulsePos + 3) & 3],
+                );
+                this.pulsePos++;
+            }
         }
 
         destroy() {

@@ -17,7 +17,13 @@ const Transform = (function () {
                 "x": x * this.gameConfig.world.width_float,
                 "y": y * this.gameConfig.world.height_float
             }
+        }
 
+        inView(x, y, worldView) {
+            return worldView.x - this.gameConfig.world.renderOffset < x &&
+                worldView.y - this.gameConfig.world.renderOffset < y &&
+                worldView.x + worldView.width + this.gameConfig.world.renderOffset > x &&
+                worldView.y + worldView.height + this.gameConfig.world.renderOffset > y;
         }
     }
 
