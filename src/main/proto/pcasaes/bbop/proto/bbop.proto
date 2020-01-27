@@ -38,6 +38,7 @@ message BoltFiredEventDto {
     float y = 4;
     float angle = 5;
     int64 startTimestamp = 6;
+    float speed = 7;
 }
 
 message BoltMovedEventDto {
@@ -123,7 +124,6 @@ message MoveCommandDto {
     float moveX = 1;
     float moveY = 2;
     FloatValue angle = 3;
-    FloatValue thrustAngle = 4;
 }
 
 message FireBoltCommandDto {

@@ -27,11 +27,12 @@ public class Bolts implements Iterable<Bolt> {
             float x,
             float y,
             float angle,
+            float speed,
             long startTimestamp) {
         if (activeBolts.containsKey(boltId)) {
             return Optional.empty();
         }
-        Bolt bolt = Bolt.create(players, boltId, ownerPlayerId, x, y, angle, startTimestamp);
+        Bolt bolt = Bolt.create(players, boltId, ownerPlayerId, x, y, angle, speed, startTimestamp);
         activeBolts.put(bolt.getId(), bolt);
         return Optional.of(bolt);
     }

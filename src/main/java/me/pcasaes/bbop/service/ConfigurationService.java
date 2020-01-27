@@ -16,6 +16,7 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
 
+    private long inertiaDampenTimeMillis;
     private int maxBolts;
     private long boltMaxDuration;
     private float minMove;
@@ -25,6 +26,9 @@ public class ConfigurationService {
     private String playerResetPosition;
     private float boltSpeed;
     private float boltCollisionRadius;
+    private boolean boltInertiaEnabled;
+    private float boltInertiaRejectionMax;
+    private float boltInertiaProjectionMax;
 
     private boolean clientBroadcastUseLinkedList;
     private int clientBroadcastMaxSizeExponent;
@@ -48,6 +52,11 @@ public class ConfigurationService {
                     name = "bbop.config.player.max.bolts",
                     defaultValue = "10"
             ) int maxBolts,
+
+            @ConfigProperty(
+                    name = "bbop.config.inertia.dampen-time-ms",
+                    defaultValue = "100"
+            ) long inertiaDampenTimeMillis,
 
             @ConfigProperty(
                     name = "bbop.config.min.move",
@@ -85,6 +94,21 @@ public class ConfigurationService {
             ) float boltSpeed,
 
             @ConfigProperty(
+                    name = "bbop.config.bolt.inertia.enabled",
+                    defaultValue = "true"
+            ) boolean boltInertiaEnabled,
+
+            @ConfigProperty(
+                    name = "bbop.config.bolt.inertia.rejection-max",
+                    defaultValue = "0.02"
+            ) float boltInertiaRejectionMax,
+
+            @ConfigProperty(
+                    name = "bbop.config.bolt.inertia.projection-max",
+                    defaultValue = "0.02"
+            ) float boltInertiaProjectionMax,
+
+            @ConfigProperty(
                     name = "bbop.config.bolt.collision.radius",
                     defaultValue = "0.001"
             ) float boltCollisionRadius,
@@ -119,6 +143,7 @@ public class ConfigurationService {
                     defaultValue = "17"
             ) int gameLoopMaxSizeExponent
     ) {
+        this.inertiaDampenTimeMillis = inertiaDampenTimeMillis;
         this.playerMaxMove = playerMaxMove;
         this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
         this.minMove = minMove;
@@ -128,6 +153,9 @@ public class ConfigurationService {
         this.boltMaxDuration = boltMaxDuration;
         this.boltSpeed = boltSpeed;
         this.boltCollisionRadius = boltCollisionRadius;
+        this.boltInertiaEnabled = boltInertiaEnabled;
+        this.boltInertiaRejectionMax = boltInertiaRejectionMax;
+        this.boltInertiaProjectionMax = boltInertiaProjectionMax;
 
         this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
         this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
@@ -145,6 +173,7 @@ public class ConfigurationService {
 
     @PostConstruct
     public void start() {
+        LOGGER.info("bbop.config.inertia.dampen-time-ms=" + getInertiaDampenTimeMillis());
         LOGGER.info("bbop.config.min.min=" + getMinMove());
         LOGGER.info("bbop.config.player.expungeSinceLastSpawnTimeout=" + getExpungeSinceLastSpawnTimeout());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
@@ -154,6 +183,9 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
+        LOGGER.info("bbop.config.bolt.inertia.enabled=" + isBoltInertiaEnabled());
+        LOGGER.info("bbop.config.bolt.inertia.rejection-max=" + getBoltInertiaRejectionMax());
+        LOGGER.info("bbop.config.bolt.inertia.projection-max=" + getBoltInertiaProjectionMax());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.linkedlist=" + isClientBroadcastUseLinkedList());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.exponent=" + getClientBroadcastMaxSizeExponent());
         LOGGER.info("bbop.config.service.domain.event.eventqueue.linkedlist=" + isDomainEventUseLinkedList());
@@ -161,6 +193,7 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
+        Config.get().setInertiaDampenTimeMillis(getInertiaDampenTimeMillis());
         Config.get().setMaxBolts(getMaxBolts());
         Config.get().setMinMove(getMinMove());
         Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout());
@@ -170,8 +203,14 @@ public class ConfigurationService {
         Config.get().setBoltMaxDuration(getBoltMaxDuration());
         Config.get().setBoltSpeed(getBoltSpeed());
         Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
+        Config.get().setBoltInertiaEnabled(isBoltInertiaEnabled());
+        Config.get().setBoltInertiaRejectionMax(getBoltInertiaRejectionMax());
+        Config.get().setBoltInertiaProjectionMax(getBoltInertiaProjectionMax());
     }
 
+    public long getInertiaDampenTimeMillis() {
+        return inertiaDampenTimeMillis;
+    }
 
     public float getMinMove() {
         return minMove;
@@ -203,6 +242,18 @@ public class ConfigurationService {
 
     public float getBoltCollisionRadius() {
         return boltCollisionRadius;
+    }
+
+    public boolean isBoltInertiaEnabled() {
+        return boltInertiaEnabled;
+    }
+
+    public float getBoltInertiaRejectionMax() {
+        return boltInertiaRejectionMax;
+    }
+
+    public float getBoltInertiaProjectionMax() {
+        return boltInertiaProjectionMax;
     }
 
     public boolean isClientBroadcastUseLinkedList() {

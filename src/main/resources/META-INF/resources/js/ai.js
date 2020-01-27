@@ -91,9 +91,6 @@ const AiBot = (function() {
                                     m.angle = {
                                         "value": Math.atan2(y - ship.y, x - ship.x) + this.forwardDir
                                     };
-                                    m.thrustAngle = {
-                                        "value": this.forwardDir
-                                    };
                                     hasAngle = true;
                                 }
 

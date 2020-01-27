@@ -1,7 +1,8 @@
 const Players = (function () {
 
-    const CONV_RADIANS_TO_DEGREE = 180 / Math.PI;
+    const FULL_CIRCLE_IN_RADIANS = 2 * Math.PI;
 
+    const HALF_CIRCLE_IN_RADIANS = Math.PI;
 
     const SHIP_COLOR = [
         0xdd0055,
@@ -26,6 +27,17 @@ const Players = (function () {
             sprite.anims.play(toplay);
             sprite.anims.chain("ship-rest");
         }
+    }
+
+    function calculateAngleDistance(a, b) {
+        const abDiff = a - b;
+
+        const d = Math.abs(abDiff) % FULL_CIRCLE_IN_RADIANS;
+        const r = d > HALF_CIRCLE_IN_RADIANS ? FULL_CIRCLE_IN_RADIANS - d : d;
+
+
+        return (abDiff >= 0 && abDiff <= HALF_CIRCLE_IN_RADIANS) ||
+        (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS) ? r : -r;
     }
 
     const OUT_OF_VIEW_SHIPS = {};
@@ -250,13 +262,14 @@ const Players = (function () {
             if (this.viewable) {
                 this.wake.generate();
 
-                if (Math.abs(thrustAngle) <= Math.PI / 4) {
+                const diff = calculateAngleDistance(angle, thrustAngle);
+                if (Math.abs(diff) <= Math.PI / 4) {
                     setShipThrustAnim(this.sprite, 'ship-fw');
-                } else if (Math.abs(thrustAngle - Math.PI / 2) <= Math.PI / 4) {
+                } else if (Math.abs(diff - Math.PI / 2) <= Math.PI / 4) {
                     setShipThrustAnim(this.sprite, 'ship-left');
-                } else if (Math.abs(thrustAngle - Math.PI) <= Math.PI / 4) {
+                } else if (Math.abs(diff - Math.PI) <= Math.PI / 4) {
                     setShipThrustAnim(this.sprite, 'ship-back');
-                } else if (Math.abs(thrustAngle + Math.PI / 2) <= Math.PI / 4) {
+                } else if (Math.abs(diff + Math.PI / 2) <= Math.PI / 4) {
                     setShipThrustAnim(this.sprite, 'ship-right');
                 }
             }
@@ -366,17 +379,7 @@ const Players = (function () {
                     command.angle = {
                         "value": Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) + forwardDir
                     };
-                    command.thrustAngle = {
-                        "value": forwardDir
-                    };
                 }
-            } else if (command.move) {
-                command.thrustAngle = {
-                    "value": Phaser.Math.Angle.ShortestBetween(
-                        this.ship.angle,
-                        Phaser.Math.Angle.Between(this.ship.x, this.ship.y, x, y) * CONV_RADIANS_TO_DEGREE
-                    ) / -CONV_RADIANS_TO_DEGREE
-                };
             }
             this.moveQueue.produce(command);
         }

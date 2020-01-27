@@ -1,5 +1,7 @@
 package me.pcasaes.bbop.model;
 
+import me.pcasaes.bbop.model.vector.PositionVector;
+
 import java.util.Optional;
 
 import static me.pcasaes.bbop.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
@@ -9,7 +11,7 @@ public class Bolt {
 
     private final EntityId id;
     private final EntityId ownerPlayerId;
-    private final VelocityVector velocityVector;
+    private final PositionVector positionVector;
     private long timestamp;
     private long startTimestamp;
     private boolean exhausted;
@@ -21,12 +23,12 @@ public class Bolt {
     private Bolt(Players players,
                  EntityId boltId,
                  EntityId ownerPlayerId,
-                 VelocityVector velocityVector,
+                 PositionVector positionVector,
                  long startTimestamp) {
         this.players = players;
         this.id = boltId;
         this.ownerPlayerId = ownerPlayerId;
-        this.velocityVector = velocityVector;
+        this.positionVector = positionVector;
         this.timestamp = startTimestamp;
         this.startTimestamp = this.timestamp;
         this.exhausted = false;
@@ -40,16 +42,17 @@ public class Bolt {
                        float x,
                        float y,
                        float angle,
+                       float speed,
                        long startTimestamp) {
         return new Bolt(
                 players,
                 boltId,
                 ownerPlayerId,
-                VelocityVector.of(
+                PositionVector.of(
                         x,
                         y,
                         angle,
-                        Config.get().getBoltSpeed(),
+                        speed,
                         startTimestamp),
                 startTimestamp);
     }
@@ -72,14 +75,14 @@ public class Bolt {
         long elapsed = Math.max(0L, timestamp - this.timestamp);
         if (elapsed > 0L) {
             this.timestamp = timestamp;
-            this.velocityVector.update(timestamp);
+            this.positionVector.update(timestamp);
             return optionalThis;
         }
         return Optional.empty();
     }
 
     Bolt tackleBoltExhaustion() {
-        if (velocityVector.isOutOfBounds() || isExpired()) {
+        if (positionVector.isOutOfBounds() || isExpired()) {
             this.exhausted = true;
             GameEvents.getDomainEvents().register(generateExhaustedEvent());
         }
@@ -103,8 +106,8 @@ public class Bolt {
         return this.exhausted;
     }
 
-    VelocityVector getVelocityVector() {
-        return velocityVector;
+    PositionVector getPositionVector() {
+        return positionVector;
     }
 
     boolean isExpired() {
@@ -128,7 +131,7 @@ public class Bolt {
 
     private void hit(Player player) {
         boolean isHit = !player.is(ownerPlayerId) &&
-                player.collision(velocityVector, Config.get().getBoltCollisionRadius());
+                player.collision(positionVector, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
             player.destroy(this.ownerPlayerId);
@@ -154,9 +157,9 @@ public class Bolt {
                                                 .clear()
                                                 .setBoltId(id.getGuid())
                                                 .setOwnerPlayerId(ownerPlayerId.getGuid())
-                                                .setX(velocityVector.getX())
-                                                .setY(velocityVector.getY())
-                                                .setAngle(velocityVector.getAngle())
+                                                .setX(positionVector.getX())
+                                                .setY(positionVector.getY())
+                                                .setAngle(positionVector.getVector().getAngle())
                                 )
                                 .build()
                 );

@@ -1,6 +1,8 @@
 package me.pcasaes.bbop.model;
 
 import me.pcasaes.bbop.model.annotations.IsThreadSafe;
+import me.pcasaes.bbop.model.vector.PositionVector;
+import me.pcasaes.bbop.model.vector.Vector2;
 import me.pcasaes.bbop.util.TrigUtil;
 import pcasaes.bbop.proto.BoltFiredEventDto;
 import pcasaes.bbop.proto.PlayerDestroyedEventDto;
@@ -41,7 +43,7 @@ public interface Player {
 
     void joined(PlayerJoinedEventDto event);
 
-    void move(float moveX, float moveY, Float angle, Float thrustAngle);
+    void move(float moveX, float moveY, Float angle);
 
     void moved(PlayerMovedEventDto event);
 
@@ -49,7 +51,7 @@ public interface Player {
 
     void left();
 
-    boolean collision(VelocityVector velocityVector, float collisionRadius);
+    boolean collision(PositionVector velocityVector, float collisionRadius);
 
     void destroy(EntityId playerId);
 
@@ -82,8 +84,6 @@ public interface Player {
 
         private float angle = 0f;
 
-        private float thrustAngle = 0f;
-
         private long movedTimestamp;
 
         private int liveBolts = 0;
@@ -98,6 +98,8 @@ public interface Player {
 
         private final ResetPosition resetPosition;
 
+        private final PositionVector inertia;
+
         private Implementation(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
@@ -108,6 +110,7 @@ public interface Player {
             this.ship = RNG.nextInt(6);
             setSpawned(false);
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
+            this.inertia = PositionVector.of(0, 0, 0, 0, 0);
         }
 
         private void setSpawned(boolean spawned) {
@@ -115,11 +118,50 @@ public interface Player {
             this.lastSpawnOrUnspawnTimestamp = clock.getTime();
         }
 
+        private Vector2 getFiredBoltVector(float boltSpeed, long timeSinceInertiaUpdate) {
+            Vector2 boltVector = Vector2.fromAngleMagnitude(this.angle, boltSpeed);
+
+            final float dampenRatio = timeSinceInertiaUpdate / (float) Config.get().getInertiaDampenTimeMillis();
+            final float converseDampenRatioSquared = 1f - dampenRatio * dampenRatio;
+
+            Vector2 scaledInertia = this.inertia
+                    .getVector()
+                    .scale(converseDampenRatioSquared);
+            Vector2 projection = scaledInertia
+                    .projection(boltVector);
+
+            Vector2 rejection = scaledInertia
+                    .minus(projection)
+                    .absMax(Config.get().getBoltInertiaRejectionMax());
+
+            projection = projection
+                    .absMax(Config.get().getBoltInertiaProjectionMax());
+
+            return boltVector.add(rejection).add(projection);
+        }
+
         @Override
         public void fire() {
             if (!spawned) {
                 return;
             }
+
+            long now = clock.getTime();
+
+            float boltSpeed = Config.get().getBoltSpeed();
+            float boltAngle;
+
+            long timeSinceInertiaUpdate = now - inertia.getTimestamp();
+            if (!Config.get().isBoltInertiaEnabled() ||
+                    timeSinceInertiaUpdate >= Config.get().getInertiaDampenTimeMillis() ||
+                    timeSinceInertiaUpdate < 0) {
+                boltAngle = angle;
+            } else {
+                Vector2 boltVector = getFiredBoltVector(boltSpeed, timeSinceInertiaUpdate);
+                boltSpeed = boltVector.getMagnitude();
+                boltAngle = boltVector.getAngle();
+            }
+
             final EntityId boltId = EntityId.newId();
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
@@ -133,8 +175,9 @@ public interface Player {
                                             .setOwnerPlayerId(id.getGuid())
                                             .setX(x)
                                             .setY(y)
-                                            .setAngle(angle)
-                                            .setStartTimestamp(clock.getTime())
+                                            .setAngle(boltAngle)
+                                            .setSpeed(boltSpeed)
+                                            .setStartTimestamp(now)
                                     )
                                     .build()
                     ));
@@ -159,6 +202,7 @@ public interface Player {
                     event.getX(),
                     event.getY(),
                     event.getAngle(),
+                    event.getSpeed(),
                     event.getStartTimestamp());
         }
 
@@ -218,7 +262,7 @@ public interface Player {
         }
 
         @Override
-        public void move(float moveX, float moveY, Float angle, Float thrustAngle) {
+        public void move(float moveX, float moveY, Float angle) {
             if (!this.spawned) {
                 return;
             }
@@ -244,11 +288,10 @@ public interface Player {
             this.x = Math.max(0f, Math.min(1f, nx));
             this.y = Math.max(0f, Math.min(1f, ny));
 
-            if (thrustAngle != null) {
-                this.thrustAngle = thrustAngle;
-            }
+            long now = clock.getTime();
+            this.inertia.move(this.x, this.y, now);
 
-            fireMoveDomainEvent();
+            fireMoveDomainEvent(now);
         }
 
         @Override
@@ -258,6 +301,7 @@ public interface Player {
 
         private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
             if (movedEvent.getTimestamp() > this.movedTimestamp) {
+                this.inertia.move(movedEvent.getX(), movedEvent.getY(), movedEvent.getTimestamp());
                 this.x = movedEvent.getX();
                 this.y = movedEvent.getY();
                 this.angle = movedEvent.getAngle();
@@ -274,7 +318,7 @@ public interface Player {
             }
         }
 
-        private void fireMoveDomainEvent() {
+        private void fireMoveDomainEvent(long eventTime) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
@@ -286,8 +330,8 @@ public interface Player {
                                             .setX(x)
                                             .setY(y)
                                             .setAngle(angle)
-                                            .setThrustAngle(thrustAngle)
-                                            .setTimestamp(clock.getTime())
+                                            .setThrustAngle(inertia.getVector().getAngle())
+                                            .setTimestamp(eventTime)
                                     )
                                     .build())
             );
@@ -311,7 +355,7 @@ public interface Player {
         }
 
         @Override
-        public boolean collision(VelocityVector velocityVector, float collisionRadius) {
+        public boolean collision(PositionVector velocityVector, float collisionRadius) {
             if (!this.spawned) {
                 return false;
             }
@@ -371,7 +415,7 @@ public interface Player {
                                                                         .setX(x)
                                                                         .setY(y)
                                                                         .setAngle(angle)
-                                                                        .setThrustAngle(thrustAngle)
+                                                                        .setThrustAngle(inertia.getVector().getAngle())
                                                                         .setTimestamp(clock.getTime())
                                                         )
                                         )
@@ -385,6 +429,9 @@ public interface Player {
         public void spawned(PlayerSpawnedEventDto event) {
             if (event.getLocation().getTimestamp() > this.movedTimestamp) {
                 setSpawned(true);
+                this.inertia.initialized(event.getLocation().getX(),
+                        event.getLocation().getY(),
+                        0L);
                 movedOrSpawned(event.getLocation(), event);
             }
         }
