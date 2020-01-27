@@ -28,6 +28,8 @@ const Players = (function () {
         }
     }
 
+    const OUT_OF_VIEW_SHIPS = {};
+
     class Ship {
         constructor(scene, gameConfig, transform) {
             this.scene = scene;
@@ -40,9 +42,14 @@ const Players = (function () {
             this.explosion = null;
             this.color = null;
             this.deathSound = false;
+            this.viewable = true;
+            this.alive = false;
+            this.followed = false;
+            this.id = null;
         }
 
         create(p, sounds) {
+            this.id = p.playerId.guid;
             sounds.get('explosion1').create(
                 this.gameConfig.ship.sound.max,
                 this.gameConfig.ship.sound.debounce,
@@ -56,9 +63,14 @@ const Players = (function () {
             this.sprite.setScale(0.3);
             this.sprite.setDepth(this.gameConfig.ship.depth);
             this.sprite.setCollideWorldBounds(true);
-            this.sprite
-                .setActive(false)
-                .setVisible(false);
+            this.alive = p.spawned || false;
+            if (this.alive) {
+                this.sprite.x = p.x;
+                this.sprite.y = p.y;
+                this.sprite.setRotation(p.angle);
+            }
+            this.viewable = !this.alive;
+            this.setViewable(this.alive);
 
 
             this.sprite.anims.play("ship-rest");
@@ -164,11 +176,34 @@ const Players = (function () {
             return this;
         }
 
+        setCameraToFollow() {
+            this.followed = true;
+            this.scene.cameras.main.startFollow(
+                this.sprite, true);
+
+            let lastX = this.sprite.x;
+            let lastY = this.sprite.y;
+            setTimeout(() => {
+                if (lastX !== this.sprite.x || lastY !== this.sprite.y) {
+                    lastX = this.sprite.x;
+                    lastY = this.sprite.y;
+                    Object.keys(OUT_OF_VIEW_SHIPS).forEach((key) => {
+                        const s = OUT_OF_VIEW_SHIPS[key];
+                        if (!s.viewable && s.inView()) {
+                            s.setViewable(true);
+                        }
+                    });
+                }
+            }, 500);
+
+        }
+
         destroyed(isControlledPlayer) {
             this.explosion.generate();
             this.sprite
                 .setActive(false)
                 .setVisible(false);
+            this.alive = false;
             if (isControlledPlayer) {
                 if (!this.deathSound) {
                     this.deathSound = this.scene.sound.add('death1');
@@ -181,30 +216,57 @@ const Players = (function () {
             this.sprite
                 .setActive(true)
                 .setVisible(true);
+            this.alive = true;
             this.moveTo(x, y, angle, thrustAngle)
         }
 
+        inView() {
+            return this.transform.inView(this.sprite.x, this.sprite.y, this.scene.cameras.main.worldView);
+        }
+
+        setViewable(v) {
+            const viewableChanged = this.viewable !== v;
+            this.viewable = v;
+
+            if (viewableChanged) {
+                this.sprite
+                    .setActive(this.viewable)
+                    .setVisible(this.viewable);
+                if (this.viewable) {
+                    delete OUT_OF_VIEW_SHIPS[this.id];
+                } else if (!this.followed) {
+                    OUT_OF_VIEW_SHIPS[this.id] = this;
+                }
+            }
+        }
+
         moveTo(x, y, angle, thrustAngle) {
-            if (!this.sprite.active) {
+            if (!this.alive) {
                 return;
             }
-            this.wake.generate();
 
+            this.setViewable(this.followed || this.transform.inView(x, y, this.scene.cameras.main.worldView));
 
-            if (Math.abs(thrustAngle) <= Math.PI / 4) {
-                setShipThrustAnim(this.sprite, 'ship-fw');
-            } else if (Math.abs(thrustAngle - Math.PI / 2) <= Math.PI / 4) {
-                setShipThrustAnim(this.sprite, 'ship-left');
-            } else if (Math.abs(thrustAngle - Math.PI) <= Math.PI / 4) {
-                setShipThrustAnim(this.sprite, 'ship-back');
-            } else if (Math.abs(thrustAngle + Math.PI / 2) <= Math.PI / 4) {
-                setShipThrustAnim(this.sprite, 'ship-right');
+            if (this.viewable) {
+                this.wake.generate();
+
+                if (Math.abs(thrustAngle) <= Math.PI / 4) {
+                    setShipThrustAnim(this.sprite, 'ship-fw');
+                } else if (Math.abs(thrustAngle - Math.PI / 2) <= Math.PI / 4) {
+                    setShipThrustAnim(this.sprite, 'ship-left');
+                } else if (Math.abs(thrustAngle - Math.PI) <= Math.PI / 4) {
+                    setShipThrustAnim(this.sprite, 'ship-back');
+                } else if (Math.abs(thrustAngle + Math.PI / 2) <= Math.PI / 4) {
+                    setShipThrustAnim(this.sprite, 'ship-right');
+                }
             }
 
             this.sprite.x = x;
             this.sprite.y = y;
             this.sprite.setRotation(angle);
-            this.fireBolt.follow();
+            if (this.viewable) {
+                this.fireBolt.follow();
+            }
         }
 
 
@@ -377,11 +439,9 @@ const Players = (function () {
 
         _setCameraToFollow() {
             this.getFollowedPlayer()
-                .ifPresent(p => {
-                    this.scene.cameras.main.startFollow(
-                        p.ship.sprite, true);
-                });
-
+                .ifPresent(p =>
+                    p.ship.setCameraToFollow()
+                );
         }
 
         getFollowedPlayer() {

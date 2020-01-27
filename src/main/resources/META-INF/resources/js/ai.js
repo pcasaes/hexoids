@@ -69,7 +69,7 @@ const AiBot = (function() {
                 setInterval(() => {
                     this.players.getControllablePlayer(this.userId)
                         .ifPresent(p => {
-                            if (p.ship.sprite.active) {
+                            if (p.ship.alive) {
                                 const m = {
                                     "moveX": 0,
                                     "moveY": 0,

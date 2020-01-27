@@ -21,6 +21,7 @@ message PlayerDto {
     float x = 3;
     float y = 4;
     float angle = 5;
+    bool spawned = 6;
 }
 
 // events
