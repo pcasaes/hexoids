@@ -26,7 +26,6 @@ class QueueProducer {
                         m.angle = evt.angle;
                         hasAngle = true;
                     }
-                    m.thrustAngle = evt.thrustAngle;
                 }
                 if (hasAngle || m.moveX !== 0 || m.moveY !== 0) {
                     this.sendMessage({

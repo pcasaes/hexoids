@@ -122,8 +122,7 @@ public class GameSocket {
                     .createOrGet(userId)
                     .move(moveCommandDto.getMoveX(),
                             moveCommandDto.getMoveY(),
-                            moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null,
-                            moveCommandDto.hasThrustAngle() ? moveCommandDto.getThrustAngle().getValue() : null
+                            moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null
                     )
             );
         } else if (command.hasFire()) {

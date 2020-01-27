@@ -1,6 +1,7 @@
 package me.pcasaes.bbop.model;
 
 
+import me.pcasaes.bbop.model.vector.PositionVector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -84,6 +85,7 @@ class PlayerTest {
         Config.get().setPlayerMaxMove(1f);
         Config.get().setMinMove(0.000000001f);
         Config.get().setPlayerMaxAngleDivisor(0.5f);
+        Config.get().setBoltInertiaEnabled(false);
     }
 
     @Test
@@ -206,7 +208,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.1f, 0.2f, (float) Math.PI, (float) Math.PI);
+        player.move(0.1f, 0.1f, (float) Math.PI);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -214,9 +216,9 @@ class PlayerTest {
 
         assertNotNull(event);
         assertEquals(0.1f, event.getX());
-        assertEquals(0.2f, event.getY());
+        assertEquals(0.1f, event.getY());
         assertEquals((float) Math.PI, event.getAngle());
-        assertEquals((float) Math.PI, event.getThrustAngle());
+        assertEquals((float) (Math.PI / 4f), event.getThrustAngle());
 
     }
 
@@ -231,7 +233,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(-1f, 2f, null, null);
+        player.move(-1f, 2f, null);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -255,7 +257,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0f, 0f, (float) Math.PI, (float) Math.PI);
+        player.move(0f, 0f, (float) Math.PI);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -280,7 +282,7 @@ class PlayerTest {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        player.move(0f, 0f, null, null);
+        player.move(0f, 0f, null);
 
         assertNull(eventReference.get());
     }
@@ -325,6 +327,7 @@ class PlayerTest {
     @Test
     void testFireDirection() {
         Config.get().setMaxBolts(2);
+        Config.get().setBoltInertiaEnabled(false);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -332,7 +335,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.5f, (float) Math.PI, (float) Math.PI);
+        player.move(0.5f, 0.5f, (float) Math.PI);
 
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
@@ -358,6 +361,46 @@ class PlayerTest {
     }
 
     @Test
+    void testFireDirectionWithInertia() {
+        Config.get().setMaxBolts(2);
+        Config.get().setBoltInertiaEnabled(true);
+        Config.get().setInertiaDampenTimeMillis(1000L);
+        Config.get().setBoltInertiaProjectionMax(20f);
+        Config.get().setBoltInertiaRejectionMax(20f);
+        Config.get().setBoltSpeed(20f);
+
+        EntityId one = EntityId.newId();
+        Player player = this.players.createOrGet(one);
+        player.join();
+        when(clock.getTime()).thenReturn(25L);
+        player.spawn();
+        when(clock.getTime()).thenReturn(50L);
+        player.move(0, 0.5f, 0f);
+
+        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
+        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+
+        player.fire();
+
+        DomainEvent event = eventReference.get();
+        assertNotNull(event);
+        assertTrue(event.getEvent().hasBoltFired());
+
+        player.fired(event.getEvent().getBoltFired());
+
+        assertEquals(1, bolts
+                .stream()
+                .filter(b -> b.isOwnedBy(one))
+                .map(Bolt::generateMovedEvent)
+                .map(DomainEvent::getEvent)
+                .filter(Event::hasBoltMoved)
+                .map(Event::getBoltMoved)
+                .filter(b -> b.getAngle() == (float) Math.PI / 4f)
+                .count());
+
+    }
+
+    @Test
     void testCollisionHitBullsEye() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -365,9 +408,9 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.5f, null, null);
+        player.move(0.5f, 0.5f, null);
 
-        VelocityVector velocityVector = VelocityVector.of(
+        PositionVector positionVector = PositionVector.of(
                 0.45f,
                 0.45f,
                 (float) (Math.PI / 4),
@@ -375,7 +418,7 @@ class PlayerTest {
                 0L
         ).update(1000L);
 
-        assertTrue(player.collision(velocityVector, 0.05f));
+        assertTrue(player.collision(positionVector, 0.05f));
     }
 
     @Test
@@ -386,9 +429,9 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.54f, 0.54f, null, null);
+        player.move(0.54f, 0.54f, null);
 
-        VelocityVector velocityVector = VelocityVector.of(
+        PositionVector positionVector = PositionVector.of(
                 0.45f,
                 0.45f,
                 (float) (Math.PI / 4),
@@ -396,7 +439,7 @@ class PlayerTest {
                 0L
         ).update(1000L);
 
-        assertTrue(player.collision(velocityVector, 0.05f));
+        assertTrue(player.collision(positionVector, 0.05f));
     }
 
     @Test
@@ -407,9 +450,9 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.4f, 0.6f, null, null);
+        player.move(0.4f, 0.6f, null);
 
-        VelocityVector velocityVector = VelocityVector.of(
+        PositionVector positionVector = PositionVector.of(
                 0.45f,
                 0.45f,
                 (float) (Math.PI / 4),
@@ -417,7 +460,7 @@ class PlayerTest {
                 0L
         ).update(1000L);
 
-        assertFalse(player.collision(velocityVector, 0.05f));
+        assertFalse(player.collision(positionVector, 0.05f));
     }
 
     @Test
@@ -428,9 +471,9 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.2f, 0.2f, null, null);
+        player.move(0.2f, 0.2f, null);
 
-        VelocityVector velocityVector = VelocityVector.of(
+        PositionVector positionVector = PositionVector.of(
                 0.45f,
                 0.45f,
                 (float) (Math.PI / 4),
@@ -438,7 +481,7 @@ class PlayerTest {
                 0L
         ).update(1000L);
 
-        assertFalse(player.collision(velocityVector, 0.05f));
+        assertFalse(player.collision(positionVector, 0.05f));
     }
 
     @Test
@@ -449,9 +492,9 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.2f, null, null);
+        player.move(0.5f, 0.2f, null);
 
-        VelocityVector velocityVector = VelocityVector.of(
+        PositionVector positionVector = PositionVector.of(
                 0.45f,
                 0.45f,
                 (float) (Math.PI / 4),
@@ -459,7 +502,7 @@ class PlayerTest {
                 0L
         ).update(1000L);
 
-        assertFalse(player.collision(velocityVector, 0.05f));
+        assertFalse(player.collision(positionVector, 0.05f));
     }
 
     @Test
@@ -477,7 +520,7 @@ class PlayerTest {
         player2.spawn();
 
         when(clock.getTime()).thenReturn(50L);
-        player1.move(0.5f, 0.5f, 1f, 1f);
+        player1.move(0.5f, 0.5f, 1f);
 
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(domainEvents::add);

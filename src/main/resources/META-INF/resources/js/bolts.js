@@ -25,6 +25,9 @@ const Bolts = (function () {
             if (this.isNew) {
                 this.sprite = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
                 this.bg = this.data.scene.physics.add.image(move.x, move.y, 'bolt');
+            } else {
+                this.sprite.x = move.x;
+                this.sprite.y = move.y;
             }
 
             this.owner = this.data.players.get(b.ownerPlayerId.guid);

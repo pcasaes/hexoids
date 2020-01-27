@@ -4,6 +4,7 @@ import me.pcasaes.bbop.util.TrigUtil;
 
 public class Config {
 
+    private long inertiaDampenTimeMillis;
     private float minMove;
     private float playerMaxMove;
     private float playerMaxAngle;
@@ -12,6 +13,9 @@ public class Config {
     private long boltMaxDuration;
     private float boltSpeed;
     private float boltCollisionRadius;
+    private boolean boltInertiaEnabled;
+    private float boltInertiaRejectionMax;
+    private float boltInertiaProjectionMax;
     private long expungeSinceLastSpawnTimeout;
 
 
@@ -21,6 +25,14 @@ public class Config {
 
     public static Config get() {
         return ConfigHolder.INSTANCE;
+    }
+
+    public long getInertiaDampenTimeMillis() {
+        return inertiaDampenTimeMillis;
+    }
+
+    public void setInertiaDampenTimeMillis(long inertiaDampenTimeMillis) {
+        this.inertiaDampenTimeMillis = inertiaDampenTimeMillis;
     }
 
     public int getMaxBolts() {
@@ -85,6 +97,30 @@ public class Config {
 
     public void setBoltCollisionRadius(float boltCollisionRadius) {
         this.boltCollisionRadius = boltCollisionRadius;
+    }
+
+    public boolean isBoltInertiaEnabled() {
+        return boltInertiaEnabled;
+    }
+
+    public void setBoltInertiaEnabled(boolean boltInertiaEnabled) {
+        this.boltInertiaEnabled = boltInertiaEnabled;
+    }
+
+    public float getBoltInertiaRejectionMax() {
+        return boltInertiaRejectionMax;
+    }
+
+    public void setBoltInertiaRejectionMax(float boltInertiaRejectionMax) {
+        this.boltInertiaRejectionMax = boltInertiaRejectionMax;
+    }
+
+    public float getBoltInertiaProjectionMax() {
+        return boltInertiaProjectionMax;
+    }
+
+    public void setBoltInertiaProjectionMax(float boltInertiaProjectionMax) {
+        this.boltInertiaProjectionMax = boltInertiaProjectionMax;
     }
 
     public long getExpungeSinceLastSpawnTimeout() {

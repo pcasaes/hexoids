@@ -64,7 +64,14 @@ class BoltTest {
 
         EntityId one = EntityId.newId();
         Config.get().setBoltMaxDuration(1_500L);
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0f, 0f, 0f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0f,
+                0f,
+                0f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
         assertTrue(bolt.isOwnedBy(one));
@@ -128,7 +135,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0f, 0f, 0f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0f,
+                0f,
+                0f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -155,7 +169,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0f, 0f, (float) Math.PI / 4f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0f,
+                0f,
+                (float) Math.PI / 4f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -181,7 +202,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0f, 0f, (float) Math.PI / 2f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0f,
+                0f,
+                (float) Math.PI / 2f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -207,7 +235,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 1f, 0f, (float) (3 * Math.PI / 4f), clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                1f,
+                0f,
+                (float) (3 * Math.PI / 4f),
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -234,7 +269,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 1f, 0f, (float) Math.PI, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                1f,
+                0f,
+                (float) Math.PI,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -260,7 +302,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 1f, 1f, (float) (5 * Math.PI / 4), clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                1f,
+                1f,
+                (float) (5 * Math.PI / 4f),
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -286,7 +335,14 @@ class BoltTest {
 
         Config.get().setBoltMaxDuration(1_500L);
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 1f, 1f, (float) (3 * Math.PI / 2), clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                1f,
+                1f,
+                (float) (3 * Math.PI / 2f),
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -321,14 +377,21 @@ class BoltTest {
         }).when(this.players).forEach(any(Consumer.class));
 
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0.5f, 0.5f, 0f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0.5f,
+                0.5f,
+                0f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
         doReturn(1_000L).when(clock).getTime();
 
         doReturn(true)
                 .when(player)
-                .collision(bolt.getVelocityVector(), Config.get().getBoltCollisionRadius());
+                .collision(bolt.getPositionVector(), Config.get().getBoltCollisionRadius());
 
 
         List<DomainEvent> domainEvents = new ArrayList<>();
@@ -373,14 +436,21 @@ class BoltTest {
         doAnswer(c -> playersList.stream()).when(this.players).stream();
 
         EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players, EntityId.newId(), one, 0.5f, 0.5f, 0f, clock.getTime()).orElse(null);
+        final Bolt bolt = bolts.fired(players,
+                EntityId.newId(),
+                one,
+                0.5f,
+                0.5f,
+                0f,
+                Config.get().getBoltSpeed(),
+                clock.getTime()).orElse(null);
         assertNotNull(bolt);
 
 
         doReturn(1_000L).when(clock).getTime();
         doReturn(false)
                 .when(player)
-                .collision(bolt.getVelocityVector(), Config.get().getBoltCollisionRadius());
+                .collision(bolt.getPositionVector(), Config.get().getBoltCollisionRadius());
 
         List<DomainEvent> events = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(events::add);
