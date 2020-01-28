@@ -78,10 +78,6 @@ public interface Player {
 
         private long lastSpawnOrUnspawnTimestamp;
 
-        private float x = 0f;
-
-        private float y = 0f;
-
         private float angle = 0f;
 
         private long movedTimestamp;
@@ -98,7 +94,7 @@ public interface Player {
 
         private final ResetPosition resetPosition;
 
-        private final PositionVector inertia;
+        private final PositionVector position;
 
         private Implementation(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
@@ -110,7 +106,7 @@ public interface Player {
             this.ship = RNG.nextInt(6);
             setSpawned(false);
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
-            this.inertia = PositionVector.of(0, 0, 0, 0, 0);
+            this.position = PositionVector.of(0, 0, 0, 0, 0);
         }
 
         private void setSpawned(boolean spawned) {
@@ -124,7 +120,7 @@ public interface Player {
             final float dampenRatio = timeSinceInertiaUpdate / (float) Config.get().getInertiaDampenTimeMillis();
             final float converseDampenRatioSquared = 1f - dampenRatio * dampenRatio;
 
-            Vector2 scaledInertia = this.inertia
+            Vector2 scaledInertia = this.position
                     .getVector()
                     .scale(converseDampenRatioSquared);
             Vector2 projection = scaledInertia
@@ -151,7 +147,7 @@ public interface Player {
             float boltSpeed = Config.get().getBoltSpeed();
             float boltAngle;
 
-            long timeSinceInertiaUpdate = now - inertia.getTimestamp();
+            long timeSinceInertiaUpdate = now - position.getTimestamp();
             if (!Config.get().isBoltInertiaEnabled() ||
                     timeSinceInertiaUpdate >= Config.get().getInertiaDampenTimeMillis() ||
                     timeSinceInertiaUpdate < 0) {
@@ -173,8 +169,8 @@ public interface Player {
                                             .clear()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
-                                            .setX(x)
-                                            .setY(y)
+                                            .setX(position.getX())
+                                            .setY(position.getY())
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
@@ -223,16 +219,15 @@ public interface Player {
                     .clear()
                     .setPlayerId(id.getGuid())
                     .setShip(ship)
-                    .setX(x)
-                    .setY(y)
+                    .setX(position.getX())
+                    .setY(position.getY())
                     .setAngle(angle)
                     .setSpawned(spawned)
                     .build();
         }
 
-        private void resetPosition() {
-            this.x = resetPosition.getNextX();
-            this.y = resetPosition.getNextY();
+        private void resetPosition(long resetTime) {
+            position.initialized(resetPosition.getNextX(), resetPosition.getNextY(), resetTime);
             this.angle = 0f;
         }
 
@@ -279,17 +274,17 @@ public interface Player {
             moveX = Math.max(-maxMove, Math.min(moveX, maxMove));
             moveY = Math.max(-maxMove, Math.min(moveY, maxMove));
 
-            float nx = this.x + moveX;
-            float ny = this.y + moveY;
+            float nx = this.position.getX() + moveX;
+            float ny = this.position.getY() + moveY;
             if (angle != null) {
                 this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
             }
 
-            this.x = Math.max(0f, Math.min(1f, nx));
-            this.y = Math.max(0f, Math.min(1f, ny));
+            float x = Math.max(0f, Math.min(1f, nx));
+            float y = Math.max(0f, Math.min(1f, ny));
 
             long now = clock.getTime();
-            this.inertia.move(this.x, this.y, now);
+            this.position.move(x, y, now);
 
             fireMoveDomainEvent(now);
         }
@@ -301,9 +296,7 @@ public interface Player {
 
         private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
             if (movedEvent.getTimestamp() > this.movedTimestamp) {
-                this.inertia.move(movedEvent.getX(), movedEvent.getY(), movedEvent.getTimestamp());
-                this.x = movedEvent.getX();
-                this.y = movedEvent.getY();
+                this.position.move(movedEvent.getX(), movedEvent.getY(), movedEvent.getTimestamp());
                 this.angle = movedEvent.getAngle();
                 this.movedTimestamp = movedEvent.getTimestamp();
                 GameEvents
@@ -327,10 +320,10 @@ public interface Player {
                                     .setPlayerMoved(PLAYER_MOVED_BUILDER
                                             .clear()
                                             .setPlayerId(id.getGuid())
-                                            .setX(x)
-                                            .setY(y)
+                                            .setX(position.getX())
+                                            .setY(position.getY())
                                             .setAngle(angle)
-                                            .setThrustAngle(inertia.getVector().getAngle())
+                                            .setThrustAngle(position.getVector().getAngle())
                                             .setTimestamp(eventTime)
                                     )
                                     .build())
@@ -355,11 +348,11 @@ public interface Player {
         }
 
         @Override
-        public boolean collision(PositionVector velocityVector, float collisionRadius) {
+        public boolean collision(PositionVector positionVector, float collisionRadius) {
             if (!this.spawned) {
                 return false;
             }
-            return velocityVector.intersectedWith(this.x, this.y, collisionRadius);
+            return positionVector.intersectedWith(this.position, collisionRadius);
         }
 
         @Override
@@ -399,7 +392,8 @@ public interface Player {
         public void spawn() {
             if (!this.spawned) {
                 setSpawned(true);
-                resetPosition();
+                long now = clock.getTime();
+                resetPosition(now);
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
                                 this.id.getId(),
@@ -412,11 +406,11 @@ public interface Player {
                                                                 PLAYER_MOVED_BUILDER
                                                                         .clear()
                                                                         .setPlayerId(id.getGuid())
-                                                                        .setX(x)
-                                                                        .setY(y)
+                                                                        .setX(position.getX())
+                                                                        .setY(position.getY())
                                                                         .setAngle(angle)
-                                                                        .setThrustAngle(inertia.getVector().getAngle())
-                                                                        .setTimestamp(clock.getTime())
+                                                                        .setThrustAngle(position.getVector().getAngle())
+                                                                        .setTimestamp(now)
                                                         )
                                         )
                                         .build()
@@ -429,7 +423,7 @@ public interface Player {
         public void spawned(PlayerSpawnedEventDto event) {
             if (event.getLocation().getTimestamp() > this.movedTimestamp) {
                 setSpawned(true);
-                this.inertia.initialized(event.getLocation().getX(),
+                this.position.initialized(event.getLocation().getX(),
                         event.getLocation().getY(),
                         0L);
                 movedOrSpawned(event.getLocation(), event);
