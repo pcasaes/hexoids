@@ -296,7 +296,12 @@ public interface Player {
 
         private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
             if (movedEvent.getTimestamp() > this.movedTimestamp) {
-                this.position.move(movedEvent.getX(), movedEvent.getY(), movedEvent.getTimestamp());
+                this.position.moved(
+                        movedEvent.getX(),
+                        movedEvent.getY(),
+                        movedEvent.getThrustAngle(),
+                        movedEvent.getVelocity(),
+                        movedEvent.getTimestamp());
                 this.angle = movedEvent.getAngle();
                 this.movedTimestamp = movedEvent.getTimestamp();
                 GameEvents
@@ -324,6 +329,7 @@ public interface Player {
                                             .setY(position.getY())
                                             .setAngle(angle)
                                             .setThrustAngle(position.getVector().getAngle())
+                                            .setVelocity(position.getVector().getMagnitude())
                                             .setTimestamp(eventTime)
                                     )
                                     .build())
