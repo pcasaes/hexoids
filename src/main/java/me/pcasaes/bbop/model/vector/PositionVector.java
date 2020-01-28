@@ -127,9 +127,11 @@ public class PositionVector {
                 currentY < 0f || currentY > 1f;
     }
 
-    public boolean intersectedWith(float x, float y, float intersectionThreshold) {
+    public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
         float minx = Math.min(previousX, currentX);
         float maxx = Math.max(previousX, currentX);
+        float x = b.getX();
+        float y = b.getY();
         if (x - intersectionThreshold > maxx || x + intersectionThreshold < minx) {
             return false;
         }
