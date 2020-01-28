@@ -70,6 +70,7 @@ message PlayerMovedEventDto {
     float angle = 4;
     float thrustAngle = 5;
     int64 timestamp = 6;
+    float velocity = 7;
 }
 
 message PlayerSpawnedEventDto {

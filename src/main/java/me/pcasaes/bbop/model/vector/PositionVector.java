@@ -47,6 +47,28 @@ public class PositionVector {
     }
 
     /**
+     * Set position to x, y and velocity to angle and magnitude
+     *
+     * @param x         the x to move to
+     * @param y         the y to move to
+     * @param angle     the velocity's angle
+     * @param magnitude the velocity's magnitude
+     * @param timestamp the time to base elapsed time against. Should be "now",
+     *                  or at least greater than the value used in the previous call.
+     */
+    public void moved(float x, float y, float angle, float magnitude, long timestamp) {
+        if (timestamp <= this.currentTimestamp) {
+            return;
+        }
+        this.previousX = this.currentX;
+        this.previousY = this.currentY;
+        this.currentX = x;
+        this.currentY = y;
+        this.vector.setAngleMagnitude(angle, magnitude);
+        this.currentTimestamp = timestamp;
+    }
+
+    /**
      * Move the position and updates is velocity accordingly.
      *
      * @param x         the x to move to
