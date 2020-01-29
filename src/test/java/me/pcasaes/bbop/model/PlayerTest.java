@@ -415,7 +415,8 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L
+                0L,
+                Player.Implementation.PLAYER_POSITION_CONFIGURATION
         ).update(1000L);
 
         assertTrue(player.collision(positionVector, 0.05f));
@@ -436,7 +437,8 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L
+                0L,
+                Player.Implementation.PLAYER_POSITION_CONFIGURATION
         ).update(1000L);
 
         assertTrue(player.collision(positionVector, 0.05f));
@@ -457,7 +459,8 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L
+                0L,
+                Player.Implementation.PLAYER_POSITION_CONFIGURATION
         ).update(1000L);
 
         assertFalse(player.collision(positionVector, 0.05f));
@@ -478,7 +481,8 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L
+                0L,
+                Player.Implementation.PLAYER_POSITION_CONFIGURATION
         ).update(1000L);
 
         assertFalse(player.collision(positionVector, 0.05f));
@@ -499,7 +503,8 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L
+                0L,
+                Player.Implementation.PLAYER_POSITION_CONFIGURATION
         ).update(1000L);
 
         assertFalse(player.collision(positionVector, 0.05f));

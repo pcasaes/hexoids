@@ -75,10 +75,11 @@ const Players = (function () {
             this.sprite.setScale(0.3);
             this.sprite.setDepth(this.gameConfig.ship.depth);
             this.sprite.setCollideWorldBounds(true);
-            this.alive = p.spawned || false;
+            this.alive = p.spawned || false; // p.spawned might be undefined so we need this bit of js nonsense
             if (this.alive) {
-                this.sprite.x = p.x;
-                this.sprite.y = p.y;
+                const move = this.transform.view(p.x, p.y);
+                this.sprite.x = move.x;
+                this.sprite.y = move.y;
                 this.sprite.setRotation(p.angle);
             }
             this.viewable = !this.alive;
@@ -316,7 +317,6 @@ const Players = (function () {
             this.playerId = null;
             this.ship = null;
             this.scoreView = null;
-            this.controlled = false;
         }
 
         create(p, sounds) {
@@ -417,9 +417,6 @@ const Players = (function () {
 
         addControllableUser(userId) {
             this.controllableUsers[userId] = userId;
-            if (this.players[userId]) {
-                this.players[userId].controlled = true;
-            }
             return this;
         }
 
