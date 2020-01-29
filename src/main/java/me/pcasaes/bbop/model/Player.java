@@ -13,6 +13,7 @@ import pcasaes.bbop.proto.PlayerSpawnedEventDto;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Random;
 
 import static me.pcasaes.bbop.model.DtoUtils.BOLT_FIRED_BUILDER;
@@ -106,7 +107,13 @@ public interface Player {
             this.ship = RNG.nextInt(6);
             setSpawned(false);
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
-            this.position = PositionVector.of(0, 0, 0, 0, 0);
+            this.position = PositionVector.of(
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    PLAYER_POSITION_CONFIGURATION);
         }
 
         private void setSpawned(boolean spawned) {
@@ -262,31 +269,18 @@ public interface Player {
                 return;
             }
 
-            float minMove = Config.get().getMinMove();
-            if (angle == null &&
-                    Math.abs(moveX) <= minMove &&
-                    Math.abs(moveY) <= minMove
-            ) {
-                return;
-            }
-
-            float maxMove = Config.get().getPlayerMaxMove();
-            moveX = Math.max(-maxMove, Math.min(moveX, maxMove));
-            moveY = Math.max(-maxMove, Math.min(moveY, maxMove));
-
-            float nx = this.position.getX() + moveX;
-            float ny = this.position.getY() + moveY;
+            boolean angleChanged = false;
             if (angle != null) {
-                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
+                float a = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
+                angleChanged = a != this.angle;
+                this.angle = a;
             }
 
-            float x = Math.max(0f, Math.min(1f, nx));
-            float y = Math.max(0f, Math.min(1f, ny));
 
             long now = clock.getTime();
-            this.position.move(x, y, now);
-
-            fireMoveDomainEvent(now);
+            if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
+                fireMoveDomainEvent(now);
+            }
         }
 
         @Override
@@ -456,5 +450,18 @@ public interface Player {
         public int hashCode() {
             return Objects.hash(id);
         }
+
+        static final PositionVector.Configuration PLAYER_POSITION_CONFIGURATION = new PositionVector.Configuration() {
+
+            @Override
+            public boolean isBounded() {
+                return true;
+            }
+
+            @Override
+            public OptionalDouble maxMagnitude() {
+                return OptionalDouble.of(Config.get().getPlayerMaxMove());
+            }
+        };
     }
 }
