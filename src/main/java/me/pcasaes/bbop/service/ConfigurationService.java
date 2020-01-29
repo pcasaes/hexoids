@@ -16,7 +16,7 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
 
-    private long inertiaDampenTimeMillis;
+    private float inertiaDampenCoefficient;
     private int maxBolts;
     private long boltMaxDuration;
     private float minMove;
@@ -27,8 +27,9 @@ public class ConfigurationService {
     private float boltSpeed;
     private float boltCollisionRadius;
     private boolean boltInertiaEnabled;
-    private float boltInertiaRejectionMax;
-    private float boltInertiaProjectionMax;
+    private float boltInertiaRejectionScale;
+    private float boltInertiaProjectionScale;
+    private float boltInertiaNegativeProjectionScale;
 
     private boolean clientBroadcastUseLinkedList;
     private int clientBroadcastMaxSizeExponent;
@@ -54,9 +55,9 @@ public class ConfigurationService {
             ) int maxBolts,
 
             @ConfigProperty(
-                    name = "bbop.config.inertia.dampen-time-ms",
-                    defaultValue = "100"
-            ) long inertiaDampenTimeMillis,
+                    name = "bbop.config.inertia.dampen-coefficient",
+                    defaultValue = "-0.001"
+            ) float inertiaDampenCoefficient,
 
             @ConfigProperty(
                     name = "bbop.config.min.move",
@@ -99,14 +100,19 @@ public class ConfigurationService {
             ) boolean boltInertiaEnabled,
 
             @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.rejection-max",
-                    defaultValue = "0.02"
-            ) float boltInertiaRejectionMax,
+                    name = "bbop.config.bolt.inertia.rejection-scale",
+                    defaultValue = "0.8"
+            ) float boltInertiaRejectionScale,
 
             @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.projection-max",
-                    defaultValue = "0.02"
-            ) float boltInertiaProjectionMax,
+                    name = "bbop.config.bolt.inertia.projection-scale",
+                    defaultValue = "0.8"
+            ) float boltInertiaProjectionScale,
+
+            @ConfigProperty(
+                    name = "bbop.config.bolt.inertia.negative-projection-scale",
+                    defaultValue = "0.1"
+            ) float boltInertiaNegativeProjectionScale,
 
             @ConfigProperty(
                     name = "bbop.config.bolt.collision.radius",
@@ -143,7 +149,7 @@ public class ConfigurationService {
                     defaultValue = "17"
             ) int gameLoopMaxSizeExponent
     ) {
-        this.inertiaDampenTimeMillis = inertiaDampenTimeMillis;
+        this.inertiaDampenCoefficient = inertiaDampenCoefficient;
         this.playerMaxMove = playerMaxMove;
         this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
         this.minMove = minMove;
@@ -154,8 +160,9 @@ public class ConfigurationService {
         this.boltSpeed = boltSpeed;
         this.boltCollisionRadius = boltCollisionRadius;
         this.boltInertiaEnabled = boltInertiaEnabled;
-        this.boltInertiaRejectionMax = boltInertiaRejectionMax;
-        this.boltInertiaProjectionMax = boltInertiaProjectionMax;
+        this.boltInertiaRejectionScale = boltInertiaRejectionScale;
+        this.boltInertiaProjectionScale = boltInertiaProjectionScale;
+        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
 
         this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
         this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
@@ -173,7 +180,7 @@ public class ConfigurationService {
 
     @PostConstruct
     public void start() {
-        LOGGER.info("bbop.config.inertia.dampen-time-ms=" + getInertiaDampenTimeMillis());
+        LOGGER.info("bbop.config.inertia.dampen-coefficients=" + getInertiaDampenCoefficient());
         LOGGER.info("bbop.config.min.min=" + getMinMove());
         LOGGER.info("bbop.config.player.expungeSinceLastSpawnTimeout=" + getExpungeSinceLastSpawnTimeout());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
@@ -184,8 +191,9 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("bbop.config.bolt.collision.radius=" + getBoltCollisionRadius());
         LOGGER.info("bbop.config.bolt.inertia.enabled=" + isBoltInertiaEnabled());
-        LOGGER.info("bbop.config.bolt.inertia.rejection-max=" + getBoltInertiaRejectionMax());
-        LOGGER.info("bbop.config.bolt.inertia.projection-max=" + getBoltInertiaProjectionMax());
+        LOGGER.info("bbop.config.bolt.inertia.rejection-scale=" + getBoltInertiaRejectionScale());
+        LOGGER.info("bbop.config.bolt.inertia.projection-scale=" + getBoltInertiaProjectionScale());
+        LOGGER.info("bbop.config.bolt.inertia.negative-projection-scale=" + getBoltInertiaNegativeProjectionScale());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.linkedlist=" + isClientBroadcastUseLinkedList());
         LOGGER.info("bbop.config.service.client.broadcast.eventqueue.exponent=" + getClientBroadcastMaxSizeExponent());
         LOGGER.info("bbop.config.service.domain.event.eventqueue.linkedlist=" + isDomainEventUseLinkedList());
@@ -193,7 +201,7 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
-        Config.get().setInertiaDampenTimeMillis(getInertiaDampenTimeMillis());
+        Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
         Config.get().setMaxBolts(getMaxBolts());
         Config.get().setMinMove(getMinMove());
         Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout());
@@ -204,12 +212,14 @@ public class ConfigurationService {
         Config.get().setBoltSpeed(getBoltSpeed());
         Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
         Config.get().setBoltInertiaEnabled(isBoltInertiaEnabled());
-        Config.get().setBoltInertiaRejectionMax(getBoltInertiaRejectionMax());
-        Config.get().setBoltInertiaProjectionMax(getBoltInertiaProjectionMax());
+        Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale());
+        Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale());
+        Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale());
     }
 
-    public long getInertiaDampenTimeMillis() {
-        return inertiaDampenTimeMillis;
+
+    public float getInertiaDampenCoefficient() {
+        return inertiaDampenCoefficient;
     }
 
     public float getMinMove() {
@@ -248,12 +258,16 @@ public class ConfigurationService {
         return boltInertiaEnabled;
     }
 
-    public float getBoltInertiaRejectionMax() {
-        return boltInertiaRejectionMax;
+    public float getBoltInertiaRejectionScale() {
+        return boltInertiaRejectionScale;
     }
 
-    public float getBoltInertiaProjectionMax() {
-        return boltInertiaProjectionMax;
+    public float getBoltInertiaProjectionScale() {
+        return boltInertiaProjectionScale;
+    }
+
+    public float getBoltInertiaNegativeProjectionScale() {
+        return boltInertiaNegativeProjectionScale;
     }
 
     public boolean isClientBroadcastUseLinkedList() {

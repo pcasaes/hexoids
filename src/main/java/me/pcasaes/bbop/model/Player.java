@@ -66,6 +66,8 @@ public interface Player {
 
     void expungeIfStalled();
 
+    void fixedUpdate(long timestamp);
+
     class Implementation implements Player {
 
 
@@ -121,24 +123,24 @@ public interface Player {
             this.lastSpawnOrUnspawnTimestamp = clock.getTime();
         }
 
-        private Vector2 getFiredBoltVector(float boltSpeed, long timeSinceInertiaUpdate) {
+        private Vector2 getFiredBoltVector(float boltSpeed, long firedTime) {
             Vector2 boltVector = Vector2.fromAngleMagnitude(this.angle, boltSpeed);
 
-            final float dampenRatio = timeSinceInertiaUpdate / (float) Config.get().getInertiaDampenTimeMillis();
-            final float converseDampenRatioSquared = 1f - dampenRatio * dampenRatio;
-
-            Vector2 scaledInertia = this.position
-                    .getVector()
-                    .scale(converseDampenRatioSquared);
-            Vector2 projection = scaledInertia
+            Vector2 currentShipVector = this.position.getVectorAt(firedTime);
+            Vector2 projection = currentShipVector
                     .projection(boltVector);
 
-            Vector2 rejection = scaledInertia
+            Vector2 rejection = currentShipVector
                     .minus(projection)
-                    .absMax(Config.get().getBoltInertiaRejectionMax());
+                    .scale(Config.get().getBoltInertiaRejectionScale());
 
+            if (boltVector.sameDirection(projection)) {
+                projection = projection.scale(Config.get().getBoltInertiaProjectionScale());
+            } else {
+                projection = projection.scale(Config.get().getBoltInertiaNegativeProjectionScale());
+            }
             projection = projection
-                    .absMax(Config.get().getBoltInertiaProjectionMax());
+                    .scale(Config.get().getBoltInertiaProjectionScale());
 
             return boltVector.add(rejection).add(projection);
         }
@@ -154,13 +156,10 @@ public interface Player {
             float boltSpeed = Config.get().getBoltSpeed();
             float boltAngle;
 
-            long timeSinceInertiaUpdate = now - position.getTimestamp();
-            if (!Config.get().isBoltInertiaEnabled() ||
-                    timeSinceInertiaUpdate >= Config.get().getInertiaDampenTimeMillis() ||
-                    timeSinceInertiaUpdate < 0) {
+            if (!Config.get().isBoltInertiaEnabled()) {
                 boltAngle = angle;
             } else {
-                Vector2 boltVector = getFiredBoltVector(boltSpeed, timeSinceInertiaUpdate);
+                Vector2 boltVector = getFiredBoltVector(boltSpeed, now);
                 boltSpeed = boltVector.getMagnitude();
                 boltAngle = boltVector.getAngle();
             }
@@ -176,8 +175,8 @@ public interface Player {
                                             .clear()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
-                                            .setX(position.getX())
-                                            .setY(position.getY())
+                                            .setX(position.getXat(now))
+                                            .setY(position.getYat(now))
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
@@ -439,6 +438,16 @@ public interface Player {
         }
 
         @Override
+        public void fixedUpdate(long timestamp) {
+            float x = position.getX();
+            float y = position.getY();
+            this.position.update(timestamp);
+            if (x != position.getX() || y != position.getY()) {
+                fireMoveDomainEvent(timestamp);
+            }
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -454,13 +463,18 @@ public interface Player {
         static final PositionVector.Configuration PLAYER_POSITION_CONFIGURATION = new PositionVector.Configuration() {
 
             @Override
-            public boolean isBounded() {
-                return true;
+            public AtBoundsOptions atBounds() {
+                return AtBoundsOptions.BOUNCE;
             }
 
             @Override
             public OptionalDouble maxMagnitude() {
                 return OptionalDouble.of(Config.get().getPlayerMaxMove());
+            }
+
+            @Override
+            public float dampenMagnitudeCoefficient() {
+                return Config.get().getInertiaDampenCoefficient();
             }
         };
     }

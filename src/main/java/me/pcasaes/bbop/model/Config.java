@@ -4,7 +4,11 @@ import me.pcasaes.bbop.util.TrigUtil;
 
 public class Config {
 
-    private long inertiaDampenTimeMillis;
+    private float inertiaDampenCoefficient;
+
+    /**
+     * The smallest value for a valid magnitude. Should be 1/boundSizeInPixels
+     */
     private float minMove;
     private float playerMaxMove;
     private float playerMaxAngle;
@@ -14,8 +18,9 @@ public class Config {
     private float boltSpeed;
     private float boltCollisionRadius;
     private boolean boltInertiaEnabled;
-    private float boltInertiaRejectionMax;
-    private float boltInertiaProjectionMax;
+    private float boltInertiaRejectionScale;
+    private float boltInertiaProjectionScale;
+    private float boltInertiaNegativeProjectionScale;
     private long expungeSinceLastSpawnTimeout;
 
 
@@ -27,12 +32,12 @@ public class Config {
         return ConfigHolder.INSTANCE;
     }
 
-    public long getInertiaDampenTimeMillis() {
-        return inertiaDampenTimeMillis;
+    public float getInertiaDampenCoefficient() {
+        return inertiaDampenCoefficient;
     }
 
-    public void setInertiaDampenTimeMillis(long inertiaDampenTimeMillis) {
-        this.inertiaDampenTimeMillis = inertiaDampenTimeMillis;
+    public void setInertiaDampenCoefficient(float inertiaDampenCoefficient) {
+        this.inertiaDampenCoefficient = inertiaDampenCoefficient;
     }
 
     public int getMaxBolts() {
@@ -107,20 +112,28 @@ public class Config {
         this.boltInertiaEnabled = boltInertiaEnabled;
     }
 
-    public float getBoltInertiaRejectionMax() {
-        return boltInertiaRejectionMax;
+    public float getBoltInertiaRejectionScale() {
+        return boltInertiaRejectionScale;
     }
 
-    public void setBoltInertiaRejectionMax(float boltInertiaRejectionMax) {
-        this.boltInertiaRejectionMax = boltInertiaRejectionMax;
+    public void setBoltInertiaRejectionScale(float boltInertiaRejectionScale) {
+        this.boltInertiaRejectionScale = boltInertiaRejectionScale;
     }
 
-    public float getBoltInertiaProjectionMax() {
-        return boltInertiaProjectionMax;
+    public float getBoltInertiaProjectionScale() {
+        return boltInertiaProjectionScale;
     }
 
-    public void setBoltInertiaProjectionMax(float boltInertiaProjectionMax) {
-        this.boltInertiaProjectionMax = boltInertiaProjectionMax;
+    public float getBoltInertiaNegativeProjectionScale() {
+        return boltInertiaNegativeProjectionScale;
+    }
+
+    public void setBoltInertiaNegativeProjectionScale(float boltInertiaNegativeProjectionScale) {
+        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
+    }
+
+    public void setBoltInertiaProjectionScale(float boltInertiaProjectionScale) {
+        this.boltInertiaProjectionScale = boltInertiaProjectionScale;
     }
 
     public long getExpungeSinceLastSpawnTimeout() {

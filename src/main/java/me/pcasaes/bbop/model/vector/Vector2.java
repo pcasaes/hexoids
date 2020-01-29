@@ -125,4 +125,30 @@ public class Vector2 {
     public Vector2 rejection(Vector2 b) {
         return this.minus(projection(b));
     }
+
+    public Vector2 invertX() {
+        if (getX() == 0f) {
+            return this;
+        }
+        return fromXY(-getX(), getY());
+    }
+
+    public Vector2 invertY() {
+        if (getY() == 0f) {
+            return this;
+        }
+        return fromXY(getX(), -getY());
+    }
+
+    /**
+     * Return true if both vectors have the same equivalent angle.
+     * This does take magnitude sign into account.
+     * @param b
+     * @return
+     */
+    public boolean sameDirection(Vector2 b) {
+        boolean sameAngle = b.getAngle() == getAngle();
+        boolean sameSign = Math.signum(b.getMagnitude()) == Math.signum(getMagnitude());
+        return sameAngle == sameSign;
+    }
 }

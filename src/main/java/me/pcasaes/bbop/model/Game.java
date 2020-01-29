@@ -52,6 +52,7 @@ public interface Game {
 
         @Override
         public void fixedUpdate(long timestamp) {
+            players.fixedUpdate(timestamp);
             bolts.fixedUpdate(timestamp);
             scoreBoard.fixedUpdate(timestamp);
         }
