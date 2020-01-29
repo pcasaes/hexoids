@@ -9,7 +9,6 @@ public class PositionVector {
 
     private final Configuration configuration;
     private final Float maxMagnitude;
-    private final Float negMaxMagnitude;
 
     private final Vector2 vector;
 
@@ -32,10 +31,8 @@ public class PositionVector {
         this.configuration = configuration;
         if (configuration.maxMagnitude().isPresent()) {
             this.maxMagnitude = (float) configuration.maxMagnitude().getAsDouble();
-            this.negMaxMagnitude = -this.maxMagnitude;
         } else {
             this.maxMagnitude = null;
-            this.negMaxMagnitude = null;
         }
     }
 
@@ -114,6 +111,11 @@ public class PositionVector {
             return false;
         }
 
+        /*
+        limiting min move here has to do with the minimum "resolution" of movement.
+        It's not a game play limitation like maxMove/maxMagnitude. We do it cheaply
+        here by comparing horizontal and vertical movements independently.
+         */
         float minMove = Config.get().getMinMove();
         if (Math.abs(moveX) <= minMove &&
                 Math.abs(moveY) <= minMove
@@ -122,8 +124,12 @@ public class PositionVector {
         }
 
         if (maxMagnitude != null) {
-            moveX = Math.max(negMaxMagnitude, Math.min(moveX, maxMagnitude));
-            moveY = Math.max(negMaxMagnitude, Math.min(moveY, maxMagnitude));
+            Vector2 moveVector = Vector2
+                    .fromXY(moveX, moveY)
+                    .absMax(maxMagnitude);
+
+            moveX = moveVector.getX();
+            moveY = moveVector.getY();
         }
 
         float x = this.currentX + moveX;

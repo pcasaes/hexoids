@@ -223,6 +223,29 @@ class PlayerTest {
     }
 
     @Test
+    void testLimitedMove() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
+
+        EntityId one = EntityId.newId();
+        Player player = this.players.createOrGet(one);
+        player.join();
+        when(clock.getTime()).thenReturn(25L);
+        player.spawn();
+        when(clock.getTime()).thenReturn(50L);
+        player.move(0f, 2f, null);
+
+        assertTrue(eventReference.get().hasEvent());
+        assertTrue(eventReference.get().getEvent().hasPlayerMoved());
+        PlayerMovedEventDto event = eventReference.get().getEvent().getPlayerMoved();
+
+        assertNotNull(event);
+        assertEquals(0f, event.getX());
+        assertEquals(1f, event.getY());
+        assertEquals(0f, event.getAngle());
+    }
+
+    @Test
     void testBoundedMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
@@ -233,7 +256,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(-1f, 2f, null);
+        player.move(-1f, -1f, -1f);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -241,9 +264,8 @@ class PlayerTest {
 
         assertNotNull(event);
         assertEquals(0f, event.getX());
-        assertEquals(1f, event.getY());
-        assertEquals(0f, event.getAngle());
-
+        assertEquals(0f, event.getY());
+        assertEquals(-1f, event.getAngle());
     }
 
     @Test
