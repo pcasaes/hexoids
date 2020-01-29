@@ -9,9 +9,12 @@ import pcasaes.bbop.proto.PlayerDto;
 import pcasaes.bbop.proto.PlayerJoinedEventDto;
 import pcasaes.bbop.proto.PlayersListCommandDto;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -28,6 +31,8 @@ public class Players implements Iterable<Player> {
     }
 
     private final Map<EntityId, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
+
+    private final Set<EntityId> playerServerUpdateSet = new HashSet<>(5000, 0.5f);
 
     private final Bolts bolts;
 
@@ -146,6 +151,14 @@ public class Players implements Iterable<Player> {
         }
     }
 
+    public void consumeFromJoinAndLeaveForServerUpdates(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() == null) {
+            playerServerUpdateSet.remove(EntityId.of(domainEvent.getKey()));
+        } else if (domainEvent.getEvent().hasPlayerJoined()) {
+            playerServerUpdateSet.add(EntityId.of(domainEvent.getKey()));
+        }
+    }
+
     public void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltFired()) {
             BoltFiredEventDto boltFiredEventDto = domainEvent.getEvent().getBoltFired();
@@ -162,4 +175,11 @@ public class Players implements Iterable<Player> {
         }
     }
 
+    public void fixedUpdate(long timestamp) {
+        playerServerUpdateSet
+                .stream()
+                .map(playerMap::get)
+                .filter(Objects::nonNull)
+                .forEach(p -> p.fixedUpdate(timestamp));
+    }
 }

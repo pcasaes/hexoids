@@ -31,9 +31,9 @@
 bbop:
   config:
     min:
-      move: 0.000000001
+      move: 0.0001
     inertia:
-      dampen-time-ms: 100
+      dampen-coefficient: -0.001
     player:
       expungeSinceLastSpawnTimeout: 60000
       max:
@@ -47,8 +47,9 @@ bbop:
       speed: 0.07
       inertia:
         enabled: true
-        rejection-max: 0.02
-        projection-max: 0.02
+        rejection-scale: 0.8
+        projection-scale: 0.8
+        negative-projection-max: 0.1
       collision:
         radius: 0.001
 
