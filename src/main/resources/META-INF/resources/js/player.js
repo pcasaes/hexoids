@@ -1,5 +1,7 @@
 const Players = (function () {
 
+    const EMPTY_OBJ = {};
+
     const FULL_CIRCLE_IN_RADIANS = 2 * Math.PI;
 
     const HALF_CIRCLE_IN_RADIANS = Math.PI;
@@ -317,6 +319,7 @@ const Players = (function () {
             this.playerId = null;
             this.ship = null;
             this.scoreView = null;
+            this.server = null;
         }
 
         create(p, sounds) {
@@ -324,6 +327,11 @@ const Players = (function () {
 
             this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p, sounds);
 
+            return this;
+        }
+
+        setServer(server) {
+            this.server = server;
             return this;
         }
 
@@ -384,18 +392,28 @@ const Players = (function () {
             this.moveQueue.produce(command);
         }
 
+        spawn() {
+            if (!this.ship.sprite.active) {
+                this.server.sendMessage({
+                    "spawn": EMPTY_OBJ
+                })
+            }
+        }
+
         destroy() {
             this.ship.destroy();
         }
     }
 
     class PlayersClass {
-        constructor(scene, sounds, gameConfig, hud, transform) {
+        constructor(scene, sounds, gameConfig, hud, transform, playerInputs, getServer) {
             this.scene = scene;
             this.sounds = sounds;
             this.gameConfig = gameConfig;
             this.hud = hud;
             this.transform = transform;
+            this.playerInputs = playerInputs;
+            this.getServer = getServer;
 
             this.players = {};
             this.controllableUsers = {};
@@ -525,6 +543,14 @@ const Players = (function () {
 
                     this.getControllablePlayer(resp.playerId.guid)
                         .ifPresent(p => {
+                            p.setServer(this.getServer(p.playerId));
+
+                            this.playerInputs.onMove = (pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR) =>
+                                p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR);
+
+                            this.playerInputs.onSpawn = () => p.spawn();
+
+                            this.playerInputs.start();
                             if (queues.move) {
                                 p.setMoveQueue(queues.move);
                             }
@@ -594,9 +620,9 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, sounds, gameConfig, hud, transform, queues) => {
+        'get': (scene, sounds, gameConfig, hud, transform, queues, playerInputs, getServer) => {
             if (!instance) {
-                instance = new PlayersClass(scene, sounds, gameConfig, hud, transform)
+                instance = new PlayersClass(scene, sounds, gameConfig, hud, transform, playerInputs, getServer)
                     .createAnims()
                     .setupQueues(queues);
             }

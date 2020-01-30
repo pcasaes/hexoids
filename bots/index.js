@@ -115,9 +115,18 @@ const SCENE_MOCK = {
     },
 };
 
+const playerInputsMock = {
+    'start': () => {
+    }
+};
+
 const transform = Transform.get(GameConfig.get());
 
 transform.inView = () => false;
+
+function getPlayerInputs() {
+    return playerInputsMock;
+}
 
 function getSounds() {
     return {
@@ -146,7 +155,7 @@ function getHud() {
 }
 
 function getPlayers() {
-    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), getHud(), transform, QUEUES);
+    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), getHud(), transform, QUEUES, getPlayerInputs(), getServer);
 }
 
 function getServer(uuid) {
