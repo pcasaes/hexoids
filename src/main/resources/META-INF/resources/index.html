@@ -15,6 +15,7 @@
     <script src="js/server.js"></script>
     <script src="js/transform.js"></script>
     <script src="js/player.js"></script>
+    <script src="js/player-inputs.js"></script>
     <script src="js/bolts.js"></script>
     <script src="js/scoreboard.js"></script>
     <script src="js/event-queue-consumer.js"></script>
@@ -48,27 +49,43 @@
         return Hud.get(gameScene(), GameConfig.get());
     }
 
+    function getPlayerInputs() {
+        return PlayerInputs.get(gameScene());
+    }
+
     const getPlayers = (function () {
         let userSet = false;
 
         return function () {
-            if (userSet) {
-                return Players.get(gameScene(), getSounds(), GameConfig.get(), getHud(), transform, QUEUES);
-            } else {
+            const players = Players.get(
+                gameScene(),
+                getSounds(),
+                GameConfig.get(),
+                getHud(),
+                transform,
+                QUEUES,
+                getPlayerInputs(),
+                getServer);
+            if (!userSet) {
                 userSet = true;
-                return Players.get(gameScene(), getSounds(), GameConfig.get(), getHud(), transform, QUEUES)
+                return players
                     .follow(USER.get())
                     .addControllableUser(USER.get());
             }
+            return players;
         }
     })();
 
-    function getMyPlayer() {
-        return Optional.of(getPlayers().players[USER.get()]);
-    }
-
     function getBolts() {
-        return Bolts.get(getServer(), gameScene(), getPlayers(), GameConfig.get(), transform, getSounds(), QUEUES);
+        return Bolts.get(
+            getServer(),
+            gameScene(),
+            getPlayers(),
+            GameConfig.get(),
+            transform,
+            getSounds(),
+            QUEUES,
+            getPlayerInputs());
     }
 
     function getServer() {
@@ -156,81 +173,6 @@
             .setDepth(GameConfig.get().hud.depth);
 
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
-
-
-        (function (game) {
-            const EMPTY_OBJ = {};
-            // Pointer lock will only work after an 'engagement gesture', e.g. mousedown, keypress, etc.
-            game.input.on('pointerdown', function (pointer) {
-
-                game.input.mouse.requestPointerLock();
-
-            }, game);
-
-
-            // When locked, you will have to use the movementX and movementY properties of the pointer
-            // (since a locked cursor's xy position does not update)
-            game.input.on('pointermove', function (pointer) {
-
-                if (game.input.mouse.locked) {
-                    getMyPlayer().ifPresent(p => p.move(pointer, MOVE_CARTESIAN, MOVE_RADIAL, FORWARD_DIR));
-                }
-            }, game);
-
-            // Exit pointer lock when Q is pressed. Browsers will also exit pointer lock when escape is
-            // pressed.
-            game.input.keyboard.on('keydown_Q', function (event) {
-                if (game.input.mouse.locked) {
-                    game.input.mouse.releasePointerLock();
-                }
-            }, game);
-
-            game.input.keyboard.on('keydown_SPACE', function (event) {
-                getMyPlayer().ifPresent(p => {
-                    if (!p.ship.sprite.active) {
-                        sendMessage({
-                            "spawn": EMPTY_OBJ
-                        })
-                    }
-                });
-            }, game);
-
-            let MOVE_CARTESIAN = false;
-            let MOVE_RADIAL = false;
-            let FORWARD_DIR = 0;
-
-            game.input.keyboard.on('keydown_W', function (event) {
-                FORWARD_DIR = 0;
-            }, game);
-            game.input.keyboard.on('keydown_D', function (event) {
-                FORWARD_DIR = Math.PI / 2;
-            }, game);
-            game.input.keyboard.on('keydown_S', function (event) {
-                FORWARD_DIR = Math.PI;
-            }, game);
-            game.input.keyboard.on('keydown_A', function (event) {
-                FORWARD_DIR = Math.PI / -2;
-            }, game);
-
-            game.input.keyboard.on('keydown_Z', function (event) {
-                MOVE_CARTESIAN = true;
-            }, game);
-            game.input.keyboard.on('keyup_Z', function (event) {
-                MOVE_CARTESIAN = false;
-            }, game);
-
-            game.input.keyboard.on('keydown_X', function (event) {
-                MOVE_RADIAL = true;
-            }, game);
-            game.input.keyboard.on('keyup_X', function (event) {
-                MOVE_RADIAL = false;
-            }, game);
-
-            game.input.keyboard.on('keydown_C', function (event) {
-                getBolts().fire();
-            }, game);
-
-        })(this);
 
 
         const AI = (function () {

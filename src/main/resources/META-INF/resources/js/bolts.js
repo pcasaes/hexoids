@@ -177,6 +177,12 @@ const Bolts = (function () {
             return this;
         }
 
+        setupPlayerInputs(playerInputs) {
+            playerInputs.onFire = () => this.fire();
+
+            return this;
+        }
+
         destroyById(boltId) {
             if (this.bolts[boltId]) {
                 this.bolts[boltId].destroy();
@@ -188,10 +194,11 @@ const Bolts = (function () {
     let instance;
 
     return {
-        'get': (server, scene, players, gameConfig, transform, sounds, queues) => {
+        'get': (server, scene, players, gameConfig, transform, sounds, queues, playerInputs) => {
             if (!instance) {
                 instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds)
                     .setupSounds()
+                    .setupPlayerInputs(playerInputs)
                     .setupQueues(queues);
             }
             return instance;
