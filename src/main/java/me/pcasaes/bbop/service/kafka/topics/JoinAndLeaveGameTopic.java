@@ -1,23 +1,15 @@
 package me.pcasaes.bbop.service.kafka.topics;
 
-import me.pcasaes.bbop.model.DomainEvent;
-import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.Topics;
 import me.pcasaes.bbop.service.kafka.TopicInfo;
 import me.pcasaes.bbop.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Named;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
 
 @Named("JoinGameTopic")
 @Dependent
@@ -43,33 +35,4 @@ public class JoinAndLeaveGameTopic implements TopicInfo {
         return Topics.JOIN_GAME_TOPIC;
     }
 
-    @Override
-    public Collection<ConsumerInfo> consumerInfos() {
-        List<ConsumerInfo> consumers = new ArrayList<>();
-        consumers.add(topic()::consume);
-
-        consumers.add(new ConsumerInfo() {
-            @Override
-            public void consume(DomainEvent domainEvent) {
-                Game.get().getPlayers().consumeFromJoinAndLeaveForServerUpdates(domainEvent);
-            }
-
-            @Override
-            public boolean useSubscription() {
-                return true;
-            }
-
-            @Override
-            public Optional<Properties> consumerConfig() {
-                Properties properties = new Properties();
-
-                properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "bbop-server");
-                properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-
-                return Optional.of(properties);
-            }
-        });
-
-        return consumers;
-    }
 }
