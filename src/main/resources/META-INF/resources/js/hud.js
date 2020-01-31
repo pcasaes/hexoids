@@ -1,6 +1,6 @@
 const Hud = (function () {
     class HudClass {
-        
+
         constructor(scene, gameConfig) {
             this.scene = scene;
             this.gameConfig = gameConfig;
@@ -38,16 +38,21 @@ const Hud = (function () {
                 t.y = (this.scene.game.config.height / 2) - (t.height);
             });
 
-            setTimeout(() => this.centerMessage.forEach(t => {
-                    if (!showIfFunction || showIfFunction()) {
-                        t
-                            .setTint(color)
-                            .setActive(true)
-                            .setVisible(true);
-
-                    }
-                }
-            ), 700);
+            if (!!showIfFunction) {
+                setTimeout(() => this.centerMessage.forEach(t =>
+                    t
+                        .setTint(color)
+                        .setActive(true)
+                        .setVisible(true)
+                ), 700);
+            } else {
+                this.centerMessage.forEach(t =>
+                    t
+                        .setTint(color)
+                        .setActive(true)
+                        .setVisible(true)
+                );
+            }
         }
 
         hideCenterMessage() {

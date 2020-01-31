@@ -54,7 +54,7 @@ public class ConfigurationService {
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.player.expungeSinceLastSpawnTimeout",
+            name = "bbop.config.player.expunge-since-last-spawn-timeout",
             defaultValue = "60000"
     )
     private long expungeSinceLastSpawnTimeout;
@@ -159,14 +159,14 @@ public class ConfigurationService {
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.game.loop.eventqueue.linkedlist",
+            name = "bbop.config.service.game-loop.event-queue.linked-list",
             defaultValue = "false"
     )
     private boolean gameLoopUseLinkedList;
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.game.loop.eventqueue.exponent",
+            name = "bbop.config.service.game-loop.event-queue.exponent",
             defaultValue = "17"
     )
     private int gameLoopMaxSizeExponent;
@@ -181,7 +181,7 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.inertia.dampen-coefficients=" + getInertiaDampenCoefficient());
         LOGGER.info("bbop.config.update-frequency-in-millis=" + getUpdateFrequencyInMillis());
         LOGGER.info("bbop.config.min.min=" + getMinMove());
-        LOGGER.info("bbop.config.player.expungeSinceLastSpawnTimeout=" + getExpungeSinceLastSpawnTimeout());
+        LOGGER.info("bbop.config.player.expunge-since-last-spawn-timeout=" + getExpungeSinceLastSpawnTimeout());
         LOGGER.info("bbop.config.player.name-length=" + getPlayerNameLength());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
@@ -198,8 +198,8 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.service.client-broadcast.event-queue.exponent=" + getClientBroadcastMaxSizeExponent());
         LOGGER.info("bbop.config.service.domain-event.event-queue.linked-list=" + isDomainEventUseLinkedList());
         LOGGER.info("bbop.config.service.domain-event.event-queue.exponent=" + getDomainEventMaxSizeExponent());
-        LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
-        LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
+        LOGGER.info("bbop.config.service.game-loop.event-queue.linked-list=" + isGameLoopUseLinkedList());
+        LOGGER.info("bbop.config.service.game-loop.event-queue.exponent=" + getGameLoopMaxSizeExponent());
 
         Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis());
         Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
