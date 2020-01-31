@@ -18,8 +18,7 @@
   bbop:
     config:
       player:
-        name-length: 7
-        expungeSinceLastSpawnTimeout: 180000
+        expunge-since-last-spawn-timeout: 180000
         reset:
           position: rng
       service:
@@ -37,7 +36,8 @@ bbop:
     inertia:
       dampen-coefficient: -0.001
     player:
-      expungeSinceLastSpawnTimeout: 60000
+      name-length: 7
+      expunge-since-last-spawn-timeout: 60000
       max:
         move: 10
         bolts: 10
@@ -70,11 +70,10 @@ bbop:
           linked-list: false
           exponent: 17
           sleep-on-empty: 5
-      game:
-        loop:
-          eventqueue:
-            linkedlist: false
-            exponent: 17
+      game-loop:
+        event-queue:
+          linked-list: false
+          exponent: 17
       kafka:
         subscriber: true
         topics:
