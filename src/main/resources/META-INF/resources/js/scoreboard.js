@@ -1,10 +1,12 @@
 const Scoreboard = (function () {
 
     class ScoreboardClass {
-        constructor(scene,
+        constructor(gameConfig,
+                    scene,
                     players,
                     x,
                     y) {
+            this.gameConfig = gameConfig;
             this.scene = scene;
             this.players = players;
             this.x = x;
@@ -49,10 +51,16 @@ const Scoreboard = (function () {
                     text.setDepth(this.depth);
                     this.entries.push(text);
                 }
-                this.entries[i].setText(entry.playerId.guid.substr(0, 7) + ": " + entry.score);
-                if (this.players.get(entry.playerId.guid)) {
-                    this.entries[i].setTintFill(this.players.get(entry.playerId.guid).ship.color);
+                const p = this.players.get(entry.playerId.guid);
+                if (p) {
+                    let n = p.name;
+                    while(n.length < this.gameConfig.hud.nameLength) {
+                        n += ' ';
+                    }
+                    this.entries[i].setText(n + " " + entry.score);
+                    this.entries[i].setTintFill(p.ship.color);
                 } else {
+                    this.entries[i].setText(entry.playerId.guid.substr(0, this.gameConfig.hud.nameLength) + " " + entry.score);
                     this.entries[i].setTintFill(0xffffff);
                 }
             });
@@ -62,12 +70,13 @@ const Scoreboard = (function () {
     let instance = 0;
 
     return {
-        'get': (scene,
+        'get': (gameConfig,
+                scene,
                 players,
                 x,
                 y) => {
             if (!instance) {
-                instance = new ScoreboardClass(scene, players, x, y)
+                instance = new ScoreboardClass(gameConfig, scene, players, x, y)
             }
             return instance;
         }

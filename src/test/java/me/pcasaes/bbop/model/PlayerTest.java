@@ -10,6 +10,7 @@ import org.mockito.MockitoAnnotations;
 import pcasaes.bbop.proto.DirectedCommand;
 import pcasaes.bbop.proto.Dto;
 import pcasaes.bbop.proto.Event;
+import pcasaes.bbop.proto.JoinCommandDto;
 import pcasaes.bbop.proto.PlayerDto;
 import pcasaes.bbop.proto.PlayerJoinedEventDto;
 import pcasaes.bbop.proto.PlayerMovedEventDto;
@@ -84,6 +85,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(0L);
 
         Config.get().setPlayerMaxMove(1f);
+        Config.get().setPlayerNameLength(7);
         Config.get().setMinMove(0.000000001f);
         Config.get().setPlayerMaxAngleDivisor(0.5f);
         Config.get().setBoltInertiaEnabled(false);
@@ -113,11 +115,31 @@ class PlayerTest {
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
         EntityId one = EntityId.newId();
-        this.players.createOrGet(one).join();
+        this.players.createOrGet(one).join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         PlayerJoinedEventDto event = eventReference.get().getEvent().getPlayerJoined();
 
         assertNotNull(event);
         assertEquals(one.getGuid(), event.getPlayerId());
+        assertEquals("one", event.getName());
+    }
+
+    @Test
+    void testJoinNoName() {
+        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
+        GameEvents.getClientEvents().setConsumer(eventReference::set);
+
+        EntityId one = EntityId.newId();
+        this.players.createOrGet(one).join(JoinCommandDto
+                .newBuilder()
+                .build());
+        PlayerJoinedEventDto event = eventReference.get().getEvent().getPlayerJoined();
+
+        assertNotNull(event);
+        assertEquals(one.getGuid(), event.getPlayerId());
+        assertEquals(one.toString().substring(0, Config.get().getPlayerNameLength()), event.getName());
     }
 
     @Test
@@ -173,8 +195,14 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         EntityId two = EntityId.newId();
-        this.players.createOrGet(one).join();
-        this.players.createOrGet(two).join();
+        this.players.createOrGet(one).join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
+        this.players.createOrGet(two).join(JoinCommandDto
+                .newBuilder()
+                .setName("two")
+                .build());
 
         this.players.requestListOfPlayers(one);
 
@@ -205,7 +233,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -230,7 +261,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -253,7 +287,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -288,7 +325,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -309,7 +349,10 @@ class PlayerTest {
     void testNoMove() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -328,7 +371,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
 
@@ -346,7 +392,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
 
@@ -366,7 +415,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -396,7 +448,8 @@ class PlayerTest {
     }
 
     @Test
-    @Disabled //this test is broken and it's some gnarly math to check
+    @Disabled
+        //this test is broken and it's some gnarly math to check
     void testFireDirectionWithInertia() {
         Config.get().setMaxBolts(2);
         Config.get().setBoltInertiaEnabled(true);
@@ -408,7 +461,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -441,7 +497,10 @@ class PlayerTest {
     void testCollisionHitBullsEye() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -463,7 +522,10 @@ class PlayerTest {
     void testCollisionHitWithinRadius() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
@@ -485,7 +547,10 @@ class PlayerTest {
     void testCollisionNoHitInsideSquare() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -507,7 +572,10 @@ class PlayerTest {
     void testCollisionNoHitOutsideSquareX() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -529,7 +597,10 @@ class PlayerTest {
     void testCollisionNoHitOutsideSquareY() {
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
@@ -554,8 +625,14 @@ class PlayerTest {
         Player player1 = this.players.createOrGet(one);
         Player player2 = this.players.createOrGet(two);
 
-        player1.join();
-        player2.join();
+        player1.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
+        player2.join(JoinCommandDto
+                .newBuilder()
+                .setName("two")
+                .build());
 
         when(clock.getTime()).thenReturn(25L);
         player1.spawn();
@@ -589,7 +666,10 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
-        player.join();
+        player.join(JoinCommandDto
+                .newBuilder()
+                .setName("one")
+                .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
 

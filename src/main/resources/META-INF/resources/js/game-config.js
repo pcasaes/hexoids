@@ -33,6 +33,7 @@ const GameConfig = (function () {
             'effectsDepth': DEPTH_BG_EFFECTS,
         },
         'hud': {
+            'nameLength': 7,
             'alpha': HUD_ALPHA,
             'depth': DEPTH_HUD,
         },

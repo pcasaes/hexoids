@@ -70,6 +70,7 @@ const AiBot = (function() {
                     this.players.getControllablePlayer(this.userId)
                         .ifPresent(p => {
                             if (p.ship.alive) {
+                                this.waitingToSpawn = true;
                                 const m = {
                                     "moveX": 0,
                                     "moveY": 0,
@@ -102,7 +103,6 @@ const AiBot = (function() {
                             } else if (this.waitingToSpawn) {
                                 this.waitingToSpawn = false;
                                 setTimeout(() => {
-                                    this.waitingToSpawn = true;
                                     this.server.sendMessage({
                                         "spawn": EMPTY_OBJ
                                     })

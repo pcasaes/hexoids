@@ -5,6 +5,7 @@ const Server = require('../src/main/resources/META-INF/resources/js/server');
 const QueueConsumer = require('../src/main/resources/META-INF/resources/js/event-queue-consumer');
 const GameConfig = require('../src/main/resources/META-INF/resources/js/game-config');
 const Players = require('../src/main/resources/META-INF/resources/js/player');
+const Users = require('../src/main/resources/META-INF/resources/js/user');
 const Transform = require('../src/main/resources/META-INF/resources/js/transform');
 const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
 const ProtoProcessor = require('../src/main/js-proto/main');
@@ -24,6 +25,10 @@ function genUuid() {
         flat.substr(16, 4) + '-' +
         flat.substr(20);
 
+}
+
+function getUsers() {
+    return Users.get(GameConfig.get(), null, genUuid);
 }
 
 
@@ -158,22 +163,22 @@ function getPlayers() {
     return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), getHud(), transform, QUEUES, getPlayerInputs(), getServer);
 }
 
-function getServer(uuid) {
-    return Server.get(uuid, QUEUES, settings.host, ProtoProcessor);
+function getServer(userId) {
+    return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor);
 }
 
 for (let i = 0; i < settings.bots; i++) {
-    const UUID = genUuid();
-    console.log("user id " + UUID);
+    const USER = getUsers().get(genUuid());
+    console.log("user id " + USER.get());
 
 
     getPlayers()
-        .addControllableUser(UUID);
+        .addControllableUser(USER.get());
 
-    const bot = new AiBot(UUID,
-        getServer(UUID),
+    const bot = new AiBot(USER.get(),
+        getServer(USER.get()),
         getPlayers()
-            .addControllableUser(UUID),
+            .addControllableUser(USER.get()),
         transform,
         GameConfig.get());
 

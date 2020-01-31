@@ -58,6 +58,11 @@ public class EntityId {
         return Objects.hash(id);
     }
 
+    @Override
+    public String toString() {
+        return this.id.toString();
+    }
+
     private static UUID stringToUuid(String uuid) {
         try {
             return UUID.fromString(uuid);

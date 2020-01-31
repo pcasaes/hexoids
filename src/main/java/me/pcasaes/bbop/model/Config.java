@@ -4,12 +4,14 @@ import me.pcasaes.bbop.util.TrigUtil;
 
 public class Config {
 
+    private long updateFrequencyInMillis;
     private float inertiaDampenCoefficient;
 
     /**
      * The smallest value for a valid magnitude. Should be 1/boundSizeInPixels
      */
     private float minMove;
+    private int playerNameLength;
     private float playerMaxMove;
     private float playerMaxAngle;
     private String playerResetPosition;
@@ -30,6 +32,14 @@ public class Config {
 
     public static Config get() {
         return ConfigHolder.INSTANCE;
+    }
+
+    public long getUpdateFrequencyInMillis() {
+        return updateFrequencyInMillis;
+    }
+
+    public void setUpdateFrequencyInMillis(long updateFrequencyInMillis) {
+        this.updateFrequencyInMillis = updateFrequencyInMillis;
     }
 
     public float getInertiaDampenCoefficient() {
@@ -58,6 +68,14 @@ public class Config {
 
     public float getPlayerMaxAngle() {
         return playerMaxAngle;
+    }
+
+    public int getPlayerNameLength() {
+        return playerNameLength;
+    }
+
+    public void setPlayerNameLength(int playerNameLength) {
+        this.playerNameLength = playerNameLength;
     }
 
     public void setPlayerMaxAngleDivisor(float playerMaxAngleDivisor) {

@@ -317,6 +317,8 @@ const Players = (function () {
             this.moveQueue = null;
 
             this.playerId = null;
+            this.name = null;
+            this.displayName = null;
             this.ship = null;
             this.scoreView = null;
             this.server = null;
@@ -324,6 +326,11 @@ const Players = (function () {
 
         create(p, sounds) {
             this.playerId = p.playerId.guid;
+            this.name = p.name;
+            this.displayName = p.name;
+            while (this.displayName.length < this.gameConfig.hud.nameLength) {
+                this.displayName += ' ';
+            }
 
             this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p, sounds);
 
@@ -363,7 +370,7 @@ const Players = (function () {
                 this.scoreView = text;
             }
 
-            this.scoreView.setText(this.playerId.substr(0, 7) + ': ' + resp.score);
+            this.scoreView.setText(this.displayName + ' ' + resp.score);
             this.scoreView.x = this.scene.game.config.width - (this.scoreView.width + 5);
         }
 
@@ -554,7 +561,7 @@ const Players = (function () {
                             if (queues.move) {
                                 p.setMoveQueue(queues.move);
                             }
-                            p.showStart();
+                            p.spawn();
                         });
 
                     if (this.playerToFollow === resp.playerId.guid) {
