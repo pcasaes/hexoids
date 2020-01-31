@@ -46,7 +46,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
     public BoltLifeCycleTopic(
             ConfigurationService configurationService,
             @ConfigProperty(
-                    name = "bbop.config.service.kafka.topics.bolt_life_cycle.partitions",
+                    name = "bbop.config.service.kafka.topics.bolt-life-cycle.partitions",
                     defaultValue = "1"
             ) int partitions) {
         this.configurationService = configurationService;

@@ -131,28 +131,28 @@ public class ConfigurationService {
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.client.broadcast.eventqueue.linkedlist",
+            name = "bbop.config.service.client-broadcast.event-queue.linked-list",
             defaultValue = "false"
     )
     private boolean clientBroadcastUseLinkedList;
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.client.broadcast.eventqueue.exponent",
+            name = "bbop.config.service.client-broadcast.event-queue.exponent",
             defaultValue = "17"
     )
     private int clientBroadcastMaxSizeExponent;
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.domain.event.eventqueue.linkedlist",
+            name = "bbop.config.service.domain-event.event-queue.linked-list",
             defaultValue = "false"
     )
     private boolean domainEventUseLinkedList;
 
     @Inject
     @ConfigProperty(
-            name = "bbop.config.service.domain.event.eventqueue.exponent",
+            name = "bbop.config.service.domain-event.event-queue.exponent",
             defaultValue = "17"
     )
     private int domainEventMaxSizeExponent;
@@ -194,10 +194,10 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.bolt.inertia.rejection-scale=" + getBoltInertiaRejectionScale());
         LOGGER.info("bbop.config.bolt.inertia.projection-scale=" + getBoltInertiaProjectionScale());
         LOGGER.info("bbop.config.bolt.inertia.negative-projection-scale=" + getBoltInertiaNegativeProjectionScale());
-        LOGGER.info("bbop.config.service.client.broadcast.eventqueue.linkedlist=" + isClientBroadcastUseLinkedList());
-        LOGGER.info("bbop.config.service.client.broadcast.eventqueue.exponent=" + getClientBroadcastMaxSizeExponent());
-        LOGGER.info("bbop.config.service.domain.event.eventqueue.linkedlist=" + isDomainEventUseLinkedList());
-        LOGGER.info("bbop.config.service.domain.event.eventqueue.exponent=" + getDomainEventMaxSizeExponent());
+        LOGGER.info("bbop.config.service.client-broadcast.event-queue.linked-list=" + isClientBroadcastUseLinkedList());
+        LOGGER.info("bbop.config.service.client-broadcast.event-queue.exponent=" + getClientBroadcastMaxSizeExponent());
+        LOGGER.info("bbop.config.service.domain-event.event-queue.linked-list=" + isDomainEventUseLinkedList());
+        LOGGER.info("bbop.config.service.domain-event.event-queue.exponent=" + getDomainEventMaxSizeExponent());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 

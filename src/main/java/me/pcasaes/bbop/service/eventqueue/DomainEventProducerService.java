@@ -1,12 +1,12 @@
 package me.pcasaes.bbop.service.eventqueue;
 
 import com.google.protobuf.GeneratedMessageLite;
-import me.pcasaes.bbop.model.Config;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerService;
 import me.pcasaes.bbop.service.kafka.KafkaProducerType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.bbop.proto.Sleep;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,16 +26,21 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
 
     private Sleep sleepDto = null;
 
-    DomainEventProducerService() {
-    }
+    private long sleepOnEmpty;
 
     @Inject
     public DomainEventProducerService(ThreadService threadService,
                                       @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService,
-                                      ConfigurationService configurationService) {
+                                      ConfigurationService configurationService,
+
+                                      @ConfigProperty(
+                                              name = "bbop.config.service.domain-event.event-queue.sleep-on-empty",
+                                              defaultValue = "5"
+                                      ) long sleepOnEmpty) {
         this.threadService = threadService;
         this.producerService = producerService;
         this.configurationService = configurationService;
+        this.sleepOnEmpty = sleepOnEmpty;
     }
 
     private byte[] serialize(GeneratedMessageLite<?, ?> value) {
@@ -71,7 +76,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     @Override
     public long getWaitTime() {
         if (this.sleepDto == null) {
-            return Config.get().getUpdateFrequencyInMillis();
+            return this.sleepOnEmpty;
         }
         long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
         this.sleepDto = null;
