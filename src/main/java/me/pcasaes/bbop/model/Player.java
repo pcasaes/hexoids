@@ -113,7 +113,7 @@ public interface Player {
             this.scoreBoard = scoreBoard;
             this.id = id;
 
-            this.ship = RNG.nextInt(10);
+            this.ship = RNG.nextInt(12);
             setSpawned(false);
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
             this.position = PositionVector.of(

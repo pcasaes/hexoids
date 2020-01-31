@@ -6,6 +6,7 @@
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.22.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/optional.js"></script>
     <script src="js/phaser-arcade-physics.min.js"></script>
+    <script src="js/color.js"></script>
     <script src="js/user.js"></script>
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
@@ -44,6 +45,10 @@
         return game.scene.scenes[0];
     }
 
+    function getColors() {
+        return Colors;
+    }
+
     function getSounds() {
         return Sounds.get(gameScene(), GameConfig.get());
     }
@@ -68,7 +73,8 @@
                 transform,
                 QUEUES,
                 getPlayerInputs(),
-                getServer);
+                getServer,
+                getColors());
             if (!userSet) {
                 userSet = true;
                 return players
@@ -185,7 +191,7 @@
                 while (n.length < GameConfig.get().hud.nameLength) {
                     n += ' ';
                 }
-                getHud().showCenterMessage('Name: ' + n, 0x00aa88);
+                getHud().showCenterMessage('Name: ' + n, getColors().getPrimaryColor());
             };
 
             const currentName = USER.hasName() ? USER.name() : '';
