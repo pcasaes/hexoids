@@ -561,6 +561,7 @@ const Players = (function () {
                             if (queues.move) {
                                 p.setMoveQueue(queues.move);
                             }
+                            p.hideStart();
                             p.spawn();
                         });
 
