@@ -7,12 +7,16 @@ const Players = (function () {
     const HALF_CIRCLE_IN_RADIANS = Math.PI;
 
     const SHIP_COLOR = [
-        0xdd0055,
-        0x00aa88,
-        0x3333ff,
-        0xcc9900,
-        0x00a0bb,
-        0xaa00ff,
+        0xaa0022, //redish
+        0xaa3300, //orangish
+        0x00aa88, //greenish
+        0x00aa33, //greenish 2
+        0x0077ff, //blueish
+        0x00d0ff, //light bluish
+        0xffaa00, //yellowish
+        0x00a0bb, //cyanish
+        0xbb00a0, //pinkish
+        0x8700ff, //purplish
     ];
 
     function getColorFromShip(ship) {
