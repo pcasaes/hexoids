@@ -128,6 +128,7 @@ public class GameSocket {
                 } else {
                     Game.get().getPlayers().requestListOfPlayers(userId);
                 }
+                Game.get().getPlayers().connected(userId);
             });
         }
     }

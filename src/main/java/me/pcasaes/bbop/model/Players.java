@@ -74,7 +74,7 @@ public class Players implements Iterable<Player> {
 
     private Player create(EntityId id) {
         requestListOfPlayers(id);
-        return Player.create(id,this, this.bolts, this.clock, this.scoreBoard);
+        return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
     }
 
     @IsThreadSafe
@@ -127,6 +127,7 @@ public class Players implements Iterable<Player> {
     void left(EntityId playerId) {
         Player player = createOrGet(playerId);
         playerMap.remove(playerId);
+        playerServerUpdateSet.remove(playerId);
         player.left();
     }
 
@@ -153,12 +154,8 @@ public class Players implements Iterable<Player> {
         }
     }
 
-    public void consumeFromJoinAndLeaveForServerUpdates(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() == null) {
-            playerServerUpdateSet.remove(EntityId.of(domainEvent.getKey()));
-        } else if (domainEvent.getEvent().hasPlayerJoined()) {
-            playerServerUpdateSet.add(EntityId.of(domainEvent.getKey()));
-        }
+    public void connected(EntityId playerId) {
+        playerServerUpdateSet.add(playerId);
     }
 
     public void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
