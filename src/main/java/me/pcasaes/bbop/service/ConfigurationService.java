@@ -16,163 +16,161 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
 
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.inertia.dampen-coefficient",
+            defaultValue = "-0.001"
+    )
     private float inertiaDampenCoefficient;
-    private int maxBolts;
-    private long boltMaxDuration;
-    private float minMove;
-    private float playerMaxMove;
-    private float playerMaxAngleDivisor;
-    private long expungeSinceLastSpawnTimeout;
-    private String playerResetPosition;
-    private float boltSpeed;
-    private float boltCollisionRadius;
-    private boolean boltInertiaEnabled;
-    private float boltInertiaRejectionScale;
-    private float boltInertiaProjectionScale;
-    private float boltInertiaNegativeProjectionScale;
-
-    private boolean clientBroadcastUseLinkedList;
-    private int clientBroadcastMaxSizeExponent;
-
-    private boolean domainEventUseLinkedList;
-    private int domainEventMaxSizeExponent;
-
-    private boolean gameLoopUseLinkedList;
-    private int gameLoopMaxSizeExponent;
-
-
-    /**
-     * Required for CDI Normal Scoped beans
-     */
-    ConfigurationService() {
-    }
 
     @Inject
-    public ConfigurationService(
-            @ConfigProperty(
-                    name = "bbop.config.player.max.bolts",
-                    defaultValue = "10"
-            ) int maxBolts,
+    @ConfigProperty(
+            name = "bbop.config.update-frequency-in-millis",
+            defaultValue = "50"
+    )
+    private long updateFrequencyInMillis;
 
-            @ConfigProperty(
-                    name = "bbop.config.inertia.dampen-coefficient",
-                    defaultValue = "-0.001"
-            ) float inertiaDampenCoefficient,
 
-            @ConfigProperty(
-                    name = "bbop.config.min.move",
-                    defaultValue = "0.000000001"
-            ) float minMove,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.min.move",
+            defaultValue = "0.000000001"
+    )
+    private float minMove;
 
-            @ConfigProperty(
-                    name = "bbop.config.player.max.move",
-                    defaultValue = "10"
-            ) float playerMaxMove,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.max.move",
+            defaultValue = "10"
+    )
+    private float playerMaxMove;
 
-            @ConfigProperty(
-                    name = "bbop.config.player.expungeSinceLastSpawnTimeout",
-                    defaultValue = "60000"
-            ) long expungeSinceLastSpawnTimeout,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.max.angle.divisor",
+            defaultValue = "4"
+    )
+    private float playerMaxAngleDivisor;
 
-            @ConfigProperty(
-                    name = "bbop.config.player.max.angle.divisor",
-                    defaultValue = "4"
-            ) float playerMaxAngleDivisor,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.expungeSinceLastSpawnTimeout",
+            defaultValue = "60000"
+    )
+    private long expungeSinceLastSpawnTimeout;
 
-            @ConfigProperty(
-                    name = "bbop.config.player.reset.position",
-                    defaultValue = "rng"
-            ) String playerResetPosition,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.reset.position",
+            defaultValue = "rng"
+    )
+    private String playerResetPosition;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.max.duration",
-                    defaultValue = "10000"
-            ) long boltMaxDuration,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.max.bolts",
+            defaultValue = "10"
+    )
+    private int maxBolts;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.speed",
-                    defaultValue = "0.07"
-            ) float boltSpeed,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.player.name-length",
+            defaultValue = "7"
+    )
+    private int playerNameLength;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.enabled",
-                    defaultValue = "true"
-            ) boolean boltInertiaEnabled,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.max.duration",
+            defaultValue = "10000"
+    )
+    private long boltMaxDuration;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.rejection-scale",
-                    defaultValue = "0.8"
-            ) float boltInertiaRejectionScale,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.speed",
+            defaultValue = "0.07"
+    )
+    private float boltSpeed;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.projection-scale",
-                    defaultValue = "0.8"
-            ) float boltInertiaProjectionScale,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.collision.radius",
+            defaultValue = "0.001"
+    )
+    private float boltCollisionRadius;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.inertia.negative-projection-scale",
-                    defaultValue = "0.1"
-            ) float boltInertiaNegativeProjectionScale,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.inertia.enabled",
+            defaultValue = "true"
+    )
+    private boolean boltInertiaEnabled;
 
-            @ConfigProperty(
-                    name = "bbop.config.bolt.collision.radius",
-                    defaultValue = "0.001"
-            ) float boltCollisionRadius,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.inertia.rejection-scale",
+            defaultValue = "0.8"
+    )
+    private float boltInertiaRejectionScale;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.domain.event.eventqueue.linkedlist",
-                    defaultValue = "false"
-            ) boolean domainEventUseLinkedList,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.inertia.projection-scale",
+            defaultValue = "0.8"
+    )
+    private float boltInertiaProjectionScale;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.domain.event.eventqueue.exponent",
-                    defaultValue = "17"
-            ) int domainEventMaxSizeExponent,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.bolt.inertia.negative-projection-scale",
+            defaultValue = "0.1"
+    )
+    private float boltInertiaNegativeProjectionScale;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.client.broadcast.eventqueue.linkedlist",
-                    defaultValue = "false"
-            ) boolean clientBroadcastUseLinkedList,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.client.broadcast.eventqueue.linkedlist",
+            defaultValue = "false"
+    )
+    private boolean clientBroadcastUseLinkedList;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.client.broadcast.eventqueue.exponent",
-                    defaultValue = "17"
-            ) int clientBroadcastMaxSizeExponent,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.client.broadcast.eventqueue.exponent",
+            defaultValue = "17"
+    )
+    private int clientBroadcastMaxSizeExponent;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.game.loop.eventqueue.linkedlist",
-                    defaultValue = "false"
-            ) boolean gameLoopUseLinkedList,
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.domain.event.eventqueue.linkedlist",
+            defaultValue = "false"
+    )
+    private boolean domainEventUseLinkedList;
 
-            @ConfigProperty(
-                    name = "bbop.config.service.game.loop.eventqueue.exponent",
-                    defaultValue = "17"
-            ) int gameLoopMaxSizeExponent
-    ) {
-        this.inertiaDampenCoefficient = inertiaDampenCoefficient;
-        this.playerMaxMove = playerMaxMove;
-        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
-        this.minMove = minMove;
-        this.playerMaxAngleDivisor = playerMaxAngleDivisor;
-        this.playerResetPosition = playerResetPosition;
-        this.maxBolts = maxBolts;
-        this.boltMaxDuration = boltMaxDuration;
-        this.boltSpeed = boltSpeed;
-        this.boltCollisionRadius = boltCollisionRadius;
-        this.boltInertiaEnabled = boltInertiaEnabled;
-        this.boltInertiaRejectionScale = boltInertiaRejectionScale;
-        this.boltInertiaProjectionScale = boltInertiaProjectionScale;
-        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.domain.event.eventqueue.exponent",
+            defaultValue = "17"
+    )
+    private int domainEventMaxSizeExponent;
 
-        this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
-        this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.game.loop.eventqueue.linkedlist",
+            defaultValue = "false"
+    )
+    private boolean gameLoopUseLinkedList;
 
-        this.domainEventUseLinkedList = domainEventUseLinkedList;
-        this.domainEventMaxSizeExponent = domainEventMaxSizeExponent;
+    @Inject
+    @ConfigProperty(
+            name = "bbop.config.service.game.loop.eventqueue.exponent",
+            defaultValue = "17"
+    )
+    private int gameLoopMaxSizeExponent;
 
-        this.gameLoopUseLinkedList = gameLoopUseLinkedList;
-        this.gameLoopMaxSizeExponent = gameLoopMaxSizeExponent;
-    }
 
     public void startup(@Observes StartupEvent event) {
         LOGGER.info("Eager load Configuration");
@@ -181,8 +179,10 @@ public class ConfigurationService {
     @PostConstruct
     public void start() {
         LOGGER.info("bbop.config.inertia.dampen-coefficients=" + getInertiaDampenCoefficient());
+        LOGGER.info("bbop.config.update-frequency-in-millis=" + getUpdateFrequencyInMillis());
         LOGGER.info("bbop.config.min.min=" + getMinMove());
         LOGGER.info("bbop.config.player.expungeSinceLastSpawnTimeout=" + getExpungeSinceLastSpawnTimeout());
+        LOGGER.info("bbop.config.player.name-length=" + getPlayerNameLength());
         LOGGER.info("bbop.config.player.max.move=" + getPlayerMaxMove());
         LOGGER.info("bbop.config.player.max.bolts=" + getMaxBolts());
         LOGGER.info("bbop.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
@@ -201,10 +201,12 @@ public class ConfigurationService {
         LOGGER.info("bbop.config.service.game.loop.eventqueue.linkedlist=" + isGameLoopUseLinkedList());
         LOGGER.info("bbop.config.service.game.loop.eventqueue.exponent=" + getGameLoopMaxSizeExponent());
 
+        Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis());
         Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
         Config.get().setMaxBolts(getMaxBolts());
         Config.get().setMinMove(getMinMove());
         Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout());
+        Config.get().setPlayerNameLength(getPlayerNameLength());
         Config.get().setPlayerMaxMove(getPlayerMaxMove());
         Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor());
         Config.get().setPlayerResetPosition(getPlayerResetPosition());
@@ -220,6 +222,10 @@ public class ConfigurationService {
 
     public float getInertiaDampenCoefficient() {
         return inertiaDampenCoefficient;
+    }
+
+    public long getUpdateFrequencyInMillis() {
+        return updateFrequencyInMillis;
     }
 
     public float getMinMove() {
@@ -296,5 +302,9 @@ public class ConfigurationService {
 
     public long getExpungeSinceLastSpawnTimeout() {
         return expungeSinceLastSpawnTimeout;
+    }
+
+    public int getPlayerNameLength() {
+        return playerNameLength;
     }
 }

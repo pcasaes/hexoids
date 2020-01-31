@@ -74,7 +74,7 @@ public class Players implements Iterable<Player> {
 
     private Player create(EntityId id) {
         requestListOfPlayers(id);
-        return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
+        return Player.create(id,this, this.bolts, this.clock, this.scoreBoard);
     }
 
     @IsThreadSafe
@@ -87,7 +87,9 @@ public class Players implements Iterable<Player> {
         playerMap
                 .values()
                 .stream()
-                .map(p -> p.toDto(playerBuilder))
+                .map(p -> p.toDtoIfJoined(playerBuilder))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .forEach(playerListBuilder::addPlayers);
 
         DirectedCommand.Builder builder = DIRECTED_COMMAND_THREAD_SAFE_BUILDER

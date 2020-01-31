@@ -1,6 +1,7 @@
 package me.pcasaes.bbop.service.eventqueue;
 
 import com.google.protobuf.GeneratedMessageLite;
+import me.pcasaes.bbop.model.Config;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
@@ -70,7 +71,7 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     @Override
     public long getWaitTime() {
         if (this.sleepDto == null) {
-            return 0L;
+            return Config.get().getUpdateFrequencyInMillis();
         }
         long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
         this.sleepDto = null;

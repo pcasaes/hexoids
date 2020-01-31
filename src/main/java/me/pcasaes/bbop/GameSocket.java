@@ -79,18 +79,6 @@ public class GameSocket {
         }
 
         this.sessionService.add(userId, session);
-        this.gameLoopService.enqueue(() -> {
-            Optional<Player> player = Game.get()
-                    .getPlayers()
-                    .createPlayer(userId);
-
-            if (player.isPresent()) {
-                player.get().join();
-            } else {
-                Game.get().getPlayers().requestListOfPlayers(userId);
-            }
-        });
-
     }
 
     public void onClose(EntityId userId) {
@@ -126,9 +114,21 @@ public class GameSocket {
                     )
             );
         } else if (command.hasFire()) {
-            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
+            this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
         } else if (command.hasSpawn()) {
-            gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
+            this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
+        } else if (command.hasJoin()) {
+            this.gameLoopService.enqueue(() -> {
+                Optional<Player> player = Game.get()
+                        .getPlayers()
+                        .createPlayer(userId);
+
+                if (player.isPresent()) {
+                    player.get().join(command.getJoin());
+                } else {
+                    Game.get().getPlayers().requestListOfPlayers(userId);
+                }
+            });
         }
     }
 

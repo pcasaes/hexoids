@@ -1,11 +1,23 @@
 const PlayerInputs = (function () {
 
+    function onAskNameKeyDown(evt) {
+        if (instance.onTypedLetter(evt)) {
+            instance.game.input.keyboard.removeListener('keydown', onAskNameKeyDown, this);
+        }
+    }
+
     class PlayerInputsClass {
         constructor(game) {
             this.game = game;
             this.onMove = null;
             this.onSpawn = null;
             this.onFire = null;
+            this.onTypedLetter = null;
+        }
+
+        typing(on) {
+            this.onTypedLetter = on;
+            this.game.input.keyboard.on('keydown', onAskNameKeyDown, this);
         }
 
         start() {

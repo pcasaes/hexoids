@@ -22,6 +22,7 @@ message PlayerDto {
     float y = 4;
     float angle = 5;
     bool spawned = 6;
+    string name = 7;
 }
 
 // events
@@ -57,6 +58,7 @@ message PlayerDestroyedEventDto {
 message PlayerJoinedEventDto {
     GUID playerId = 1;
     int32 ship = 2;
+    string name = 3;
 }
 
 message PlayerLeftEventDto {
@@ -135,11 +137,16 @@ message SpawnCommandDto {
 
 }
 
+message JoinCommandDto {
+    string name = 1;
+}
+
 message RequestCommand {
     oneof command {
         MoveCommandDto move = 1;
         FireBoltCommandDto fire = 2;
         SpawnCommandDto spawn = 3;
+        JoinCommandDto join = 4;
     }
 }
 

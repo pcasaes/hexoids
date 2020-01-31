@@ -18,6 +18,7 @@
   bbop:
     config:
       player:
+        name-length: 7
         expungeSinceLastSpawnTimeout: 180000
         reset:
           position: rng
@@ -30,6 +31,7 @@
 
 bbop:
   config:
+    update-frequency-in-millis: 50
     min:
       move: 0.0001
     inertia:

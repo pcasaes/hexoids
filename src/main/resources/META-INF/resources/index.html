@@ -6,7 +6,7 @@
     <!-- https://cdn.jsdelivr.net/npm/phaser@3.22.0/dist/phaser-arcade-physics.min.js -->
     <script src="js/optional.js"></script>
     <script src="js/phaser-arcade-physics.min.js"></script>
-    <script src="js/user-id.js"></script>
+    <script src="js/user.js"></script>
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
     <script src="js/get-cookie.js"></script>
@@ -27,8 +27,11 @@
 
 <script>
 
+    function getUsers() {
+        return Users.get(GameConfig.get(), getCookie, uuid);
+    }
 
-    const USER = new UserId(getCookie, uuid).start();
+    const USER = getUsers().fromSession();
 
 
     const QUEUES = {
@@ -89,7 +92,7 @@
     }
 
     function getServer() {
-        return Server.get(USER.get(), QUEUES, location.host, ProtoProcessor);
+        return Server.get(USER, QUEUES, location.host, ProtoProcessor);
     }
 
     function sendMessage(value) {
@@ -162,22 +165,63 @@
 
         this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
-        //create singletons
-        getPlayers();
-        getBolts();
-        getServer();
-
-        Scoreboard.get(this, getPlayers(), 0, 0)
-            .setAlpha(GameConfig.get().hud.alpha)
-            .setupEventQueue(QUEUES.event)
-            .setDepth(GameConfig.get().hud.depth);
-
         Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
+
+        const startGame = () => {
+            //create singletons
+            getPlayers();
+            getBolts();
+            getServer();
+
+            Scoreboard.get(GameConfig.get(), this, getPlayers(), 0, 0)
+                .setAlpha(GameConfig.get().hud.alpha)
+                .setupEventQueue(QUEUES.event)
+                .setDepth(GameConfig.get().hud.depth);
+
+        };
+
+        (function () {
+            const showTypedName = (n) => {
+                while (n.length < GameConfig.get().hud.nameLength) {
+                    n += ' ';
+                }
+                getHud().showCenterMessage('Name: ' + n, 0x00aa88);
+            };
+
+            const currentName = USER.hasName() ? USER.name() : '';
+
+            let name = '';
+            let canUseCurrent = !!currentName;
+            getPlayerInputs().typing((evt) => {
+                if (evt.key === 'Backspace') {
+                    canUseCurrent = false;
+                    name = name.substr(0, name.length - 1);
+                    showTypedName(name);
+                } else if (evt.key.length === 1 && evt.key.match(/[a-zA-Z0-9]/) && name.length < 7) {
+                    canUseCurrent = false;
+                    name += evt.key;
+                    showTypedName(name);
+                } else if (evt.key === 'Enter') {
+                    if (name && name.length >= 3 || canUseCurrent) {
+                        USER.setName(name || currentName);
+                        startGame();
+                        return true;
+                    }
+                }
+                return false;
+            });
+            showTypedName(currentName);
+
+        })();
+
+
+
 
 
         const AI = (function () {
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
+                startGame();
                 return new AiBot(USER.get(), getServer(), getPlayers(), transform, GameConfig.get());
             }
             return {

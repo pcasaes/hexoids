@@ -21,12 +21,17 @@ const Server = (function () {
         }
 
         createSocket() {
-            const endpoint = "ws://" + this.host + "/game/" + this.userId;
+            const endpoint = "ws://" + this.host + "/game/" + this.userId.get();
             console.log(endpoint);
             this.socket = new WebSocket(endpoint);
             this.socket.binaryType = "arraybuffer";
             this.socket.onopen = () => {
                 console.log("Connected to the web socket");
+                this.sendMessage({
+                    "join": {
+                        "name": this.userId.name()
+                    }
+                });
             };
             this.socket.onclose = () => {
                 console.log("web socket closed");
@@ -70,7 +75,7 @@ const Server = (function () {
             this.createSocket();
 
             this.queues.event.add('playerLeft', resp => {
-                if (resp.playerId.guid === this.userId) {
+                if (resp.playerId.guid === this.userId.get()) {
                     console.log('Player left or booted. Disconnecting');
                     this.booted = true;
                     this.socket.close();
@@ -92,10 +97,10 @@ const Server = (function () {
 
     return {
         'get': (userId, queues, host, proto) => {
-            if (!instances[userId]) {
-                instances[userId] = new ServerClass(userId, queues, host, proto).setup();
+            if (!instances[userId.get()]) {
+                instances[userId.get()] = new ServerClass(userId, queues, host, proto).setup();
             }
-            return instances[userId];
+            return instances[userId.get()];
         }
     }
 

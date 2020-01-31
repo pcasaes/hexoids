@@ -1,5 +1,6 @@
 package me.pcasaes.bbop.service.eventqueue;
 
+import me.pcasaes.bbop.model.Config;
 import me.pcasaes.bbop.model.DomainEvent;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.model.GameEvents;
@@ -19,8 +20,6 @@ import java.util.logging.Logger;
  */
 @ApplicationScoped
 public class GameLoopService implements EventQueueConsumerService<GameLoopService.GameRunnable> {
-
-    private static final long UPDATE_DELTA = 50L;
 
     private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
 
@@ -62,7 +61,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
 
     private long fixedUpdate(long lastTimestamp) {
         long timestamp = Game.get().getClock().getTime();
-        if (timestamp - lastTimestamp > UPDATE_DELTA) {
+        if (timestamp - lastTimestamp > Config.get().getUpdateFrequencyInMillis()) {
             Game.get()
                     .fixedUpdate(timestamp);
 
@@ -74,7 +73,7 @@ public class GameLoopService implements EventQueueConsumerService<GameLoopServic
     @Override
     public long getWaitTime() {
         long timeSinceFixedUpdate = Game.get().getClock().getTime() - lastTimestamp;
-        return timeSinceFixedUpdate % UPDATE_DELTA;
+        return timeSinceFixedUpdate % Config.get().getUpdateFrequencyInMillis();
     }
 
     @Override

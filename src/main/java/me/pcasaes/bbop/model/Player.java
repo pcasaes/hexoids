@@ -5,6 +5,7 @@ import me.pcasaes.bbop.model.vector.PositionVector;
 import me.pcasaes.bbop.model.vector.Vector2;
 import me.pcasaes.bbop.util.TrigUtil;
 import pcasaes.bbop.proto.BoltFiredEventDto;
+import pcasaes.bbop.proto.JoinCommandDto;
 import pcasaes.bbop.proto.PlayerDestroyedEventDto;
 import pcasaes.bbop.proto.PlayerDto;
 import pcasaes.bbop.proto.PlayerJoinedEventDto;
@@ -38,9 +39,11 @@ public interface Player {
 
     boolean is(EntityId playerId);
 
-    PlayerDto toDto(PlayerDto.Builder builder);
+    boolean isJoined();
 
-    void join();
+    Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder);
+
+    void join(JoinCommandDto command);
 
     void joined(PlayerJoinedEventDto event);
 
@@ -75,6 +78,8 @@ public interface Player {
 
         private final EntityId id;
 
+        private String name;
+
         private int ship;
 
         private boolean spawned;
@@ -84,6 +89,8 @@ public interface Player {
         private float angle = 0f;
 
         private long movedTimestamp;
+
+        private long spawnedTimestamp;
 
         private int liveBolts = 0;
 
@@ -220,8 +227,11 @@ public interface Player {
         }
 
         @Override
-        public PlayerDto toDto(PlayerDto.Builder builder) {
-            return builder
+        public Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder) {
+            if (!isJoined()) {
+                return Optional.empty();
+            }
+            return Optional.of(builder
                     .clear()
                     .setPlayerId(id.getGuid())
                     .setShip(ship)
@@ -229,7 +239,8 @@ public interface Player {
                     .setY(position.getY())
                     .setAngle(angle)
                     .setSpawned(spawned)
-                    .build();
+                    .setName(name)
+                    .build());
         }
 
         private void resetPosition(long resetTime) {
@@ -237,8 +248,20 @@ public interface Player {
             this.angle = 0f;
         }
 
+        private void setName(String n) {
+            n = (n == null || n.length() == 0) ?
+                    id.getId().toString() :
+                    n;
+            if (n.length() > Config.get().getPlayerNameLength()) {
+                n = n.substring(0, Config.get().getPlayerNameLength());
+            }
+            this.name = n;
+        }
+
         @Override
-        public void join() {
+        public void join(JoinCommandDto command) {
+            setName(command.getName());
+
             GameEvents.getDomainEvents().register(
                     DomainEvent
                             .create(Topics.JOIN_GAME_TOPIC.name(),
@@ -248,7 +271,8 @@ public interface Player {
                                             .setPlayerJoined(PLAYER_JOINED_BUILDER
                                                     .clear()
                                                     .setPlayerId(id.getGuid())
-                                                    .setShip(ship))
+                                                    .setShip(ship)
+                                                    .setName(name))
                                             .build()
                             )
             );
@@ -284,29 +308,30 @@ public interface Player {
 
         @Override
         public void moved(PlayerMovedEventDto event) {
-            movedOrSpawned(event, null);
+            if (event.getTimestamp() > this.movedTimestamp) {
+                this.movedTimestamp = event.getTimestamp();
+                movedOrSpawned(event, null);
+            }
         }
 
         private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
-            if (movedEvent.getTimestamp() > this.movedTimestamp) {
-                this.position.moved(
-                        movedEvent.getX(),
-                        movedEvent.getY(),
-                        movedEvent.getThrustAngle(),
-                        movedEvent.getVelocity(),
-                        movedEvent.getTimestamp());
-                this.angle = movedEvent.getAngle();
-                this.movedTimestamp = movedEvent.getTimestamp();
-                GameEvents
-                        .getClientEvents()
-                        .register(newDtoEvent(ev -> {
-                            if (spawnedEvent != null) {
-                                ev.setPlayerSpawned(spawnedEvent);
-                            } else {
-                                ev.setPlayerMoved(movedEvent);
-                            }
-                        }));
-            }
+            this.position.moved(
+                    movedEvent.getX(),
+                    movedEvent.getY(),
+                    movedEvent.getThrustAngle(),
+                    movedEvent.getVelocity(),
+                    movedEvent.getTimestamp());
+            this.angle = movedEvent.getAngle();
+            GameEvents
+                    .getClientEvents()
+                    .register(newDtoEvent(ev -> {
+                        if (spawnedEvent != null) {
+                            ev.setPlayerSpawned(spawnedEvent);
+                        } else {
+                            ev.setPlayerMoved(movedEvent);
+                        }
+                    }));
+
         }
 
         private void fireMoveDomainEvent(long eventTime) {
@@ -420,7 +445,8 @@ public interface Player {
 
         @Override
         public void spawned(PlayerSpawnedEventDto event) {
-            if (event.getLocation().getTimestamp() > this.movedTimestamp) {
+            if (event.getLocation().getTimestamp() > this.spawnedTimestamp) {
+                this.spawnedTimestamp = event.getLocation().getTimestamp();
                 setSpawned(true);
                 this.position.initialized(event.getLocation().getX(),
                         event.getLocation().getY(),
@@ -432,7 +458,7 @@ public interface Player {
         @Override
         @IsThreadSafe
         public void expungeIfStalled() {
-            if (!spawned && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
+            if ((!spawned || !isJoined()) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
                 leave();
             }
         }
@@ -445,6 +471,11 @@ public interface Player {
             if (x != position.getX() || y != position.getY()) {
                 fireMoveDomainEvent(timestamp);
             }
+        }
+
+        @Override
+        public boolean isJoined() {
+            return this.name != null;
         }
 
         @Override

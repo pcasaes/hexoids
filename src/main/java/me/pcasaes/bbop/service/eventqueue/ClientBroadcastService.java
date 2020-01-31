@@ -1,5 +1,6 @@
 package me.pcasaes.bbop.service.eventqueue;
 
+import me.pcasaes.bbop.model.Config;
 import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
@@ -114,7 +115,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     @Override
     public long getWaitTime() {
         if (this.sleepDto == null) {
-            return 0L;
+            return Config.get().getUpdateFrequencyInMillis();
         }
         long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
         this.sleepDto = null;
