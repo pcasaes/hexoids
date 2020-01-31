@@ -6,27 +6,6 @@ const Players = (function () {
 
     const HALF_CIRCLE_IN_RADIANS = Math.PI;
 
-    const SHIP_COLOR = [
-        0xaa0022, //redish
-        0xaa3300, //orangish
-        0x00aa88, //greenish
-        0x00aa33, //greenish 2
-        0x0077ff, //blueish
-        0x00d0ff, //light bluish
-        0xffaa00, //yellowish
-        0x00a0bb, //cyanish
-        0xbb00a0, //pinkish
-        0x8700ff, //purplish
-    ];
-
-    function getColorFromShip(ship) {
-        if (ship < 0 || ship >= SHIP_COLOR.length) {
-            return SHIP_COLOR[SHIP_COLOR.length - 1];
-        }
-        return SHIP_COLOR[ship];
-    }
-
-
     function setShipThrustAnim(sprite, toplay) {
         const p = sprite.anims.getProgress();
         if (Number.isNaN(p) || p > 0.9) {
@@ -49,10 +28,11 @@ const Players = (function () {
     const OUT_OF_VIEW_SHIPS = {};
 
     class Ship {
-        constructor(scene, gameConfig, transform) {
+        constructor(scene, gameConfig, transform, colors) {
             this.scene = scene;
             this.gameConfig = gameConfig;
             this.transform = transform;
+            this.colors = colors;
 
             this.sprite = null;
             this.wake = null;
@@ -75,7 +55,7 @@ const Players = (function () {
             );
 
             this.sprite = this.scene.physics.add.sprite(-100, -100, 'ship');
-            const color = getColorFromShip(p.ship);
+            const color = this.colors.get(p.ship).toRgbNumber();
             this.sprite.setTint(color | 0x555555, color, color | 0x555555, color);
             this.sprite.setBounce(0, 0);
             this.sprite.setScale(0.3);
@@ -313,12 +293,13 @@ const Players = (function () {
     }
 
     class PlayerClass {
-        constructor(scene, gameConfig, hud, transform) {
+        constructor(scene, gameConfig, hud, transform, colors) {
             this.scene = scene;
             this.gameConfig = gameConfig;
             this.hud = hud;
             this.transform = transform;
             this.moveQueue = null;
+            this.colors = colors;
 
             this.playerId = null;
             this.name = null;
@@ -336,7 +317,7 @@ const Players = (function () {
                 this.displayName += ' ';
             }
 
-            this.ship = new Ship(this.scene, this.gameConfig, this.transform).create(p, sounds);
+            this.ship = new Ship(this.scene, this.gameConfig, this.transform, this.colors).create(p, sounds);
 
             return this;
         }
@@ -417,7 +398,7 @@ const Players = (function () {
     }
 
     class PlayersClass {
-        constructor(scene, sounds, gameConfig, hud, transform, playerInputs, getServer) {
+        constructor(scene, sounds, gameConfig, hud, transform, playerInputs, getServer, colors) {
             this.scene = scene;
             this.sounds = sounds;
             this.gameConfig = gameConfig;
@@ -425,6 +406,7 @@ const Players = (function () {
             this.transform = transform;
             this.playerInputs = playerInputs;
             this.getServer = getServer;
+            this.colors = colors;
 
             this.players = {};
             this.controllableUsers = {};
@@ -437,7 +419,8 @@ const Players = (function () {
                     this.scene,
                     this.gameConfig,
                     this.hud,
-                    this.transform
+                    this.transform,
+                    this.colors
                 ).create(p, this.sounds);
             }
 
@@ -632,9 +615,9 @@ const Players = (function () {
     let instance;
 
     return {
-        'get': (scene, sounds, gameConfig, hud, transform, queues, playerInputs, getServer) => {
+        'get': (scene, sounds, gameConfig, hud, transform, queues, playerInputs, getServer, colors) => {
             if (!instance) {
-                instance = new PlayersClass(scene, sounds, gameConfig, hud, transform, playerInputs, getServer)
+                instance = new PlayersClass(scene, sounds, gameConfig, hud, transform, playerInputs, getServer, colors)
                     .createAnims()
                     .setupQueues(queues);
             }

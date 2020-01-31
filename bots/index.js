@@ -5,6 +5,7 @@ const Server = require('../src/main/resources/META-INF/resources/js/server');
 const QueueConsumer = require('../src/main/resources/META-INF/resources/js/event-queue-consumer');
 const GameConfig = require('../src/main/resources/META-INF/resources/js/game-config');
 const Players = require('../src/main/resources/META-INF/resources/js/player');
+const Colors = require('../src/main/resources/META-INF/resources/js/color');
 const Users = require('../src/main/resources/META-INF/resources/js/user');
 const Transform = require('../src/main/resources/META-INF/resources/js/transform');
 const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
@@ -31,6 +32,9 @@ function getUsers() {
     return Users.get(GameConfig.get(), null, genUuid);
 }
 
+function getColors() {
+    return Colors;
+}
 
 const SCENE_MOCK = {
     'anims': {
@@ -160,7 +164,16 @@ function getHud() {
 }
 
 function getPlayers() {
-    return Players.get(SCENE_MOCK, getSounds(), GameConfig.get(), getHud(), transform, QUEUES, getPlayerInputs(), getServer);
+    return Players.get(
+        SCENE_MOCK,
+        getSounds(),
+        GameConfig.get(),
+        getHud(),
+        transform,
+        QUEUES,
+        getPlayerInputs(),
+        getServer,
+        getColors());
 }
 
 function getServer(userId) {
