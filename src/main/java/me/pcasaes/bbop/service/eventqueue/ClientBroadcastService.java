@@ -1,6 +1,5 @@
 package me.pcasaes.bbop.service.eventqueue;
 
-import me.pcasaes.bbop.model.Config;
 import me.pcasaes.bbop.model.EntityId;
 import me.pcasaes.bbop.model.Game;
 import me.pcasaes.bbop.service.ConfigurationService;
@@ -25,6 +24,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     private final boolean enabled;
     private final int batchSize;
     private final int batchTimeout;
+    private final long sleepOnEmpty;
     private final Dto.Builder dtoBuilder;
     private final Events.Builder eventsBuilder;
 
@@ -39,6 +39,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
         this.dtoBuilder = null;
         this.batchSize = 0;
         this.batchTimeout = 0;
+        this.sleepOnEmpty = 0;
     }
 
 
@@ -46,22 +47,27 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     public ClientBroadcastService(SessionService sessionService,
                                   ConfigurationService configurationService,
                                   @ConfigProperty(
-                                          name = "bbop.config.service.client.broadcast.enabled",
+                                          name = "bbop.config.service.client-broadcast.enabled",
                                           defaultValue = "true"
                                   ) boolean enabled,
                                   @ConfigProperty(
-                                          name = "bbop.config.service.client.broadcast.batch.size",
+                                          name = "bbop.config.service.client-broadcast.batch.size",
                                           defaultValue = "64"
                                   ) int batchSize,
                                   @ConfigProperty(
-                                          name = "bbop.config.service.client.broadcast.batch.timeout",
+                                          name = "bbop.config.service.client-broadcast.batch.timeout",
                                           defaultValue = "20"
-                                  ) int batchTimeout) {
+                                  ) int batchTimeout,
+                                  @ConfigProperty(
+                                          name = "bbop.config.service.client-broadcast.event-queue.sleep-on-empty",
+                                          defaultValue = "5"
+                                  ) long sleepOnEmpty) {
         this.sessionService = sessionService;
         this.configurationService = configurationService;
         this.enabled = enabled;
         this.batchSize = batchSize;
         this.batchTimeout = batchTimeout;
+        this.sleepOnEmpty = sleepOnEmpty;
         if (enabled) {
             this.eventsBuilder = Events.newBuilder();
             this.dtoBuilder = Dto.newBuilder();
@@ -115,7 +121,7 @@ public class ClientBroadcastService implements EventQueueConsumerService<ClientB
     @Override
     public long getWaitTime() {
         if (this.sleepDto == null) {
-            return Config.get().getUpdateFrequencyInMillis();
+            return this.sleepOnEmpty;
         }
         long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
         this.sleepDto = null;

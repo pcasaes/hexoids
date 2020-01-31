@@ -51,7 +51,7 @@ services:
       dockerfile: src/main/docker/Dockerfile.jvm
     image: me.pcasaes/bbop-mmo-arcade
     environment:
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dbbop.config.service.kafka.subscriber=true -Dbbop.config.service.client.broadcast.enabled=false
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dbbop.config.service.kafka.subscriber=true -Dbbop.config.service.client-broadcast.enabled=false
     depends_on:
       - bbop-kafka
     networks:

@@ -25,7 +25,7 @@
       service:
         kafka:
           topics:
-            bolt_life_cycle:
+            bolt-life-cycle:
               partitions: 1
 
 
@@ -56,20 +56,20 @@ bbop:
         radius: 0.001
 
     service:
-      client:
-        broadcast:
-          enabled: true
-          batch:
-            size: 64
-            timeout: 20
-          eventqueue:
-            linkedlist: false
-            exponent: 17
-      domain:
-        event:
-          eventqueue:
-            linkedlist: false
-            exponent: 17
+      client-broadcast:
+        enabled: true
+        batch:
+          size: 64
+          timeout: 20
+        event-queue:
+          linked-list: false
+          exponent: 17
+          sleep-on-empty: 5
+      domain-event:
+        event-queue:
+          linked-list: false
+          exponent: 17
+          sleep-on-empty: 5
       game:
         loop:
           eventqueue:
@@ -78,5 +78,5 @@ bbop:
       kafka:
         subscriber: true
         topics:
-          bolt_life_cycle:
+          bolt-life-cycle:
             partitions: 1
