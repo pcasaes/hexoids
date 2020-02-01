@@ -22,12 +22,16 @@ COPY target/*-runner.jar /deployments/app.jar
 COPY src/main/docker/docker-entrypoint.sh /deployments/docker-entrypoint.sh
 EXPOSE 8080
 
-# run with user 1001 and be prepared for be running in OpenShift too
-RUN adduser -G root --no-create-home --disabled-password 1001 \
-  && chown -R 1001 /deployments \
+RUN mkdir -p /deployments/sockets
+RUN chmod 777 /deployments/sockets
+RUN chown 101:root /deployments/sockets
+
+# run with user 101 and be prepared for be running in OpenShift too
+RUN adduser -G root --no-create-home --disabled-password 101 \
+  && chown -R 101 /deployments \
   && chmod -R "g+rwX" /deployments \
-  && chown -R 1001:root /deployments \
+  && chown -R 101:root /deployments \
   && chmod a+x /deployments/docker-entrypoint.sh
-USER 1001
+USER 101
 
 ENTRYPOINT [ "/deployments/docker-entrypoint.sh" ]

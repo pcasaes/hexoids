@@ -68,3 +68,16 @@ hexoids:
         topics:
           bolt-life-cycle:
             partitions: 1
+
+quarkus:
+  vertx:
+    prefer-native-transport: true
+  http:
+    so-reuse-port: true
+    tcp-quick-ack: true
+    tcp-cork: false
+    tcp-fast-open: true
+  log:
+    category:
+      "io.quarkus.vertx.core.runtime.VertxCoreRecorder":
+        level: DEBUG
