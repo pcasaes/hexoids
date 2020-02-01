@@ -7,11 +7,11 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.native -t me.pcasaes/bbop-mmo-arcade .
+# docker build -f src/main/docker/Dockerfile.native -t me.pcasaes/hexoids .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 me.pcasaes/bbop-mmo-arcade
+# docker run -i --rm -p 8080:8080 me.pcasaes/hexoids
 #
 ###
 FROM registry.access.redhat.com/ubi8/ubi-minimal

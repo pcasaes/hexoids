@@ -13,9 +13,9 @@ ADD https://github.com/protocolbuffers/protobuf/releases/download/v3.11.2/protoc
 RUN unzip protoc-3.11.2-linux-x86_64.zip -d /usr
 RUN chmod a+x /usr/bin/protoc
 
-## compile bbop's protocol
-ADD bbop.proto /bbop.proto
-RUN /usr/bin/protoc -o bbop.fdset bbop.proto
+## compile hexoids's protocol
+ADD hexoids.proto /hexoids.proto
+RUN /usr/bin/protoc -o hexoids.fdset hexoids.proto
 RUN mkdir -p ~/.pq
 RUN cp *.fdset ~/.pq/
 
