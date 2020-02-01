@@ -1,11 +1,11 @@
 {
-  "name": "bbop-proto-js",
+  "name": "hexoids-proto-js",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile": "pbf ../proto/pcasaes/bbop/proto/bbop.proto > bbop.proto.node.js",
-    "build": "browserify main.js -o ../resources/META-INF/resources/js/bbop.proto.js"
+    "compile": "pbf ../proto/pcasaes/hexoids/proto/hexoids.proto > hexoids.proto.node.js",
+    "build": "browserify main.js -o ../resources/META-INF/resources/js/hexoids.proto.js"
   },
   "author": "Paulo Casaes",
   "license": "AGPLv3",

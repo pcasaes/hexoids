@@ -8,7 +8,7 @@ This program is used for debugging the Kafka topic.
     
 # Run
 
-    ./run.sh kafk bbop-kafka:9092 topic-name
+    ./run.sh kafk hexoids-kafka:9092 topic-name
     
-Checkout `me.pcasaes.bbop.model.Topics` for the topic names.
-You will need to add `bbop-kafka` to your `/etc/hosts` file pointing to your IP.
+Checkout `me.pcasaes.hexoids.model.Topics` for the topic names.
+You will need to add `hexoids-kafka` to your `/etc/hosts` file pointing to your IP.

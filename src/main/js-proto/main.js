@@ -1,5 +1,5 @@
 const Pbf = require('pbf');
-const bbopProto = require('./bbop.proto.node.js');
+const hexoidsProto = require('./hexoids.proto.node.js');
 
 
 const ProtoProcessor = (function () {
@@ -10,12 +10,12 @@ const ProtoProcessor = (function () {
 
         readDto(buffer) {
             const pbf = new Pbf(buffer);
-            return bbopProto.Dto.read(pbf);
+            return hexoidsProto.Dto.read(pbf);
         }
 
         writeRequestCommand(command) {
             const pbf = new Pbf();
-            bbopProto.RequestCommand.write(command, pbf);
+            hexoidsProto.RequestCommand.write(command, pbf);
             return pbf.finish();
         }
     }

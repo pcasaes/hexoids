@@ -1,7 +1,7 @@
 {
-  "name": "bbop-bots",
+  "name": "hexoids-bots",
   "version": "1.0.0",
-  "description": "bots to load test bbop",
+  "description": "bots to load test hexoids",
   "main": "index.js",
   "dependencies": {
     "ws": "^7.2.1",
