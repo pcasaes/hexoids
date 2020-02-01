@@ -47,3 +47,6 @@ bots/settings.local.js
 
 # pq
 docker/pq/hexoids.proto
+
+# bots
+bots/node_modules/
