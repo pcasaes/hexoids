@@ -217,7 +217,7 @@ const Colors = (function () {
             if (!this.rgbColorString) {
                 let r = Number(this.toRgbNumber()).toString(16);
                 while (r.length < 6) {
-                    r = "00" + r;
+                    r = "0" + r;
                 }
                 return "#" + r;
             }
@@ -236,6 +236,11 @@ const Colors = (function () {
             const h = ((this.hsl.h * 360 + degrees) % 360) / 360;
 
             return fromHsl(h, this.hsl.s, this.hsl.l);
+        }
+
+        scaleLight(scale) {
+            const l = this.hsl.l * scale;
+            return fromHsl(this.hsl.h, this.hsl.s, l);
         }
     }
 
@@ -300,25 +305,29 @@ const Colors = (function () {
             this.fromRgbNumber = fromRgbNumber;
             this.fromHslNumber = fromHslNumber;
 
-            this.palette = [];
+            this.palette = null;
+            this.primaryColor = null;
+            this._size = null;
         }
 
-        create() {
-            const deg = this.degrees();
+        create(primaryColor, hues, offset) {
+            this._size = hues * 2;
+            this.palette = [];
+            this.primaryColor = primaryColor;
+            const deg = 360 / hues;
             this.palette.push(this.fromRgbNumber(this.getPrimaryColor()));
-            for (let i = 0; i < this.size(); i++) {
-                this.palette.push(this.palette[i].transformByDegrees(deg));
+            this.palette.push(this.palette[0].transformByDegrees(offset));
+            for (let i = 0; i < this.size(); i += 2) {
+                const c = this.palette[i].transformByDegrees(deg);
+                this.palette.push(c);
+                this.palette.push(c.transformByDegrees(offset));
             }
 
             return this;
         }
 
         size() {
-            return 12;
-        }
-
-        degrees() {
-            return 360 / this.size();
+            return this._size;
         }
 
         get(i) {
@@ -338,11 +347,11 @@ const Colors = (function () {
                     0xbb00a0, //pinkish
                     0x8700ff, //purplish
             */
-            return 0x00d0ff; //0x00B46B;
+            return this.primaryColor; //0x00B46B;
         }
     }
 
-    return new ColorsClass().create();
+    return new ColorsClass().create(0x0077ff, 6, 20);
 })();
 
 try {
