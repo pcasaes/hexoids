@@ -1,12 +1,12 @@
 "%dev":
-  bbop:
+  hexoids:
     config:
       player:
         reset:
           position: rng
 
 "%test":
-  bbop:
+  hexoids:
     config:
       player:
         reset:
@@ -15,7 +15,7 @@
           move: 1
 
 "%prod":
-  bbop:
+  hexoids:
     config:
       player:
         expunge-since-last-spawn-timeout: 180000
@@ -28,7 +28,7 @@
               partitions: 1
 
 
-bbop:
+hexoids:
   config:
     update-frequency-in-millis: 50
     min:
