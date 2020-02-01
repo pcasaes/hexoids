@@ -7,11 +7,11 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t me.pcasaes/bbop-mmo-arcade-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t me.pcasaes/hexoids-jvm .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 me.pcasaes/bbop-mmo-arcade-jvm
+# docker run -i --rm -p 8080:8080 me.pcasaes/hexoids-jvm
 #
 ###
 FROM fabric8/java-alpine-openjdk8-jre

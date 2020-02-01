@@ -1,4 +1,4 @@
-# BBOP MMO ARCADE
+# HEXOIDS
 
 A simple distributed arcade game
 
@@ -29,7 +29,7 @@ and open in a WebGL capable browser:
 ## Setup ENV
 
 Copy `.env.sample` to `.env` and replace the value
-`BBOP_HOST` with your accessible host
+`HEXOIDS_HOST` with your accessible host
 
 ## Run
 
@@ -37,4 +37,4 @@ Copy `.env.sample` to `.env` and replace the value
     
 ## Increase nodes
 
-    docker-compose scale bbop-mmo-arcade=#
+    docker-compose scale hexoids=#

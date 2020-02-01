@@ -1,6 +1,6 @@
 const Users = (function () {
-    const USER_ID = 'bbop_user_id';
-    const USER_NAME = 'bbop_user_name';
+    const USER_ID = 'hexoids_user_id';
+    const USER_NAME = 'hexoids_user_name';
 
     class UserClass {
 

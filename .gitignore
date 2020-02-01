@@ -42,8 +42,8 @@ bots/settings.local.js
 # npm
 /src/main/js-proto/node_modules/
 /src/main/js-proto/node/
-/src/main/js-proto/bbop.proto.node.js
-/src/main/resources/META-INF/resources/js/bbop.proto.js
+/src/main/js-proto/hexoids.proto.node.js
+/src/main/resources/META-INF/resources/js/hexoids.proto.js
 
 # pq
-docker/pq/bbop.proto
+docker/pq/hexoids.proto
