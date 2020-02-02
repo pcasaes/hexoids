@@ -1,5 +1,15 @@
 const Hud = (function () {
 
+    function toFixedWithName(name, length, char) {
+        if (!char) {
+            char = ' ';
+        }
+        while (name.length < length) {
+            name += char;
+        }
+        return name;
+    }
+
     /**
      * Message that appears in the center screen
      */
@@ -99,12 +109,8 @@ const Hud = (function () {
                 }
                 const p = this.getPlayer(entry.playerId.guid);
                 if (p) {
-                    let n = p.name;
-                    while(n.length < this.gameConfig.hud.nameLength) {
-                        n += ' ';
-                    }
-                    this.entries[i].setText(n + " " + entry.score);
-                    this.entries[i].setTintFill(p.ship.color);
+                    this.entries[i].setText(p.displayName + " " + entry.score);
+                    this.entries[i].setTintFill(p.color);
                 } else {
                     this.entries[i].setText(entry.playerId.guid.substr(0, this.gameConfig.hud.nameLength) + " " + entry.score);
                     this.entries[i].setTintFill(this.colors.getDarkTextColor().toRgbNumber());
@@ -121,25 +127,27 @@ const Hud = (function () {
      * Show's player's score on top right
      */
     class PlayerScoreHudClass {
-        constructor(scene, gameConfig) {
+        constructor(scene, gameConfig, colors) {
             this.scene = scene;
             this.gameConfig = gameConfig;
+            this.colors = colors;
 
             this.scoreView = null;
         }
 
-        update(resp, displayName, color) {
+        update(resp, p) {
             if (!this.scoreView) {
                 const text = this.scene.add.bitmapText(0, 4, 'font', '', this.gameConfig.hud.fontSize.periphery);
                 text.setScrollFactor(0);
                 text.setAlpha(this.gameConfig.hud.alpha);
                 text.setDepth(this.gameConfig.hud.depth);
-                text.setTintFill(color);
+                text.setTintFill(p ? p.color : this.colors.getDarkTextColor());
 
                 this.scoreView = text;
             }
+            const name = p ? p.displayName : resp.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
 
-            this.scoreView.setText(displayName + ' ' + resp.score);
+            this.scoreView.setText(name + ' ' + resp.score);
             this.scoreView.x = this.scene.game.config.width - (this.scoreView.width + 5);
         }
     }
@@ -193,38 +201,39 @@ const Hud = (function () {
 
                             const destroyer = this.getPlayer(playerDestroyed.destroyedByPlayerId.guid);
                             const destroyerLabel = destroyer ?
-                                destroyer.displayName :
+                                destroyer.actionName :
                                 playerDestroyed.destroyedByPlayerId.guid.substr(0, this.gameConfig.hud.nameLength);
 
                             const destroyed = this.getPlayer(playerDestroyed.playerId.guid);
                             const destroyedLabel = destroyed ?
-                                destroyed.displayName :
+                                destroyed.actionName :
                                 playerDestroyed.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
 
-                            const timestamp = new Date(playerDestroyed.destroyedTimestamp).toTimeString().substr(0, 8);
+                            const timestamp = new Date(playerDestroyed.destroyedTimestamp);
+                            const timeStr = `${timestamp.getUTCHours() < 10 ? '0' : ''}${timestamp.getUTCHours()}${timestamp.getUTCMinutes() < 10 ? '0' : ''}${timestamp.getUTCMinutes()}${timestamp.getUTCSeconds() < 10 ? '0' : ''}${timestamp.getUTCSeconds()}`;
 
-
-                            let xoffset = this.latestActionsTexts[c][0]
-                                .setText(timestamp + " ")
+                            let xOffset = this.latestActionsTexts[c][0]
+                                .setText(timeStr + " ")
                                 .width;
 
                             this.latestActionsTexts[c][1]
-                                .setTintFill(destroyer ? destroyer.ship.color : this.colors.getDarkTextColor().toRgbNumber())
+                                .setTintFill(destroyer ? destroyer.color : this.colors.getDarkTextColor().toRgbNumber())
                                 .setText(destroyerLabel)
-                                .x = xoffset;
+                                .x = xOffset;
 
-                            xoffset += this.latestActionsTexts[c][1].width;
+                            xOffset += this.latestActionsTexts[c][1].width;
 
                             this.latestActionsTexts[c][2]
-                                .setText(" destroys ")
-                                .x = xoffset;
+                                .setText("-*")
+                                .setTintFill(destroyer ? destroyer.color : this.colors.getDarkTextColor().toRgbNumber())
+                                .x = xOffset;
 
-                            xoffset += this.latestActionsTexts[c][2].width;
+                            xOffset += this.latestActionsTexts[c][2].width;
 
                             this.latestActionsTexts[c][3]
-                                .setTintFill(destroyed ? destroyed.ship.color : this.colors.getDarkTextColor().toRgbNumber())
+                                .setTintFill(destroyed ? destroyed.color : this.colors.getDarkTextColor().toRgbNumber())
                                 .setText(destroyedLabel)
-                                .x = xoffset;
+                                .x = xOffset;
                         }
                     }
                     i = (i + 1) & this.latestActionsWrapMod;
@@ -246,18 +255,54 @@ const Hud = (function () {
     class HudClass {
 
         constructor(scene, gameConfig, colors) {
+            this.gameConfig = gameConfig;
+            this.colors = colors;
             this.centerMessage = new CenterMessageHudClass(scene, gameConfig);
             this.scoreBoard = new ScoreBoardHudClass(scene, gameConfig, colors);
-            this.playerScore = new PlayerScoreHudClass(scene, gameConfig);
+            this.playerScore = new PlayerScoreHudClass(scene, gameConfig, colors);
             this.latestActions = new LatestActionsHudClass(scene, gameConfig, colors);
+            this.players = {};
         }
 
-        setGetPlayer(getPlayer) {
-            this.scoreBoard.setGetPlayer(getPlayer);
-            this.latestActions.setGetPlayer(getPlayer);
+        setupQueues(queues) {
+            const addPlayer = (resp) => {
+                this.players[resp.playerId.guid] = {
+                    'name': resp.name,
+                    'displayName': toFixedWithName(resp.name, this.gameConfig.hud.nameLength),
+                    'actionName': toFixedWithName(resp.name, this.gameConfig.hud.nameLength, '-'),
+                    'color': this.colors.get(resp.ship).toRgbNumber()
+                };
+            };
+
+            queues.command
+                .add('playersList', resp => {
+                    resp.players.forEach(r => addPlayer(r));
+                })
+                .add('playerScoreUpdate', (resp, dto) => {
+                    this.playerScore.update(resp, this.players[dto.directedCommand.playerId.guid])
+                });
+
+
+            queues.event
+                .add('playerJoined', resp => addPlayer(resp))
+                .add('playerLeft', resp => {
+                    delete this.players[resp.playerId.guid];
+                })
+                .add('DISCONNECTED', resp => {
+                    this.players = {};
+                });
+
+            return this;
         }
 
         start() {
+            const getPlayer = (id) => {
+                return this.players[id];
+            };
+
+            this.scoreBoard.setGetPlayer(getPlayer);
+            this.latestActions.setGetPlayer(getPlayer);
+
             this.latestActions.start();
             return this;
         }
@@ -267,9 +312,10 @@ const Hud = (function () {
     let instance = null;
 
     return {
-        'get': (scene, gameConfig, colors) => {
+        'get': (scene, gameConfig, colors, queues) => {
             if (!instance) {
                 instance = new HudClass(scene, gameConfig, colors)
+                    .setupQueues(queues)
                     .start();
             }
             return instance;

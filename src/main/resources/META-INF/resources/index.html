@@ -54,7 +54,7 @@
     }
 
     function getHud() {
-        return Hud.get(gameScene(), GameConfig.get(), getColors());
+        return Hud.get(gameScene(), GameConfig.get(), getColors(), QUEUES);
     }
 
     function getPlayerInputs() {

@@ -304,7 +304,6 @@ const Players = (function () {
 
             this.playerId = null;
             this.name = null;
-            this.displayName = null;
             this.ship = null;
             this.server = null;
         }
@@ -312,10 +311,6 @@ const Players = (function () {
         create(p, sounds) {
             this.playerId = p.playerId.guid;
             this.name = p.name;
-            this.displayName = p.name;
-            while (this.displayName.length < this.gameConfig.hud.nameLength) {
-                this.displayName += ' ';
-            }
 
             this.ship = new Ship(this.scene, this.gameConfig, this.transform, this.colors).create(p, sounds);
 
@@ -342,10 +337,6 @@ const Players = (function () {
 
         hideStart() {
             this.hud.centerMessage.hide();
-        }
-
-        updateScore(resp) {
-            this.hud.playerScore.update(resp, this.displayName, this.ship.color);
         }
 
         move(pointer, moveCartesian, moveRadial, forwardDir) {
@@ -521,8 +512,7 @@ const Players = (function () {
             queues.command
                 .add('playersList', resp => {
                     resp.players.forEach(r => this.create(r));
-                })
-                .add('playerScoreUpdate', r => this.getFollowedPlayer().ifPresent(p => p.updateScore(r)));
+                });
 
             queues.event
                 .add('playerJoined', resp => {
@@ -591,11 +581,6 @@ const Players = (function () {
             return this;
         }
 
-        setupHud() {
-            this.hud.setGetPlayer((id) => this.get(id));
-            return this;
-        }
-
         get(id) {
             return this.players[id];
         }
@@ -620,8 +605,7 @@ const Players = (function () {
             if (!instance) {
                 instance = new PlayersClass(scene, sounds, gameConfig, hud, transform, playerInputs, getServer, colors)
                     .createAnims()
-                    .setupQueues(queues)
-                    .setupHud();
+                    .setupQueues(queues);
             }
             return instance;
         }

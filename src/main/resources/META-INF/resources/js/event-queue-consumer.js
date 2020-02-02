@@ -17,7 +17,7 @@ class QueueConsumer {
         if (resp.dto === this.dtoTypeProperty) {
             const event = this.events[resp[this.dtoTypeProperty][this.typeProperty]];
             if (event) {
-                event.forEach(ev => ev(resp[this.dtoTypeProperty][resp[this.dtoTypeProperty][this.typeProperty]]));
+                event.forEach(ev => ev(resp[this.dtoTypeProperty][resp[this.dtoTypeProperty][this.typeProperty]], resp));
             }
         }
     }

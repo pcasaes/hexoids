@@ -162,8 +162,6 @@ function getHud() {
             'hide': () => {
             },
         },
-        'setGetPlayer': () => {
-        },
         'latestActions': {
             'append': () => {
             },
