@@ -165,6 +165,113 @@ const Hud = (function () {
         }
     }
 
+    class NearbyPlayersHudClass {
+        constructor(scene, gameConfig, colors, transform) {
+            this.scene = scene;
+            this.gameConfig = gameConfig;
+            this.colors = colors;
+            this.transform = transform;
+
+            this.getPlayer = () => null;
+            this.myPlayerId = null;
+            this.texts = new Array(10);
+            this.playerIdIndex = {};
+            this.playerInView = 0;
+        }
+
+        setGetPlayer(getPlayer) {
+            this.getPlayer = getPlayer;
+        }
+
+
+        setMyPlayerId(id) {
+            this.myPlayerId = id;
+        }
+
+
+        removeAll() {
+            Object.keys(this.playerIdIndex).forEach((playerId) => {
+                this.remove(playerId);
+            });
+        }
+
+        remove(playerId) {
+            if (!this.contains(playerId)) {
+                return;
+            }
+
+            const text = this.texts[this.playerIdIndex[playerId]];
+            if (text && text.visible) {
+                text
+                    .setVisible(false)
+                    .setActive(false);
+
+                delete this.playerIdIndex[playerId];
+                this.playerInView--;
+            }
+        }
+
+        contains(playerId) {
+            return this.playerIdIndex[playerId] || this.playerIdIndex[playerId] === 0;
+        }
+
+        update(resp) {
+            if (resp.playerId.guid === this.myPlayerId) {
+                return;
+            }
+
+            const move = this.transform.view(resp.x, resp.y);
+            const playerId = resp.playerId.guid;
+            if (this.transform.inView(move.x, move.y, this.scene.cameras.main.worldView)) {
+                if (this.playerInView >= 10 || this.contains(playerId)) {
+                    return;
+                }
+
+                const p = this.getPlayer(playerId);
+
+                for (let i = 0; i < 10; i++) {
+                    let text;
+
+                    if (!this.texts[i]) {
+                        text = this.scene.add.bitmapText(
+                            this.gameConfig.hud.font.offset.x,
+                            -100,
+                            'font',
+                            'Y',
+                            this.gameConfig.hud.font.size.periphery);
+
+                        text.setScrollFactor(0);
+                        text.setAlpha(this.gameConfig.hud.alpha);
+                        text.setDepth(this.gameConfig.hud.depth);
+                        text.scaleX = this.gameConfig.hud.font.scale.width;
+                        text.y = this.scene.game.config.height - (text.height * (i + 1) + 100);
+                        this.texts[i] = text;
+                    } else if (!this.texts[i].visible) {
+                        text = this.texts[i]
+                            .setVisible(true)
+                            .setActive(true);
+                    }
+
+                    if (text) {
+                        text.setTintFill(p ? p.color : this.colors.getDarkTextColor());
+                        text.setText(p ? p.displayName : playerId.sub(0, this.gameConfig.hud.nameLength));
+
+                        text.x = this.scene.game.config.width - (text.width - this.gameConfig.hud.font.offset.x);
+
+                        this.playerIdIndex[playerId] = i;
+                        this.playerInView++;
+                        break;
+                    }
+                }
+            } else {
+                this.remove(playerId);
+            }
+        }
+    }
+
+    /**
+     * Show's latest in game action on the bottom left.
+     */
     class LatestActionsHudClass {
         constructor(scene, gameConfig, colors) {
             this.scene = scene;
@@ -273,14 +380,21 @@ const Hud = (function () {
 
     class HudClass {
 
-        constructor(scene, gameConfig, colors) {
+        constructor(scene, gameConfig, colors, transform) {
             this.gameConfig = gameConfig;
             this.colors = colors;
             this.centerMessage = new CenterMessageHudClass(scene, gameConfig);
             this.scoreBoard = new ScoreBoardHudClass(scene, gameConfig, colors);
             this.playerScore = new PlayerScoreHudClass(scene, gameConfig, colors);
             this.latestActions = new LatestActionsHudClass(scene, gameConfig, colors);
+            this.nearestPlayers = new NearbyPlayersHudClass(scene, gameConfig, colors, transform);
             this.players = {};
+            this.myPlayerId = null;
+        }
+
+        setMyPlayerId(id) {
+            this.myPlayerId = id;
+            this.nearestPlayers.setMyPlayerId(id);
         }
 
         setupQueues(queues) {
@@ -294,7 +408,8 @@ const Hud = (function () {
             };
 
             queues.command
-                .add('playersList', resp => {
+                .add('playersList', (resp, dto) => {
+                    this.setMyPlayerId(dto.directedCommand.playerId.guid);
                     resp.players.forEach(r => addPlayer(r));
                 })
                 .add('playerScoreUpdate', (resp, dto) => {
@@ -306,9 +421,24 @@ const Hud = (function () {
                 .add('playerJoined', resp => addPlayer(resp))
                 .add('playerLeft', resp => {
                     delete this.players[resp.playerId.guid];
+                    this.nearestPlayers.remove(resp.playerId.guid);
                 })
                 .add('DISCONNECTED', resp => {
                     this.players = {};
+                    this.nearestPlayers.removeAll();
+                })
+                .add('playerMoved', resp => {
+                    this.nearestPlayers.update(resp);
+                })
+                .add('playerSpawned', resp => {
+                    resp = resp.location;
+                    this.nearestPlayers.update(resp);
+                    if (this.myPlayerId === resp.playerId.guid) {
+                        this.nearestPlayers.removeAll();
+                    }
+                })
+                .add('playerDestroyed', resp => {
+                    this.nearestPlayers.remove(resp.playerId.guid);
                 });
 
             return this;
@@ -321,6 +451,7 @@ const Hud = (function () {
 
             this.scoreBoard.setGetPlayer(getPlayer);
             this.latestActions.setGetPlayer(getPlayer);
+            this.nearestPlayers.setGetPlayer(getPlayer);
 
             this.latestActions.start();
             return this;
@@ -331,9 +462,9 @@ const Hud = (function () {
     let instance = null;
 
     return {
-        'get': (scene, gameConfig, colors, queues) => {
+        'get': (scene, gameConfig, colors, transform, queues) => {
             if (!instance) {
-                instance = new HudClass(scene, gameConfig, colors)
+                instance = new HudClass(scene, gameConfig, colors, transform)
                     .setupQueues(queues)
                     .start();
             }
