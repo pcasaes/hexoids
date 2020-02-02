@@ -53,6 +53,7 @@ message BoltMovedEventDto {
 message PlayerDestroyedEventDto {
     GUID playerId = 1;
     GUID destroyedByPlayerId = 2;
+    int64 destroyedTimestamp = 3;
 }
 
 message PlayerJoinedEventDto {

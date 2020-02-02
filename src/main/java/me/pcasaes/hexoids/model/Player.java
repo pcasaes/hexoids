@@ -391,6 +391,7 @@ public interface Player {
                                             .clear()
                                             .setPlayerId(this.id.getGuid())
                                             .setDestroyedByPlayerId(byPlayerId.getGuid())
+                                            .setDestroyedTimestamp(this.clock.getTime())
                                     )
                                     .build()
                     )

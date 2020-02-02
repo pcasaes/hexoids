@@ -308,6 +308,7 @@ const Colors = (function () {
             this.palette = null;
             this.primaryColor = null;
             this._size = null;
+            this.darkTextColor = null;
         }
 
         create(primaryColor, hues, offset) {
@@ -323,6 +324,8 @@ const Colors = (function () {
                 this.palette.push(c.transformByDegrees(offset));
             }
 
+            this.darkTextColor = this.fromRgbNumber(0x777777);
+
             return this;
         }
 
@@ -332,6 +335,10 @@ const Colors = (function () {
 
         get(i) {
             return this.palette[i % this.size()];
+        }
+
+        getDarkTextColor() {
+            return this.darkTextColor;
         }
 
         getPrimaryColor() {

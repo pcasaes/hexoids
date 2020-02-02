@@ -24,7 +24,7 @@
     <script src="js/ai.js"></script>
     <script src="js/hexoids.proto.js"></script>
 </head>
-<body>
+<body style="background-color: #222222;">
 
 <script>
 
@@ -54,7 +54,7 @@
     }
 
     function getHud() {
-        return Hud.get(gameScene(), GameConfig.get());
+        return Hud.get(gameScene(), GameConfig.get(), getColors());
     }
 
     function getPlayerInputs() {
@@ -133,9 +133,9 @@
         this.load.spritesheet('shockwave', 'assets/shockwave1-sheet.png', {frameWidth: 272, frameHeight: 272});
         this.load.spritesheet('fire-effect', 'assets/fire-effect.png', {frameWidth: 128, frameHeight: 128});
 
-        this.load.atlas('fontatlas', 'assets/font/font2.png', 'assets/font/font2.json');
+        this.load.atlas('fontatlas', 'assets/font/hexoids.png', 'assets/font/hexoids.json');
 
-        this.load.xml('atariXML', 'assets/font/atari-sunset.xml');
+        this.load.xml('fontXML', 'assets/font/hexoids.fnt');
 
         this.load.image('bolt', 'assets/white.png');
         this.load.image('wake', 'assets/white.png');
@@ -171,7 +171,7 @@
 
         this.cameras.main.setDeadzone(GameConfig.get().camera.deadZone, GameConfig.get().camera.deadZone);
 
-        Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'atari-sunset', 'atariXML');
+        Phaser.GameObjects.BitmapText.ParseFromAtlas(this, 'font', 'fontatlas', 'hexoids-font', 'fontXML');
 
         const startGame = () => {
             //create singletons
@@ -179,10 +179,8 @@
             getBolts();
             getServer();
 
-            Scoreboard.get(GameConfig.get(), this, getPlayers(), 0, 0)
-                .setAlpha(GameConfig.get().hud.alpha)
-                .setupEventQueue(QUEUES.event)
-                .setDepth(GameConfig.get().hud.depth);
+            Scoreboard.get(getHud(), getPlayers())
+                .setupEventQueue(QUEUES.event);
 
         };
 
@@ -191,7 +189,7 @@
                 while (n.length < GameConfig.get().hud.nameLength) {
                     n += ' ';
                 }
-                getHud().showCenterMessage('Name: ' + n, getColors().getPrimaryColor());
+                getHud().centerMessage.show('Name: ' + n, getColors().getPrimaryColor());
             };
 
             const currentName = USER.hasName() ? USER.name() : '';
@@ -210,6 +208,7 @@
                 } else if (evt.key === 'Enter') {
                     if (name && name.length >= 3 || canUseCurrent) {
                         USER.setName(name || currentName);
+                        getHud().centerMessage.hide();
                         startGame();
                         return true;
                     }
@@ -219,9 +218,6 @@
             showTypedName(currentName);
 
         })();
-
-
-
 
 
         const AI = (function () {

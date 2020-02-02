@@ -179,6 +179,7 @@ const Players = (function () {
             this.followed = true;
             this.scene.cameras.main.startFollow(
                 this.sprite, true);
+            this.sprite.setDepth(this.gameConfig.ship.depth + 1);
 
             let lastX = this.sprite.x;
             let lastY = this.sprite.y;
@@ -305,7 +306,6 @@ const Players = (function () {
             this.name = null;
             this.displayName = null;
             this.ship = null;
-            this.scoreView = null;
             this.server = null;
         }
 
@@ -333,30 +333,19 @@ const Players = (function () {
         }
 
         showExpunged() {
-            this.hud.showCenterMessage('You have been booted for inactivity.\nRefresh to rejoin', this.ship.color);
+            this.hud.centerMessage.show('You have been booted for inactivity.\nRefresh to rejoin', this.ship.color);
         }
 
         showStart() {
-            this.hud.showCenterMessage('Press SPACEBAR to START', this.ship.color, () => !this.ship.sprite.active);
+            this.hud.centerMessage.show('Press SPACEBAR to START', this.ship.color, () => !this.ship.sprite.active);
         }
 
         hideStart() {
-            this.hud.hideCenterMessage();
+            this.hud.centerMessage.hide();
         }
 
         updateScore(resp) {
-            if (!this.scoreView) {
-                const text = this.scene.add.bitmapText(0, 4, 'font', '', 16);
-                text.setScrollFactor(0);
-                text.setAlpha(this.gameConfig.hud.alpha);
-                text.setDepth(this.gameConfig.hud.depth);
-                text.setTintFill(this.ship.color);
-
-                this.scoreView = text;
-            }
-
-            this.scoreView.setText(this.displayName + ' ' + resp.score);
-            this.scoreView.x = this.scene.game.config.width - (this.scoreView.width + 5);
+            this.hud.playerScore.update(resp, this.displayName, this.ship.color);
         }
 
         move(pointer, moveCartesian, moveRadial, forwardDir) {
@@ -411,6 +400,10 @@ const Players = (function () {
             this.players = {};
             this.controllableUsers = {};
             this.playerToFollow = null;
+        }
+
+        appendAction(action) {
+            this.hud.latestActions.append(action);
         }
 
         create(p) {
@@ -578,6 +571,9 @@ const Players = (function () {
                         const ctrlPlayer = this.getControllablePlayer(resp.playerId.guid);
                         this.get(resp.playerId.guid).ship.destroyed(ctrlPlayer.map(p => true).orElse(false));
                         ctrlPlayer.ifPresent(p => p.showStart());
+                        this.appendAction({
+                            "playerDestroyed": resp
+                        });
                     }
                 })
                 .add('playerLeft', resp => {
@@ -592,6 +588,11 @@ const Players = (function () {
                     });
                 });
 
+            return this;
+        }
+
+        setupHud() {
+            this.hud.setGetPlayer((id) => this.get(id));
             return this;
         }
 
@@ -619,7 +620,8 @@ const Players = (function () {
             if (!instance) {
                 instance = new PlayersClass(scene, sounds, gameConfig, hud, transform, playerInputs, getServer, colors)
                     .createAnims()
-                    .setupQueues(queues);
+                    .setupQueues(queues)
+                    .setupHud();
             }
             return instance;
         }

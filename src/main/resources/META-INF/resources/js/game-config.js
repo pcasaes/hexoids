@@ -34,6 +34,10 @@ const GameConfig = (function () {
         },
         'hud': {
             'nameLength': 7,
+            'fontSize': {
+                'center': 16,
+                'periphery': 12,
+            },
             'alpha': HUD_ALPHA,
             'depth': DEPTH_HUD,
         },

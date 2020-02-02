@@ -156,11 +156,19 @@ function getSounds() {
 
 function getHud() {
     return {
-        'showCenterMessage': () => {
+        'centerMessage': {
+            'show': () => {
+            },
+            'hide': () => {
+            },
         },
-        'hideCenterMessage': () => {
+        'setGetPlayer': () => {
         },
-    }
+        'latestActions': {
+            'append': () => {
+            },
+        }
+    };
 }
 
 function getPlayers() {
