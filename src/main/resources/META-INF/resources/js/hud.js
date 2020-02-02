@@ -24,11 +24,12 @@ const Hud = (function () {
         show(message, color, showIfFunction) {
             if (!this.centerMessage) {
                 this.centerMessage = [];
-                this.centerMessage.push(this.scene.add.bitmapText(-100, -100, 'font', message, this.gameConfig.hud.fontSize.center));
-                this.centerMessage.push(this.scene.add.bitmapText(-100, -100, 'font', message, this.gameConfig.hud.fontSize.center));
+                this.centerMessage.push(this.scene.add.bitmapText(-100, -100, 'font', message, this.gameConfig.hud.font.size.center));
+                this.centerMessage.push(this.scene.add.bitmapText(-100, -100, 'font', message, this.gameConfig.hud.font.size.center));
 
                 this.centerMessage.forEach(text => {
                     text.setScrollFactor(0);
+                    text.scaleX = this.gameConfig.hud.font.scale.width;
                 });
 
                 this.centerMessage[0]
@@ -100,7 +101,13 @@ const Hud = (function () {
                     if (i > 0) {
                         y = this.entries[0].height;
                     }
-                    const text = this.scene.add.bitmapText(5, i * y + 4, 'font', '', this.gameConfig.hud.fontSize.periphery);
+                    const text = this.scene.add.bitmapText(
+                        this.gameConfig.hud.font.offset.x,
+                        i * y + this.gameConfig.hud.font.offset.y,
+                        'font',
+                        '',
+                        this.gameConfig.hud.font.size.periphery);
+                    text.scaleX = this.gameConfig.hud.font.scale.width;
 
                     text.setScrollFactor(0);
                     text.setAlpha(this.gameConfig.hud.alpha);
@@ -137,18 +144,24 @@ const Hud = (function () {
 
         update(resp, p) {
             if (!this.scoreView) {
-                const text = this.scene.add.bitmapText(0, 4, 'font', '', this.gameConfig.hud.fontSize.periphery);
+                const text = this.scene.add.bitmapText(
+                    this.gameConfig.hud.font.offset.x,
+                    this.gameConfig.hud.font.offset.y,
+                    'font',
+                    '',
+                    this.gameConfig.hud.font.size.periphery);
                 text.setScrollFactor(0);
                 text.setAlpha(this.gameConfig.hud.alpha);
                 text.setDepth(this.gameConfig.hud.depth);
                 text.setTintFill(p ? p.color : this.colors.getDarkTextColor());
+                text.scaleX = this.gameConfig.hud.font.scale.width;
 
                 this.scoreView = text;
             }
             const name = p ? p.displayName : resp.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
 
             this.scoreView.setText(name + ' ' + resp.score);
-            this.scoreView.x = this.scene.game.config.width - (this.scoreView.width + 5);
+            this.scoreView.x = this.scene.game.config.width - (this.scoreView.width - this.gameConfig.hud.font.offset.x);
         }
     }
 
@@ -182,10 +195,16 @@ const Hud = (function () {
                         if (!this.latestActionsTexts[c]) {
                             this.latestActionsTexts[c] = [];
                             for (let p = 0; p < 4; p++) {
-                                const text = this.scene.add.bitmapText(5, -100, 'font', 'X', this.gameConfig.hud.fontSize.periphery);
+                                const text = this.scene.add.bitmapText(
+                                    this.gameConfig.hud.font.offset.x,
+                                    -100,
+                                    'font',
+                                    'X',
+                                    this.gameConfig.hud.font.size.periphery);
                                 text.setScrollFactor(0);
                                 text.setAlpha(this.gameConfig.hud.alpha);
                                 text.setDepth(this.gameConfig.hud.depth);
+                                text.scaleX = this.gameConfig.hud.font.scale.width;
 
                                 const textPos = this.latestActions.length - c;
                                 text.y = this.scene.game.config.height - (text.height * textPos + 5);
@@ -206,7 +225,7 @@ const Hud = (function () {
 
                             const destroyed = this.getPlayer(playerDestroyed.playerId.guid);
                             const destroyedLabel = destroyed ?
-                                destroyed.actionName :
+                                destroyed.name :
                                 playerDestroyed.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
 
                             const timestamp = new Date(playerDestroyed.destroyedTimestamp);

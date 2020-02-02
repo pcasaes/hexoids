@@ -224,7 +224,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             if ('true' === urlParams.get('ai')) {
                 startGame();
-                return new AiBot(USER.get(), getServer(), getPlayers(), transform, GameConfig.get());
+                return new AiBot(USER, getServer(), getPlayers(), transform, GameConfig.get());
             }
             return {
                 'start': () => {

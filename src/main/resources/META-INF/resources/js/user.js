@@ -4,10 +4,11 @@ const Users = (function () {
 
     class UserClass {
 
-        constructor(gameConfig, id, name) {
+        constructor(gameConfig, id, name, sessionUser) {
             this.gameConfig = gameConfig;
             this._id = id;
             this._name = name;
+            this.sessionUser = sessionUser;
         }
 
         /**
@@ -33,7 +34,9 @@ const Users = (function () {
         setName(n) {
             if (n) {
                 this._name = n;
-                document.cookie = USER_NAME + "=" + this._name;
+                if (this.sessionUser) {
+                    document.cookie = USER_NAME + "=" + this._name;
+                }
             } else {
                 this._name = '';
             }
@@ -46,7 +49,7 @@ const Users = (function () {
             this.getCookie = getCookie;
             this.genUuid = genUuid;
             this.users = {};
-            this.sessionUser = false;
+            this.sessionUser = null;
         }
 
         fromSession() {
@@ -55,7 +58,7 @@ const Users = (function () {
                 const userNameFromCookie = this.getCookie(USER_NAME);
                 const id = !userIdFromCookie ? this.genUuid() : userIdFromCookie;
                 document.cookie = USER_ID + "=" + id;
-                this.sessionUser = new UserClass(this.gameConfig, id, userNameFromCookie);
+                this.sessionUser = new UserClass(this.gameConfig, id, userNameFromCookie, true);
                 console.log(this.sessionUser.id() + " " + this.sessionUser.name());
                 this.users[this.sessionUser.id()] = this.sessionUser;
             }
@@ -64,7 +67,7 @@ const Users = (function () {
 
         get(id) {
             if (!this.users[id]) {
-                this.users[id] = new UserClass(this.gameConfig, id, null);
+                this.users[id] = new UserClass(this.gameConfig, id, null, false);
             }
             return this.users[id];
         }

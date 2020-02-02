@@ -2,9 +2,42 @@ const AiBot = (function() {
 
     const EMPTY_OBJ = {};
 
+    const NAMES = {};
+
+    function getRandomName() {
+        if (!NAMES.p1) {
+            NAMES.p1 = [];
+            NAMES.p2 = [];
+
+            NAMES.p1.push("Dek");
+            NAMES.p1.push("Cij");
+            NAMES.p1.push("Bak");
+            NAMES.p1.push("Rut");
+            NAMES.p1.push("Sol");
+
+            NAMES.p2.push("Ort");
+            NAMES.p2.push("Eck");
+            NAMES.p2.push("Art");
+            NAMES.p2.push("Vuq");
+            NAMES.p2.push("Pil");
+        }
+
+        let p1 = NAMES.p1[Math.floor(Math.random()*NAMES.p1.length)];
+        if (Math.random() < 0.25) {
+            p1 = p1.substr(0, 2);
+        }
+
+        let p2 = NAMES.p2[Math.floor(Math.random()*NAMES.p2.length)];
+        if (Math.random() < 0.01) {
+            p2 = p2.substr(0, 2);
+        }
+
+        return p1 + p2 + Math.floor(Math.random() * 10);
+    }
+
     class AiBotClass {
-        constructor(userId, server, players, transform, gameConfig) {
-            this.userId = userId;
+        constructor(user, server, players, transform, gameConfig) {
+            this.userId = user.id();
             this.server = server;
             this.players = players;
             this.transform = transform;
@@ -14,6 +47,8 @@ const AiBot = (function() {
             this.y = 0;
             this.forwardDir = 0;
             this.waitingToSpawn = true;
+
+            user.setName(getRandomName());
         }
 
         start() {

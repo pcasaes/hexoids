@@ -21,12 +21,12 @@ const GameConfig = (function () {
             }
         },
         'bolt': {
-          'debounce': 100,
-          'sound': {
-              'max': 3,
-              'distanceThreshold': 0.5,
-              'debounce': 100,
-          }
+            'debounce': 100,
+            'sound': {
+                'max': 3,
+                'distanceThreshold': 0.5,
+                'debounce': 100,
+            }
         },
         'background': {
             'depth': DEPTH_BG,
@@ -34,9 +34,20 @@ const GameConfig = (function () {
         },
         'hud': {
             'nameLength': 7,
-            'fontSize': {
-                'center': 16,
-                'periphery': 12,
+            'font': {
+                'size': {
+                    'center':
+                        28,
+                    'periphery':
+                        20,
+                },
+                'scale': {
+                    'width': 1.8
+                },
+                'offset': {
+                    'x': -2,
+                    'y': -4
+                }
             },
             'alpha': HUD_ALPHA,
             'depth': DEPTH_HUD,
@@ -53,7 +64,7 @@ const GameConfig = (function () {
             }
         },
         'camera': {
-            'deadZone': DEADZONE_SIZE ,
+            'deadZone': DEADZONE_SIZE,
         },
 
         'add': (field, val) => {

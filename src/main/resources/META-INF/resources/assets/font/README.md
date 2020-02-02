@@ -1,4 +1,6 @@
 source:
-https://github.com/photonstorm/phaser3-examples
+https://github.com/google/fonts/tree/master/ofl/monofett
 
-License: ISC
+License: SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+
+Font has been modified

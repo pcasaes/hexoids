@@ -194,7 +194,7 @@ for (let i = 0; i < settings.bots; i++) {
     getPlayers()
         .addControllableUser(USER.get());
 
-    const bot = new AiBot(USER.get(),
+    const bot = new AiBot(USER,
         getServer(USER.get()),
         getPlayers()
             .addControllableUser(USER.get()),
