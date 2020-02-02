@@ -159,7 +159,7 @@ public class Bolt {
                                                 .setOwnerPlayerId(ownerPlayerId.getGuid())
                                                 .setX(positionVector.getX())
                                                 .setY(positionVector.getY())
-                                                .setAngle(positionVector.getVector().getAngle())
+                                                .setAngle(positionVector.getVelocity().getAngle())
                                 )
                                 .build()
                 );

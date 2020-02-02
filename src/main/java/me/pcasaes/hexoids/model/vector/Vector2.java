@@ -35,6 +35,32 @@ public class Vector2 {
         this.initializedXY = false;
     }
 
+    void setXY(float x, float y) {
+        this.x = x;
+        this.y = y;
+        this.initializedXY = true;
+        this.initializedAM = false;
+    }
+
+    void addXY(float x, float y) {
+        setXY(getX() + x, getY() + y);
+    }
+
+    void set(Vector2 vector) {
+        if (vector.initializedAM && vector.initializedXY) {
+            this.x = vector.x;
+            this.y = vector.y;
+            this.angle = vector.angle;
+            this.magnitude = vector.magnitude;
+            this.initializedXY = true;
+            this.initializedAM = true;
+        } else if (vector.initializedXY) {
+            setXY(vector.x, vector.y);
+        } else {
+            setAngleMagnitude(vector.angle, vector.magnitude);
+        }
+    }
+
     private void lazyInitAM() {
         if (!this.initializedAM) {
             this.angle = TrigUtil.calculateAngleFromComponents(this.x, this.y);
@@ -143,6 +169,7 @@ public class Vector2 {
     /**
      * Return true if both vectors have the same equivalent angle.
      * This does take magnitude sign into account.
+     *
      * @param b
      * @return
      */
