@@ -315,33 +315,44 @@ public class PositionVector {
         float minMove = Config.get().getMinMove();
 
         // https://gamedev.stackexchange.com/questions/125011/given-the-position-and-velocity-of-an-object-how-can-i-detect-possible-collision
-        Vector2 bAdjustedPreviousPosition;
-        if (b.previousTimestamp != this.previousTimestamp) {
-            long timeDifference;
-            Vector2 vel;
-            if (b.previousTimestamp < this.previousTimestamp) {
-                timeDifference = this.previousTimestamp - b.previousTimestamp;
-                vel = b.velocity;
+        if (b.currentTimestamp > previousTimestamp) {
+            Vector2 bAdjustedPreviousPosition;
+            float timeUntilCollision;
+            if (b.previousTimestamp != this.previousTimestamp) {
+                long timeDifference;
+                Vector2 vel;
+                if (b.previousTimestamp < this.previousTimestamp) {
+                    timeDifference = this.previousTimestamp - b.previousTimestamp;
+                    vel = b.velocity;
+                } else {
+                    timeDifference = b.previousTimestamp - this.previousTimestamp;
+                    vel = b.previousVelocity.invert();
+                }
+
+                Vector2 moveDelta = calculateMoveDelta(vel, minMove, timeDifference);
+                bAdjustedPreviousPosition = b.previousPosition.add(moveDelta);
+
+
+                if (currentTimestamp > b.currentTimestamp) {
+                    timeUntilCollision = (b.currentTimestamp - previousTimestamp) + 10f;
+                } else {
+                    timeUntilCollision = Config.get().getUpdateFrequencyInMillisWithAdded20Percent();
+                }
+
             } else {
-                timeDifference = b.previousTimestamp - this.previousTimestamp;
-                vel = b.previousVelocity.invert();
+                bAdjustedPreviousPosition = b.previousPosition;
+                timeUntilCollision = Config.get().getUpdateFrequencyInMillisWithAdded20Percent();
             }
 
-            Vector2 moveDelta = calculateMoveDelta(vel, minMove, timeDifference);
-            bAdjustedPreviousPosition = b.previousPosition.add(moveDelta);
-
-        } else {
-            bAdjustedPreviousPosition = b.previousPosition;
-        }
-
-        if (detectCollision(
-                previousPosition,
-                velocity,
-                bAdjustedPreviousPosition,
-                b.velocity,
-                intersectionThreshold,
-                Config.get().getUpdateFrequencyInMillisWithAdded20Percent())) {
-            return true;
+            if (detectCollision(
+                    previousPosition,
+                    velocity,
+                    bAdjustedPreviousPosition,
+                    b.velocity,
+                    intersectionThreshold,
+                    timeUntilCollision)) {
+                return true;
+            }
         }
 
         if (b.currentTimestamp < this.currentTimestamp) {
