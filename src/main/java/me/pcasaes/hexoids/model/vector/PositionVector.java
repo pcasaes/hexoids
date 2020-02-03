@@ -295,14 +295,15 @@ public class PositionVector {
 
     private static boolean detectCollision(Vector2 aPos, Vector2 aVel,
                                            Vector2 bPos, Vector2 bVel,
-                                           float intersectionThreshold) {
+                                           float intersectionThreshold,
+                                           float collisionTimeInMillis) {
         Vector2 relativePosition = bPos.minus(aPos);
         Vector2 relativeVelocity = bVel.minus(aVel);
 
         float timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
                 (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1f);
 
-        if (timeToCollisionInSeconds * 1000f > Config.get().getUpdateFrequencyInMillisWithAdded20Percent()) {
+        if (timeToCollisionInSeconds * 1000f > collisionTimeInMillis) {
             return false;
         }
 
@@ -333,7 +334,13 @@ public class PositionVector {
             bAdjustedPreviousPosition = b.previousPosition;
         }
 
-        if (detectCollision(previousPosition, velocity, bAdjustedPreviousPosition, b.velocity, intersectionThreshold)) {
+        if (detectCollision(
+                previousPosition,
+                velocity,
+                bAdjustedPreviousPosition,
+                b.velocity,
+                intersectionThreshold,
+                Config.get().getUpdateFrequencyInMillisWithAdded20Percent())) {
             return true;
         }
 
@@ -353,7 +360,13 @@ public class PositionVector {
             Vector2 moveDelta = calculateMoveDelta(bAdjustedVelocity, minMove, timeDifference);
             bAdjustedCurrentPosition = b.currentPosition.add(moveDelta);
 
-            return detectCollision(currentPosition, velocity, bAdjustedCurrentPosition, bAdjustedVelocity, intersectionThreshold);
+            return detectCollision(
+                    currentPosition,
+                    velocity,
+                    bAdjustedCurrentPosition,
+                    bAdjustedVelocity,
+                    intersectionThreshold,
+                    timeDifference + 10f);
 
         } else {
             return false;
