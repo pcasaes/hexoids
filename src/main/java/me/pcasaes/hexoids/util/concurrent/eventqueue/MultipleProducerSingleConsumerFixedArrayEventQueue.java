@@ -3,8 +3,8 @@ package me.pcasaes.hexoids.util.concurrent.eventqueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Simple unbounded FIFO event queue that is thread safe only if there's
- * a single thread consuming. Many threads can produce including the
+ * Simple unbounded FIFO event queue that is thread safe for immutable or effectively immutable
+ * objects only if there's a single thread consuming. Many threads can produce including the
  * consumer thread.
  *
  * <p>

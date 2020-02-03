@@ -1,8 +1,8 @@
 package me.pcasaes.hexoids.util.concurrent.eventqueue;
 
 /**
- * Simple unbounded FIFO event queue that is thread safe only if there's
- * a single thread producing and a single thread consuming. They can be
+ * Simple unbounded FIFO event queue that is thread safe for immutable or effectively immutable
+ * objects only if there's a single thread producing and a single thread consuming. They can be
  * the same thread.
  * <p>
  * This implementation uses a linked list.
@@ -64,7 +64,8 @@ class SingleProducerSingleConsumerLinkedListEventQueue<T> implements EventQueue<
 
 
     private class Entry<T> {
-        T value;
+        // volatile fields allows for safe publishing
+        volatile T value; //NOSONAR: This class is specifically used for effectively immutable objects
         Entry<T> next;
 
         private Entry(T value) {

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Simple unbounded FIFO event queue that is thread safe only if there's
- * a single thread producing and a single thread consuming. They can be
+ * Simple unbounded FIFO event queue that is thread safe for immutable or effectively immutable
+ * objects only if there's a single thread producing and a single thread consuming. They can be
  * the same thread.
  * <p>
  * This implementation uses a fixed size array
@@ -21,7 +21,7 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
 
     protected final int maxSizeMinusOne;
 
-    private final List<T> table;
+    private final List<SafeHolder<T>> table;
 
     SingleProducerSingleConsumerFixedArrayEventQueue(int maxSizeExponent) {
         int maxSize = (int) Math.pow(2, maxSizeExponent);
@@ -56,10 +56,13 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
         int next;
         tail = next = getNextTail(tail);
         int current = getNextPosition(prev);
-        if (next == current && table.get(current) != null) {
+
+        SafeHolder<T> safeHolder = table.get(current);
+        if (next == current && safeHolder != null) {
             throw new IllegalStateException("Event queue out of space!!! Must be increased");
         }
-        table.set(next, value);
+
+        table.set(next, SafeHolder.of(value));
     }
 
     public boolean isEmpty() {
@@ -76,7 +79,8 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
     @Override
     public T consume() {
         int next = getNextPosition(prev);
-        T value = table.get(next);
+        SafeHolder<T> safeHolder = table.get(next);
+        T value = safeHolder == null ? null : safeHolder.value;
         if (value != null) {
             prev = next;
             table.set(next, null);
@@ -85,5 +89,24 @@ class SingleProducerSingleConsumerFixedArrayEventQueue<T> implements EventQueue<
         return null;
     }
 
+    /**
+     * Events must be effectively immutable and safely published in order to guarantee
+     * thread safety.
+     *
+     * see Java Concurrency In Practice, Brian Goetz et al. 3.5
+     *
+     * @param <T>
+     */
+    private static class SafeHolder<T> {
+        private final T value;
+
+        private SafeHolder(T value) {
+            this.value = value;
+        }
+
+        private static <T> SafeHolder<T> of(T value) {
+            return new SafeHolder<>(value);
+        }
+    }
 
 }
