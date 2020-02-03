@@ -495,6 +495,8 @@ class PlayerTest {
 
     @Test
     void testCollisionHitBullsEye() {
+        Config.get().setUpdateFrequencyInMillis(1000L);
+
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
         player.join(JoinCommandDto
@@ -507,13 +509,13 @@ class PlayerTest {
         player.move(0.5f, 0.5f, null);
 
         PositionVector positionVector = PositionVector.of(
-                0.45f,
-                0.45f,
-                (float) (Math.PI / 4),
-                0.1f / (float) Math.cos(Math.PI / 4),
-                0L,
-                Player.Implementation.PLAYER_POSITION_CONFIGURATION
-        ).update(1000L);
+                1f,
+                1f,
+                (float) (5 * Math.PI / 4f),
+                -0.5f / (float) Math.cos(5 * Math.PI / 4),
+                25L,
+                PositionVector.DEFAULT_CONFIGURATION
+        ).update(1025L);
 
         assertTrue(player.collision(positionVector, 0.05f));
     }
@@ -537,7 +539,7 @@ class PlayerTest {
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
                 0L,
-                Player.Implementation.PLAYER_POSITION_CONFIGURATION
+                PositionVector.DEFAULT_CONFIGURATION
         ).update(1000L);
 
         assertTrue(player.collision(positionVector, 0.05f));
@@ -545,6 +547,8 @@ class PlayerTest {
 
     @Test
     void testCollisionNoHitInsideSquare() {
+        Config.get().setUpdateFrequencyInMillis(1000L);
+
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
         player.join(JoinCommandDto
@@ -561,15 +565,17 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L,
-                Player.Implementation.PLAYER_POSITION_CONFIGURATION
-        ).update(1000L);
+                975L,
+                PositionVector.DEFAULT_CONFIGURATION
+        ).update(1025L);
 
         assertFalse(player.collision(positionVector, 0.05f));
     }
 
     @Test
     void testCollisionNoHitOutsideSquareX() {
+        Config.get().setUpdateFrequencyInMillis(1000L);
+
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
         player.join(JoinCommandDto
@@ -586,9 +592,9 @@ class PlayerTest {
                 0.45f,
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
-                0L,
-                Player.Implementation.PLAYER_POSITION_CONFIGURATION
-        ).update(1000L);
+                25L,
+                PositionVector.DEFAULT_CONFIGURATION
+        ).update(1025L);
 
         assertFalse(player.collision(positionVector, 0.05f));
     }
@@ -612,7 +618,7 @@ class PlayerTest {
                 (float) (Math.PI / 4),
                 0.1f / (float) Math.cos(Math.PI / 4),
                 0L,
-                Player.Implementation.PLAYER_POSITION_CONFIGURATION
+                PositionVector.DEFAULT_CONFIGURATION
         ).update(1000L);
 
         assertFalse(player.collision(positionVector, 0.05f));

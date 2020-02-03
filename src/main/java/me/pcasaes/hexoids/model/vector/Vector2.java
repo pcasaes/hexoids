@@ -127,9 +127,13 @@ public class Vector2 {
     }
 
     public Vector2 add(Vector2 b) {
+        return add(b.getX(), b.getY());
+    }
+
+    public Vector2 add(float x, float y) {
         return fromXY(
-                getX() + b.getX(),
-                getY() + b.getY()
+                getX() + x,
+                getY() + y
         );
     }
 
@@ -150,6 +154,16 @@ public class Vector2 {
 
     public Vector2 rejection(Vector2 b) {
         return this.minus(projection(b));
+    }
+
+    public Vector2 invert() {
+        if (getX() == 0f && getY() == 0f) {
+            return this;
+        }
+        return fromXY(
+                -getX(),
+                -getY()
+        );
     }
 
     public Vector2 invertX() {

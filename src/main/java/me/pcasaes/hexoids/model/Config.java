@@ -5,6 +5,7 @@ import me.pcasaes.hexoids.util.TrigUtil;
 public class Config {
 
     private long updateFrequencyInMillis;
+    private float updateFrequencyInMillisWithAdded20Percent;
     private float inertiaDampenCoefficient;
 
     /**
@@ -40,6 +41,11 @@ public class Config {
 
     public void setUpdateFrequencyInMillis(long updateFrequencyInMillis) {
         this.updateFrequencyInMillis = updateFrequencyInMillis;
+        this.updateFrequencyInMillisWithAdded20Percent = updateFrequencyInMillis * 1.2f;
+    }
+
+    public float getUpdateFrequencyInMillisWithAdded20Percent() {
+        return updateFrequencyInMillisWithAdded20Percent;
     }
 
     public float getInertiaDampenCoefficient() {

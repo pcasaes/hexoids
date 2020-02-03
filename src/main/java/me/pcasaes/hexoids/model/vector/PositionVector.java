@@ -11,8 +11,13 @@ public class PositionVector {
     private final Configuration configuration;
     private final Float maxMagnitude;
 
-    private Vector2 velocity;
+    /*
+    Velocity here is distance unit per second (not millis!)
+     */
+    private final Vector2 velocity;
+    private final Vector2 previousVelocity;
 
+    private long previousTimestamp;
     private long currentTimestamp;
 
     private Vector2 currentPosition;
@@ -23,10 +28,11 @@ public class PositionVector {
                            float startY,
                            long startTime,
                            Configuration configuration) {
+        this.previousVelocity = velocity;
         this.velocity = velocity;
         this.currentPosition = Vector2.fromXY(startX, startY);
         this.previousPosition = Vector2.fromXY(startX, startY);
-        this.currentTimestamp = startTime;
+        this.currentTimestamp = this.previousTimestamp = startTime;
         this.configuration = configuration;
         if (configuration.maxMagnitude().isPresent()) {
             this.maxMagnitude = (float) configuration.maxMagnitude().getAsDouble();
@@ -69,9 +75,10 @@ public class PositionVector {
 
     public void initialized(float x, float y, long timestamp) {
         this.velocity.setAngleMagnitude(0, 0);
+        this.previousVelocity.setAngleMagnitude(0, 0);
         this.previousPosition.setXY(x, y);
         this.currentPosition.setXY(x, y);
-        this.currentTimestamp = timestamp;
+        this.currentTimestamp = this.previousTimestamp = timestamp;
     }
 
     /**
@@ -90,7 +97,9 @@ public class PositionVector {
         }
         this.previousPosition.set(this.currentPosition);
         this.currentPosition.setXY(x, y);
+        this.previousVelocity.set(this.velocity);
         this.velocity.setAngleMagnitude(angle, magnitude);
+        this.previousTimestamp = this.currentTimestamp;
         this.currentTimestamp = timestamp;
     }
 
@@ -126,7 +135,8 @@ public class PositionVector {
             moveVector = moveVector.absMax(maxMagnitude);
         }
 
-        this.velocity = moveVector;
+        this.previousVelocity.set(this.velocity);
+        this.velocity.set(moveVector);
 
         float x = getX();
         float y = getY();
@@ -162,8 +172,8 @@ public class PositionVector {
     private void applyXYDelta(float minMove, long elapsed) {
         float velocityDelta = velocity.getMagnitude() * elapsed / 1000f;
 
-        float mx = (float) Math.cos(velocity.getAngle()) * velocityDelta;
-        float my = (float) Math.sin(velocity.getAngle()) * velocityDelta;
+        float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
+        float my = TrigUtil.calculateYComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
 
         boolean mxAboveMinMove = Math.abs(mx) > minMove;
         boolean myAboveMinMove = Math.abs(my) > minMove;
@@ -185,6 +195,8 @@ public class PositionVector {
             return this;
         }
 
+        this.previousVelocity.set(this.velocity);
+
         long elapsed = (timestamp - this.currentTimestamp);
 
         float minMove = Config.get().getMinMove();
@@ -194,21 +206,22 @@ public class PositionVector {
         applyXYDelta(minMove, elapsed);
 
         if (configuration.atBounds() == Configuration.AtBoundsOptions.STOP) {
-            this.velocity = Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0f);
+            this.velocity.set(Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0f));
         } else if (configuration.atBounds() == Configuration.AtBoundsOptions.BOUNCE) {
             if (this.currentPosition.getX() <= 0f || this.currentPosition.getX() >= 1f) {
-                velocity = velocity.invertX();
+                velocity.set(velocity.invertX());
             }
             if (this.currentPosition.getY() <= 0f || this.currentPosition.getY() >= 1f) {
-                velocity = velocity.invertY();
+                velocity.set(velocity.invertY());
             }
         }
-        
+
         this.currentPosition.setXY(
                 configuration.atBounds().bound(this.currentPosition.getX()),
                 configuration.atBounds().bound(this.currentPosition.getY())
         );
 
+        this.previousTimestamp = this.currentTimestamp;
         this.currentTimestamp = timestamp;
 
         return this;
@@ -280,31 +293,60 @@ public class PositionVector {
                 currentPosition.getY() < 0f || currentPosition.getY() > 1f;
     }
 
+    private boolean intersectedWithSegment(PositionVector b, float intersectionThreshold) {
+        float minMove = Config.get().getMinMove();
+
+        // https://gamedev.stackexchange.com/questions/125011/given-the-position-and-velocity-of-an-object-how-can-i-detect-possible-collision
+        Vector2 bAdjustedPreviousPosition;
+        if (b.previousTimestamp != this.previousTimestamp) {
+            long timeDifference;
+            Vector2 vel;
+            if (b.previousTimestamp < this.previousTimestamp) {
+                timeDifference = this.previousTimestamp - b.previousTimestamp;
+                vel = b.velocity;
+            } else {
+                timeDifference = b.previousTimestamp - this.previousTimestamp;
+                vel = b.previousVelocity.invert();
+            }
+
+            float velocityDelta = vel.getMagnitude() * timeDifference / 1000f;
+
+            float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(vel.getAngle(), velocityDelta);
+            float my = TrigUtil.calculateYComponentFromAngleAndMagnitude(vel.getAngle(), velocityDelta);
+
+            boolean mxAboveMinMove = Math.abs(mx) > minMove;
+            boolean myAboveMinMove = Math.abs(my) > minMove;
+
+            if (mxAboveMinMove && myAboveMinMove) {
+                bAdjustedPreviousPosition = b.previousPosition.add(mx, my);
+            } else if (mxAboveMinMove) {
+                bAdjustedPreviousPosition = b.previousPosition.add(mx, b.previousPosition.getY());
+            } else if (myAboveMinMove) {
+                bAdjustedPreviousPosition = b.previousPosition.add(b.previousPosition.getX(), my);
+            } else {
+                bAdjustedPreviousPosition = b.previousPosition;
+            }
+        } else {
+            bAdjustedPreviousPosition = b.previousPosition;
+        }
+
+
+        Vector2 relativePosition = bAdjustedPreviousPosition.minus(previousPosition);
+        Vector2 relativeVelocity = b.velocity.minus(velocity);
+
+        float timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
+                (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1f);
+
+        if (timeToCollisionInSeconds * 1000f > Config.get().getUpdateFrequencyInMillisWithAdded20Percent()) {
+            return false;
+        }
+
+        float minSeparation = relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds;
+        return minSeparation <= intersectionThreshold;
+    }
+
     public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
-        float minx = Math.min(previousPosition.getX(), currentPosition.getX());
-        float maxx = Math.max(previousPosition.getX(), currentPosition.getX());
-        float x = b.getX();
-        float y = b.getY();
-        if (x - intersectionThreshold > maxx || x + intersectionThreshold < minx) {
-            return false;
-        }
-
-        float miny = Math.min(previousPosition.getY(), currentPosition.getY());
-        float maxy = Math.max(previousPosition.getY(), currentPosition.getY());
-        if (y - intersectionThreshold > maxy || y + intersectionThreshold < miny) {
-            return false;
-        }
-
-        float distance = TrigUtil
-                .calculateShortestDistanceFromPointToLine(
-                        previousPosition.getX(),
-                        previousPosition.getY(),
-                        currentPosition.getX(),
-                        currentPosition.getY(),
-                        x,
-                        y);
-        return distance <= intersectionThreshold;
-
+        return intersectedWithSegment(b, intersectionThreshold);
     }
 
     public interface Configuration {

@@ -143,7 +143,7 @@ public class ConfigurationService {
     public void setMinMove(
             @ConfigProperty(
                     name = "hexoids.config.min.move",
-                    defaultValue = "0.000000001"
+                    defaultValue = "0.0001"
             ) float minMove) {
         this.minMove = minMove;
     }
