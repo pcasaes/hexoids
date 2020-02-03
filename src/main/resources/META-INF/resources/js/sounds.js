@@ -54,13 +54,17 @@ const Sounds = (function () {
             if (priority) {
                 this.priorityIndex = (this.priorityIndex + 1) % this.pool.length;
                 const s = this.pool[this.priorityIndex][f];
-                if (s.isPlaying) {
-                    s.stop();
+                if (s[0].isPlaying) {
+                    s[0].stop();
+                }
+                if (s[1].isPlaying) {
+                    s[1].stop();
                 }
                 return s;
+            } else {
+                const s = this.pool.find(x => !x[f][0].isPlaying);
+                return s ? s[f] : null;
             }
-            const s = this.pool.find(s => !s[f][0].isPlaying);
-            return s ? s[f] : null;
         }
 
         play3d(sourceX, sourceY, priority) {
