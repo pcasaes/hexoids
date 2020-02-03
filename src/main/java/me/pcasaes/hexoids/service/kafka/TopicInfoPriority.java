@@ -8,6 +8,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Objects;
 
+/**
+ * Some topics must be caught up before others during startup.
+ * This qualifier allows us to do so. Lower value's means higher priority.
+ */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

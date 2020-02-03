@@ -46,7 +46,7 @@ public interface Game {
             this.bolts = bolts;
             this.scoreBoard = scoreBoard;
 
-            Topics.setGame(this);
+            GameTopic.setGame(this);
         }
 
 

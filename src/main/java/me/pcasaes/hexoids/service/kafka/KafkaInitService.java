@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.service.kafka;
 
 import io.quarkus.runtime.StartupEvent;
-import me.pcasaes.hexoids.model.Topics;
+import me.pcasaes.hexoids.model.GameTopic;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
@@ -37,7 +37,7 @@ public class KafkaInitService {
     private Instance<TopicInfo> topicsFactory;
 
     private Instance<KafkaConsumerService> kafkaConsumerServiceFactory;
-    private Map<Topics, KafkaConsumerService> kafkaConsumerServiceMap = new ConcurrentHashMap<>();
+    private Map<GameTopic, KafkaConsumerService> kafkaConsumerServiceMap = new ConcurrentHashMap<>();
 
     private KafkaAdmin kafkaAdmin;
 

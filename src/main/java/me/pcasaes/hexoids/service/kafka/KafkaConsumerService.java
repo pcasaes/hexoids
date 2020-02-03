@@ -44,7 +44,7 @@ public class KafkaConsumerService {
 
     private boolean started = false;
 
-    private boolean subcriber;
+    private boolean subscriber;
 
     @Inject
     public KafkaConsumerService(KafkaConfiguration configuration,
@@ -55,7 +55,7 @@ public class KafkaConsumerService {
                                 ) boolean subscriber) {
         this.configuration = configuration;
         this.gameLoopService = gameLoopService;
-        this.subcriber = subscriber;
+        this.subscriber = subscriber;
     }
 
 
@@ -73,7 +73,7 @@ public class KafkaConsumerService {
                             .ifPresent(properties::putAll);
 
                     if (consumerInfo.useSubscription()) {
-                        if (this.subcriber) {
+                        if (this.subscriber) {
                             threads.add(startWithSubscription(
                                     properties,
                                     topicInfo.topic().name(),

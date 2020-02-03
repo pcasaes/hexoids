@@ -10,7 +10,14 @@ public @interface KafkaProducerType {
     Type value();
 
     enum Type {
+        /**
+         * The producer will fire and forget
+         */
         FAST,
+
+        /**
+         * The producer will block until kafka acks.
+         */
         BLOCK,
     }
 }

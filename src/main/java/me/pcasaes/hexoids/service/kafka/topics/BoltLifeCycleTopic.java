@@ -2,7 +2,7 @@ package me.pcasaes.hexoids.service.kafka.topics;
 
 import me.pcasaes.hexoids.model.DomainEvent;
 import me.pcasaes.hexoids.model.Game;
-import me.pcasaes.hexoids.model.Topics;
+import me.pcasaes.hexoids.model.GameTopic;
 import me.pcasaes.hexoids.service.ConfigurationService;
 import me.pcasaes.hexoids.service.kafka.TopicInfo;
 import me.pcasaes.hexoids.service.kafka.TopicInfoPriority;
@@ -81,6 +81,15 @@ public class BoltLifeCycleTopic implements TopicInfo {
                 topic().consume(domainEvent);
             }
 
+            /**
+             * Bolts have a max duration of 10 seconds, @see {@link ConfigurationService#getBoltMaxDuration()}
+             *
+             * This methods updates the consumer's offset so that it is always boldMaxDuration + 10 seconds behind.
+             * This way if there is a fail over a new node can pick up from where it left off.
+             *
+             * @param kafkaConsumer
+             * @param record
+             */
             @Override
             public void postConsume(Consumer<UUID, Event> kafkaConsumer, ConsumerRecord<UUID, Event> record) {
                 int partition = record.partition();
@@ -122,8 +131,8 @@ public class BoltLifeCycleTopic implements TopicInfo {
     }
 
     @Override
-    public Topics topic() {
-        return Topics.BOLT_LIFECYCLE_TOPIC;
+    public GameTopic topic() {
+        return GameTopic.BOLT_LIFECYCLE_TOPIC;
     }
 
     @Override

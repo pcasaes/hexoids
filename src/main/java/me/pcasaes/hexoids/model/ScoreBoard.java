@@ -58,7 +58,7 @@ public interface ScoreBoard {
         public void updateScore(EntityId playerId, int deltaScore) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
-                            Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
+                            GameTopic.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId.getId(),
                             DtoUtils
                                     .newEvent()
@@ -84,7 +84,7 @@ public interface ScoreBoard {
 
                 GameEvents.getDomainEvents().register(
                         DomainEvent.create(
-                                Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
+                                GameTopic.SCORE_BOARD_UPDATE_TOPIC.name(),
                                 playerId.getId(),
                                 DtoUtils
                                         .newEvent()
@@ -106,7 +106,7 @@ public interface ScoreBoard {
 
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
-                            Topics.SCORE_BOARD_UPDATE_TOPIC.name(),
+                            GameTopic.SCORE_BOARD_UPDATE_TOPIC.name(),
                             playerId.getId()
                     )
             );
@@ -139,7 +139,7 @@ public interface ScoreBoard {
         public void resetScore(EntityId playerId) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.delete(
-                            Topics.SCORE_BOARD_CONTROL_TOPIC.name(),
+                            GameTopic.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId.getId()
                     )
             );

@@ -74,11 +74,11 @@ class PlayerTest {
                 .when(game)
                 .getBolts();
 
-        Topics.setGame(game);
+        GameTopic.setGame(game);
 
         GameEvents.getClientEvents().setConsumer(null);
         GameEvents.getDomainEvents().setConsumer(domainEvent ->
-                Topics.valueOf(domainEvent.getTopic()).consume(domainEvent)
+                GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
         );
 
 

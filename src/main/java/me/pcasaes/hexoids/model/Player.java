@@ -174,7 +174,7 @@ public interface Player {
             final EntityId boltId = EntityId.newId();
             GameEvents.getDomainEvents()
                     .register(DomainEvent.create(
-                            Topics.BOLT_LIFECYCLE_TOPIC.name(),
+                            GameTopic.BOLT_LIFECYCLE_TOPIC.name(),
                             boltId.getId(),
                             DtoUtils
                                     .newEvent()
@@ -264,7 +264,7 @@ public interface Player {
 
             GameEvents.getDomainEvents().register(
                     DomainEvent
-                            .create(Topics.JOIN_GAME_TOPIC.name(),
+                            .create(GameTopic.JOIN_GAME_TOPIC.name(),
                                     this.id.getId(),
                                     DtoUtils
                                             .newEvent()
@@ -336,7 +336,7 @@ public interface Player {
 
         private void fireMoveDomainEvent(long eventTime) {
             GameEvents.getDomainEvents().register(
-                    DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
+                    DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
                             DtoUtils
                                     .newEvent()
@@ -357,8 +357,8 @@ public interface Player {
         @Override
         @IsThreadSafe
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.JOIN_GAME_TOPIC.name(), this.id.getId()));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(Topics.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name(), this.id.getId()));
+            GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
         }
 
         @Override
@@ -383,7 +383,7 @@ public interface Player {
         public void destroy(EntityId byPlayerId) {
             GameEvents.getDomainEvents().register(
                     DomainEvent.create(
-                            Topics.PLAYER_ACTION_TOPIC.name(),
+                            GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
                             DtoUtils
                                     .newEvent()
@@ -420,7 +420,7 @@ public interface Player {
                 long now = clock.getTime();
                 resetPosition(now);
                 GameEvents.getDomainEvents().register(
-                        DomainEvent.create(Topics.PLAYER_ACTION_TOPIC.name(),
+                        DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                                 this.id.getId(),
                                 DtoUtils
                                         .newEvent()

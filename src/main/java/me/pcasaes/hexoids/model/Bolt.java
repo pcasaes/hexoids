@@ -148,7 +148,7 @@ public class Bolt {
     DomainEvent generateMovedEvent() {
         return DomainEvent
                 .create(
-                        Topics.BOLT_ACTION_TOPIC.name(),
+                        GameTopic.BOLT_ACTION_TOPIC.name(),
                         this.id.getId(),
                         DtoUtils
                                 .newEvent()
@@ -168,7 +168,7 @@ public class Bolt {
     private DomainEvent generateExhaustedEvent() {
         return DomainEvent
                 .create(
-                        Topics.BOLT_ACTION_TOPIC.name(),
+                        GameTopic.BOLT_ACTION_TOPIC.name(),
                         this.id.getId(),
                         DtoUtils
                                 .newEvent()

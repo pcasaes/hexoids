@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.service.kafka.topics;
 
-import me.pcasaes.hexoids.model.Topics;
+import me.pcasaes.hexoids.model.GameTopic;
 import me.pcasaes.hexoids.service.kafka.TopicInfo;
 import me.pcasaes.hexoids.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -31,8 +31,8 @@ public class JoinAndLeaveGameTopic implements TopicInfo {
     }
 
     @Override
-    public Topics topic() {
-        return Topics.JOIN_GAME_TOPIC;
+    public GameTopic topic() {
+        return GameTopic.JOIN_GAME_TOPIC;
     }
 
 }

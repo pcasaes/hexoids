@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.service.kafka.topics;
 
 import me.pcasaes.hexoids.model.DomainEvent;
-import me.pcasaes.hexoids.model.Topics;
+import me.pcasaes.hexoids.model.GameTopic;
 import me.pcasaes.hexoids.service.kafka.TopicInfo;
 import me.pcasaes.hexoids.service.kafka.TopicInfoPriority;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -61,8 +61,8 @@ public class ScoreBoardControlTopic implements TopicInfo {
     }
 
     @Override
-    public Topics topic() {
-        return Topics.SCORE_BOARD_CONTROL_TOPIC;
+    public GameTopic topic() {
+        return GameTopic.SCORE_BOARD_CONTROL_TOPIC;
     }
 
     @Override

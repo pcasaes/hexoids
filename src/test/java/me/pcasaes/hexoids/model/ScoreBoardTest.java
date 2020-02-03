@@ -30,13 +30,13 @@ class ScoreBoardTest {
         MockitoAnnotations.initMocks(this);
         GameEvents.getClientEvents().setConsumer(null);
 
-        Topics.setGame(game);
+        GameTopic.setGame(game);
 
         scoreBoard = ScoreBoard.create(Clock.create());
         doReturn(scoreBoard).when(game).getScoreBoard();
 
         GameEvents.getDomainEvents().setConsumer(domainEvent ->
-                Topics.valueOf(domainEvent.getTopic()).consume(domainEvent)
+                GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
         );
     }
 
