@@ -4,6 +4,8 @@ import me.pcasaes.hexoids.util.TrigUtil;
 
 public class Vector2 {
 
+    public static final Vector2 ZERO = Vector2.fromXY(0, 0);
+
     private float angle;
     private float magnitude;
     private boolean initializedAM;
@@ -47,17 +49,19 @@ public class Vector2 {
     }
 
     void set(Vector2 vector) {
-        if (vector.initializedAM && vector.initializedXY) {
-            this.x = vector.x;
-            this.y = vector.y;
-            this.angle = vector.angle;
-            this.magnitude = vector.magnitude;
-            this.initializedXY = true;
-            this.initializedAM = true;
-        } else if (vector.initializedXY) {
-            setXY(vector.x, vector.y);
-        } else {
-            setAngleMagnitude(vector.angle, vector.magnitude);
+        if (this != vector) {
+            if (vector.initializedAM && vector.initializedXY) {
+                this.x = vector.x;
+                this.y = vector.y;
+                this.angle = vector.angle;
+                this.magnitude = vector.magnitude;
+                this.initializedXY = true;
+                this.initializedAM = true;
+            } else if (vector.initializedXY) {
+                setXY(vector.x, vector.y);
+            } else {
+                setAngleMagnitude(vector.angle, vector.magnitude);
+            }
         }
     }
 

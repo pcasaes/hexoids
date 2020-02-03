@@ -13,6 +13,8 @@ public class PositionVector {
 
     /*
     Velocity here is distance unit per second (not millis!)
+
+    velocity is what got us from previous position to currentPosition
      */
     private final Vector2 velocity;
     private final Vector2 previousVelocity;
@@ -156,20 +158,18 @@ public class PositionVector {
         return update(timestamp, configuration.dampenMagnitudeCoefficient());
     }
 
-    private void applyDampen(float dampMagCoef, float minMove, long elapsed) {
+    private static Vector2 calculateDampenedVelocity(Vector2 velocity, float dampMagCoef, float minMove, long elapsed) {
         if (dampMagCoef < 0f && velocity.getMagnitude() != 0f) {
-            float mag = calculateDampenedMagnitude(dampMagCoef, elapsed);
+            float mag = calculateDampenedMagnitude(velocity, dampMagCoef, elapsed);
             if (mag < minMove) {
                 mag = 0f;
             }
-            velocity.setAngleMagnitude(
-                    velocity.getAngle(),
-                    mag
-            );
+            return Vector2.fromAngleMagnitude(velocity.getAngle(), mag);
         }
+        return velocity;
     }
 
-    private void applyXYDelta(float minMove, long elapsed) {
+    private static Vector2 calculateMoveDelta(Vector2 velocity, float minMove, long elapsed) {
         float velocityDelta = velocity.getMagnitude() * elapsed / 1000f;
 
         float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
@@ -179,15 +179,13 @@ public class PositionVector {
         boolean myAboveMinMove = Math.abs(my) > minMove;
 
         if (mxAboveMinMove && myAboveMinMove) {
-            this.previousPosition.set(this.currentPosition);
-            this.currentPosition.addXY(mx, my);
+            return Vector2.fromXY(mx, my);
         } else if (mxAboveMinMove) {
-            this.previousPosition.setXY(this.currentPosition.getX(), this.previousPosition.getY());
-            this.currentPosition.addXY(mx, 0f);
+            return Vector2.fromXY(mx, 0f);
         } else if (myAboveMinMove) {
-            this.previousPosition.setXY(this.previousPosition.getX(), this.currentPosition.getY());
-            this.currentPosition.addXY(0f, my);
+            return Vector2.fromXY(0, my);
         }
+        return Vector2.ZERO;
     }
 
     private PositionVector update(long timestamp, float dampMagCoef) {
@@ -201,9 +199,11 @@ public class PositionVector {
 
         float minMove = Config.get().getMinMove();
 
-        applyDampen(dampMagCoef, minMove, elapsed);
+        this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed));
 
-        applyXYDelta(minMove, elapsed);
+        this.previousPosition.set(this.currentPosition);
+        Vector2 moveDelta = calculateMoveDelta(this.velocity, minMove, elapsed);
+        this.currentPosition.addXY(moveDelta.getX(), moveDelta.getY());
 
         if (configuration.atBounds() == Configuration.AtBoundsOptions.STOP) {
             this.velocity.set(Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0f));
@@ -272,7 +272,7 @@ public class PositionVector {
 
             float minMove = Config.get().getMinMove();
 
-            float mag = calculateDampenedMagnitude(dampMagCoef, elapsed);
+            float mag = calculateDampenedMagnitude(this.velocity, dampMagCoef, elapsed);
             if (mag < minMove) {
                 mag = 0f;
             }
@@ -284,13 +284,30 @@ public class PositionVector {
         return getVelocity();
     }
 
-    private float calculateDampenedMagnitude(float dampMagCoef, long elapsed) {
+    private static float calculateDampenedMagnitude(Vector2 velocity, float dampMagCoef, long elapsed) {
         return 0.999994f * (float) Math.exp(dampMagCoef * elapsed) * velocity.getMagnitude();
     }
 
     public boolean isOutOfBounds() {
         return currentPosition.getX() < 0f || currentPosition.getX() > 1f ||
                 currentPosition.getY() < 0f || currentPosition.getY() > 1f;
+    }
+
+    private static boolean detectCollision(Vector2 aPos, Vector2 aVel,
+                                           Vector2 bPos, Vector2 bVel,
+                                           float intersectionThreshold) {
+        Vector2 relativePosition = bPos.minus(aPos);
+        Vector2 relativeVelocity = bVel.minus(aVel);
+
+        float timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
+                (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1f);
+
+        if (timeToCollisionInSeconds * 1000f > Config.get().getUpdateFrequencyInMillisWithAdded20Percent()) {
+            return false;
+        }
+
+        float minSeparation = relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds;
+        return minSeparation <= intersectionThreshold;
     }
 
     private boolean intersectedWithSegment(PositionVector b, float intersectionThreshold) {
@@ -309,40 +326,38 @@ public class PositionVector {
                 vel = b.previousVelocity.invert();
             }
 
-            float velocityDelta = vel.getMagnitude() * timeDifference / 1000f;
+            Vector2 moveDelta = calculateMoveDelta(vel, minMove, timeDifference);
+            bAdjustedPreviousPosition = b.previousPosition.add(moveDelta);
 
-            float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(vel.getAngle(), velocityDelta);
-            float my = TrigUtil.calculateYComponentFromAngleAndMagnitude(vel.getAngle(), velocityDelta);
-
-            boolean mxAboveMinMove = Math.abs(mx) > minMove;
-            boolean myAboveMinMove = Math.abs(my) > minMove;
-
-            if (mxAboveMinMove && myAboveMinMove) {
-                bAdjustedPreviousPosition = b.previousPosition.add(mx, my);
-            } else if (mxAboveMinMove) {
-                bAdjustedPreviousPosition = b.previousPosition.add(mx, b.previousPosition.getY());
-            } else if (myAboveMinMove) {
-                bAdjustedPreviousPosition = b.previousPosition.add(b.previousPosition.getX(), my);
-            } else {
-                bAdjustedPreviousPosition = b.previousPosition;
-            }
         } else {
             bAdjustedPreviousPosition = b.previousPosition;
         }
 
-
-        Vector2 relativePosition = bAdjustedPreviousPosition.minus(previousPosition);
-        Vector2 relativeVelocity = b.velocity.minus(velocity);
-
-        float timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
-                (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1f);
-
-        if (timeToCollisionInSeconds * 1000f > Config.get().getUpdateFrequencyInMillisWithAdded20Percent()) {
-            return false;
+        if (detectCollision(previousPosition, velocity, bAdjustedPreviousPosition, b.velocity, intersectionThreshold)) {
+            return true;
         }
 
-        float minSeparation = relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds;
-        return minSeparation <= intersectionThreshold;
+        if (b.currentTimestamp < this.currentTimestamp) {
+            Vector2 bAdjustedCurrentPosition;
+            Vector2 bAdjustedVelocity;
+
+            long timeDifference;
+            timeDifference = this.currentTimestamp - b.currentTimestamp;
+
+            bAdjustedVelocity = calculateDampenedVelocity(
+                    b.velocity,
+                    b.configuration.dampenMagnitudeCoefficient(),
+                    minMove,
+                    timeDifference);
+
+            Vector2 moveDelta = calculateMoveDelta(bAdjustedVelocity, minMove, timeDifference);
+            bAdjustedCurrentPosition = b.currentPosition.add(moveDelta);
+
+            return detectCollision(currentPosition, velocity, bAdjustedCurrentPosition, bAdjustedVelocity, intersectionThreshold);
+
+        } else {
+            return false;
+        }
     }
 
     public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
