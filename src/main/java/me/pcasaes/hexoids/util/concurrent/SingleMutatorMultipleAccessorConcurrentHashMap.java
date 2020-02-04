@@ -9,6 +9,15 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+/**
+ * This hash map implementation does not rely on blocking. It is thread safe as long as:
+ *
+ * Only a single thread calls mutators (put, remove, clear, etc).
+ * K and V are immutable or effectively immutable.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map<K, V> {
 
     private static final int DEFAULT_CAPACITY = 512;
@@ -155,7 +164,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
     @Override
     public V get(Object key) {
         MyEntry<K, V> entry = getEntry(key);
-        return entry == null ? null : entry.value;
+        return entry == null ? null : entry.getValue();
     }
 
     private MyEntry<K, V> getEntry(Object key) {
@@ -258,7 +267,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
     public V remove(Object key) {
         MyEntry<K, V> entry = getEntry(key);
         if (entry != null) {
-            V value = entry.value;
+            V value = entry.getValue();
             removeEntry(entry);
             return value;
         }
@@ -317,18 +326,33 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
         return entrySet;
     }
 
+    /**
+     * Values must be effectively immutable and safely published in order to guarantee
+     * thread safety.
+     *
+     * see Java Concurrency In Practice, Brian Goetz et al. 3.5
+     * @param <V>
+     */
+    private static class SafeHolder<V> {
+        private final V value;
+
+        public SafeHolder(V value) {
+            this.value = value;
+        }
+    }
+
     private static class MyEntry<K, V> implements Map.Entry<K, V> {
 
         private final int usedHash;
         private final K key;
-        private V value;
+        private SafeHolder<V> valueHolder;
         private MyEntry<K, V> prev;
         private MyEntry<K, V> next;
 
         private MyEntry(int usedHash, K key, V value, MyEntry<K, V> prev) {
             this.usedHash = usedHash;
             this.key = key;
-            this.value = value;
+            this.valueHolder = new SafeHolder<>(value);
             link(prev);
         }
 
@@ -346,13 +370,13 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
 
         @Override
         public V getValue() {
-            return value;
+            return valueHolder == null ? null : valueHolder.value;
         }
 
         @Override
         public V setValue(V value) {
-            V v = this.value;
-            this.value = value;
+            V v = getValue();
+            this.valueHolder = new SafeHolder<>(value);
             return v;
         }
     }
@@ -404,7 +428,7 @@ public class SingleMutatorMultipleAccessorConcurrentHashMap<K, V> implements Map
         private void prepareNext() {
             while ((nextEntry = nextEntry == null ? head : nextEntry.next) != null) {
                 K key = nextEntry.key;
-                V value = nextEntry.value;
+                V value = nextEntry.getValue();
 
                 if (key != null && value != null) {
                     nextKey = key;
