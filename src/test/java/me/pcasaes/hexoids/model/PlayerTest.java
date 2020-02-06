@@ -89,6 +89,7 @@ class PlayerTest {
         Config.get().setMinMove(0.000000001f);
         Config.get().setPlayerMaxAngleDivisor(0.5f);
         Config.get().setBoltInertiaEnabled(false);
+        Config.get().setUpdateFrequencyInMillis(50L);
     }
 
     @Test
@@ -331,7 +332,7 @@ class PlayerTest {
                 .build());
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
-        when(clock.getTime()).thenReturn(50L);
+        when(clock.getTime()).thenReturn(75L);
         player.move(0f, 0f, (float) Math.PI);
 
         assertTrue(eventReference.get().hasEvent());
@@ -522,6 +523,7 @@ class PlayerTest {
 
     @Test
     void testCollisionHitWithinRadius() {
+        Config.get().setUpdateFrequencyInMillis(1000L);
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
         player.join(JoinCommandDto

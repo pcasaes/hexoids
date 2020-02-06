@@ -6,6 +6,7 @@ public class Config {
 
     private long updateFrequencyInMillis;
     private float updateFrequencyInMillisWithAdded20Percent;
+    private float updateFrequencyInMillisWithSubstract10Percent;
     private float inertiaDampenCoefficient;
 
     /**
@@ -42,10 +43,15 @@ public class Config {
     public void setUpdateFrequencyInMillis(long updateFrequencyInMillis) {
         this.updateFrequencyInMillis = updateFrequencyInMillis;
         this.updateFrequencyInMillisWithAdded20Percent = updateFrequencyInMillis * 1.2f;
+        this.updateFrequencyInMillisWithSubstract10Percent = updateFrequencyInMillis * 0.9f;
     }
 
     public float getUpdateFrequencyInMillisWithAdded20Percent() {
         return updateFrequencyInMillisWithAdded20Percent;
+    }
+
+    public float getUpdateFrequencyInMillisWithSubstract10Percent() {
+        return updateFrequencyInMillisWithSubstract10Percent;
     }
 
     public float getInertiaDampenCoefficient() {

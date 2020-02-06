@@ -92,6 +92,11 @@ public interface Player {
 
         private long spawnedTimestamp;
 
+        /**
+         * This attribute is not shared with other nodes. It is used to prevent high frequency requests
+         */
+        private long lastMoveTimestamp;
+
         private int liveBolts = 0;
 
         private final Players players;
@@ -115,7 +120,7 @@ public interface Player {
 
             this.ship = RNG.nextInt(12);
             this.spawned = false;
-            this.lastSpawnOrUnspawnTimestamp = clock.getTime();
+            this.lastSpawnOrUnspawnTimestamp = this.lastMoveTimestamp = clock.getTime();
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
             this.position = PositionVector.of(
                     0,
@@ -289,9 +294,12 @@ public interface Player {
 
         @Override
         public void move(float moveX, float moveY, Float angle) {
-            if (!this.spawned) {
+            long now = clock.getTime();
+            if (!this.spawned ||
+                    (now - this.lastMoveTimestamp) < Config.get().getUpdateFrequencyInMillisWithSubstract10Percent()) {
                 return;
             }
+            this.lastMoveTimestamp = now;
 
             boolean angleChanged = false;
             if (angle != null) {
@@ -301,7 +309,6 @@ public interface Player {
             }
 
 
-            long now = clock.getTime();
             if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
                 fireMoveDomainEvent(now);
             }
