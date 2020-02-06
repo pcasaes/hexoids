@@ -39,8 +39,8 @@ hexoids:
       name-length: 7
       expunge-since-last-spawn-timeout: 60000
       max:
-        move: 10
-        bolts: 10
+        move: 0.2
+        bolts: 12
         angle:
           divisor: 4
     bolt:
