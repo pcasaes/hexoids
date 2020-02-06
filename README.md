@@ -96,7 +96,7 @@ Hexoids is server authoritative and is built around an event driven model.
 * Move to more robust client side framework like [Godot](https://godotengine.org/).
 
     [Phaser](https://phaser.io/) is a great way to get started and prototyping
-    quickly. But from a scalability stand point there's only so far ou can go
+    quickly. But from a scalability stand point there's only so far you can go
     running the client on a single threaded browser engine.
 
 * Replace Websockets with a combination of TCP an UDP sockets.
@@ -114,7 +114,7 @@ Hexoids is server authoritative and is built around an event driven model.
 
     Right now nothing gets persisted long term. It would be interesting to
     certain player information like K/D and Hit miss ratio's. As well as a permanent
-    leader board. For this to work probably though we would need authentication.
+    leader board. For this to work properly though we would need authentication.
 
 ## Game Play
 
@@ -123,7 +123,7 @@ Hexoids is server authoritative and is built around an event driven model.
     Without any kind of obstacles the game quickly becomes a frenetic death match
     with bolts flying all over the place. Having obstacles would allow players to
     employ diverse tactics. This could be done procedurally. It would event be 
-    interesting to allow playing to deploy obstacles in a limited fashion.
+    interesting to allow players to deploy obstacles in a limited fashion.
    
 * Powerups
 
