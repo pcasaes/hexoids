@@ -58,7 +58,7 @@ If you wish to use a different port run:
     
 # Production
 
-The file `docker-compose.yml` is a guide to how we could setup Hexoids for production.
+The file `docker-compose.yml` is a guide on how we could setup Hexoids for production.
 This particular setup runs everything in a single Host which is not something you'd
 do for real. Regardless this allows us to test the service in a distributed fashion.
 
@@ -99,9 +99,9 @@ Hexoids is server authoritative and is built around an event driven model.
     quickly. But from a scalability stand point there's only so far you can go
     running the client on a single threaded browser engine.
 
-* Replace Websockets with a combination of TCP an UDP sockets.
+* Replace WebSockets with a combination of TCP an UDP sockets.
 
-   TCP connections are expensive, Websockets even more so. High frequency events 
+   TCP connections are expensive, WebSockets even more so. High frequency events 
    like player and bolt movements would be better served over a UDP socket. 
    
 * Replace the custom inter thread event queue with the [LMAX Disruptor](https://github.com/LMAX-Exchange/disruptor)
@@ -116,6 +116,10 @@ Hexoids is server authoritative and is built around an event driven model.
     certain player information like K/D and Hit miss ratio's. As well as a permanent
     leader board. For this to work properly though we would need authentication.
 
+* Look into migrating the Kafka client to reactive streams
+
+    This promises to reduce the code base.
+
 ## Game Play
 
 * Add obstacles
@@ -125,9 +129,9 @@ Hexoids is server authoritative and is built around an event driven model.
     employ diverse tactics. This could be done procedurally. It would event be 
     interesting to allow players to deploy obstacles in a limited fashion.
    
-* Powerups
+* Power Ups
 
-    Having players compete to acquire powerups would add variety to the game:
+    Having players compete to acquire power ups would add variety to the game:
     teleport, cloak, bombs, shields, faster bolts, more bolts, etc.
     
 * Different ships
