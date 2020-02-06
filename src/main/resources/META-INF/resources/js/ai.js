@@ -72,7 +72,7 @@ const AiBot = (function() {
 
                                 const d = (this.gameConfig.world.max[dim] / 2 - ship[dim]) / this.gameConfig.world.max[dim];
 
-                                return ((Math.random() * (1 - d) + d) - 0.5) * 16;
+                                return ((Math.random() * (1 - d) + d) - 0.5) * 50;
                             }
                         },
                         () => this[dim]);
