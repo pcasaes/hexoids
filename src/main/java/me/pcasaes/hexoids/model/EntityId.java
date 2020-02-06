@@ -6,6 +6,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+/**
+ * Identifier immutable.
+ *
+ * The identifier uses a {@link UUID} and holds its DTO {@link GUID} analog.
+ *
+ */
 public class EntityId {
 
     private static final Logger LOGGER = Logger.getLogger(EntityId.class.getName());
@@ -20,18 +26,40 @@ public class EntityId {
         this.guid = guid;
     }
 
+    /**
+     * Constructs an EntityId from a {@link UUID}
+     * @param id a uuid
+     * @return
+     */
     public static EntityId of(UUID id) {
         return new EntityId(id, uuidToGuid(id));
     }
 
+    /**
+     * Constructs an EntityId from a DTO {@link GUID}
+     *
+     * @param guid a dto guid
+     * @return
+     */
     public static EntityId of(GUID guid) {
         return new EntityId(guidToUuid(guid), guid);
     }
 
+    /**
+     * Constructs an entity from a string representation of a UUID.
+     * @see UUID#fromString(String)
+     *
+     * @param uuid a string representation of a UUID
+     * @return
+     */
     public static EntityId of(String uuid) {
         return of(stringToUuid(uuid));
     }
 
+    /**
+     * Generates a new identifier based on UUIDv4
+     * @return
+     */
     public static EntityId newId() {
         return of(UUID.randomUUID());
     }

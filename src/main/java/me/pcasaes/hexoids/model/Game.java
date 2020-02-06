@@ -1,18 +1,53 @@
 package me.pcasaes.hexoids.model;
 
+/**
+ * The Game object is a singleton access through {@link Game#get()} that is
+ * the root object of the game composition.
+ */
 public interface Game {
 
+    /**
+     * Updates the game model to the specified timestamp.
+     * <p>
+     * Will move players, bolts and check for hits and score updates.
+     *
+     * @param timestamp time to update the game model. Should always increase.
+     */
     void fixedUpdate(long timestamp);
 
+    /**
+     * Returns the players collection singleton.
+     *
+     * @return Players collection
+     */
     Players getPlayers();
 
+    /**
+     * Returns the game's clock.
+     *
+     * @return Game clock
+     */
     Clock getClock();
 
+    /**
+     * Returns the bolts collection singleton.
+     *
+     * @return Bolts collection
+     */
     Bolts getBolts();
 
+    /**
+     * Returns the score board singleton.
+     *
+     * @return Scoreboard
+     */
     ScoreBoard getScoreBoard();
 
 
+    /**
+     * Returns the game's singleton.
+     * @return
+     */
     static Game get() {
         return Implementation.INSTANCE;
     }

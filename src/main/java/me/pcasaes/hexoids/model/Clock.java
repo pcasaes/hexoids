@@ -1,5 +1,8 @@
 package me.pcasaes.hexoids.model;
 
+/**
+ * Used to get the current time in millis;
+ */
 public interface Clock {
 
     long getTime();
@@ -9,6 +12,10 @@ public interface Clock {
         return new Implementation();
     }
 
+    /**
+     * This implementation uses {@link System#nanoTime()} to provide a
+     * monotonic clock.
+     */
     class Implementation implements Clock {
 
         private final long adjustment;

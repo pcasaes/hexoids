@@ -2,12 +2,25 @@ package me.pcasaes.hexoids.model;
 
 import java.util.Random;
 
+/**
+ * Whenever a player is spawned the class provides the player's X,Y position.
+ *
+ */
 public interface ResetPosition {
 
     float getNextX();
 
     float getNextY();
 
+    /**
+     * Return a ResetPosition.
+     *
+     * If config is rng will return {@link RngResetPosition}
+     * Otherwise presumes a comma separated float list and return {@link FixedResetPosition}
+     *
+     * @param config used to configure an appropriate implementation
+     * @return a ResetPosition
+     */
     static ResetPosition create(String config) {
         if (Holder.instance == null) {
             if ("rng".equalsIgnoreCase(config)) {
@@ -26,6 +39,10 @@ public interface ResetPosition {
         private static ResetPosition instance;
     }
 
+    /**
+     * {@link ResetPosition} implementaiton that spawns players in a random
+     * location.
+     */
     class RngResetPosition implements ResetPosition {
 
         private static final Random RNG = new Random();
@@ -44,12 +61,24 @@ public interface ResetPosition {
         }
     }
 
+    /**
+     * {@link ResetPosition} implementation that spawns all player in the
+     * same X,Y position.
+     */
     class FixedResetPosition implements ResetPosition {
 
         private final float x;
 
         private final float y;
 
+        /**
+         * The fixed position is defined in a comma separated list.
+         * ex: 0,0
+         *
+         * Valid values are between 0 and 1.
+         *
+         * @param config comma separated X,Y position.
+         */
         private FixedResetPosition(String config) {
             if (config == null || config.length() == 0) {
                 this.x = 0f;

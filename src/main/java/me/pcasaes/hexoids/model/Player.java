@@ -114,7 +114,8 @@ public interface Player {
             this.id = id;
 
             this.ship = RNG.nextInt(12);
-            setSpawned(false);
+            this.spawned = false;
+            this.lastSpawnOrUnspawnTimestamp = clock.getTime();
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
             this.position = PositionVector.of(
                     0,

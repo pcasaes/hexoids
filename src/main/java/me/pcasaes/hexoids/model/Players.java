@@ -24,6 +24,9 @@ import static me.pcasaes.hexoids.model.DtoUtils.DTO_THREAD_SAFE_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.PLAYERS_LIST_THREAD_SAFE_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.PLAYER_THREAD_SAFE_BUILDER;
 
+/**
+ * The collection of Players.
+ */
 public class Players implements Iterable<Player> {
 
     static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
@@ -49,8 +52,8 @@ public class Players implements Iterable<Player> {
     /**
      * If the player hasn't been created will do so and return the player
      *
-     * @param id
-     * @return
+     * @param id player's id.
+     * @return If created returns the player
      */
     public Optional<Player> createPlayer(EntityId id) {
         if (playerMap.containsKey(id)) {
@@ -59,10 +62,26 @@ public class Players implements Iterable<Player> {
         return Optional.of(createOrGet(id));
     }
 
+    /**
+     * Returns a player, creating them if they don't exist.
+     *
+     * @param id the player's id.
+     * @return
+     */
     public Player createOrGet(EntityId id) {
         return playerMap.computeIfAbsent(id, this::create);
     }
 
+    /**
+     * Returns a specific player if they exist.
+     *
+     * This method can be called from outside the game loop thread
+     * as long as weak consistency from the returned value can be
+     * tolerated.
+     *
+     * @param id
+     * @return
+     */
     @IsThreadSafe
     public Optional<Player> get(EntityId id) {
         return Optional.ofNullable(playerMap.get(id));
