@@ -77,7 +77,7 @@ public class Players implements Iterable<Player> {
      *
      * This method can be called from outside the game loop thread
      * as long as weak consistency from the returned value can be
-     * tolerated.
+     * tolerated and no mutator methods are called.
      *
      * @param id
      * @return

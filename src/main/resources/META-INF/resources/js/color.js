@@ -358,7 +358,7 @@ const Colors = (function () {
         }
     }
 
-    return new ColorsClass().create(0x0077ff, 6, 20);
+    return new ColorsClass().create(0xff8800, 6, 20);
 })();
 
 try {

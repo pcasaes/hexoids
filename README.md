@@ -4,7 +4,7 @@ A simple distributed arcade game.
 
 ![Screenshot](./docs/hexoids-screenshot1.png "Screenshot")
 
-
+- [Playing the Game](#playing-the-game)
 - [Requirements](#requirements)
 - [Development](#development)
     - [Infrastructure](#infrastructure)
@@ -16,6 +16,20 @@ A simple distributed arcade game.
 - [Future Improvements](#future-improvements)
     - [Techinical](#technical)
     - [Game Play](#game-play)
+    
+# Playing the Game
+
+The game is best play with a trackpad. 
+
+* Press `C` to fire
+* Keep `Z` pressed to lock aim direction
+* Keep `X` pressed to lock position and aim freely.
+* Press `W` to aim towards forward direction.
+* Press `D` to aim 90&deg; clockwise from forward direction.
+* Press `S` to aim 180&deg; from forward direction.
+* Press `A` to aim 90&deg; anticlockwise from forward direction.
+
+
 
 # Requirements
 

@@ -189,7 +189,8 @@
                 while (n.length < GameConfig.get().hud.nameLength) {
                     n += ' ';
                 }
-                getHud().centerMessage.show('Name: ' + n, getColors().getPrimaryColor());
+                getHud().centerMessage.show('Enter Name: ' + n + "\n\nTrackpad/Mouse for movements.\nC to fire.\nZ pressed to lock direction.\nX pressed to lock position.",
+                    getColors().getPrimaryColor());
             };
 
             const currentName = USER.hasName() ? USER.name() : '';
