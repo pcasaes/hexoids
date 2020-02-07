@@ -39,6 +39,9 @@ If you'd like to reset the backend run:
 
     docker-compose -f docker-compose-dev-infrastructure.yml rm -svf
 
+You will have to append the following to your `/etc/hosts` file:
+
+    127.0.0.1 hexoids-kafka
 
 ## Start Quarkus
 
@@ -113,7 +116,7 @@ Hexoids is server authoritative and is built around an event driven model.
 * Add persistence
 
     Right now nothing gets persisted long term. It would be interesting to
-    certain player information like K/D and Hit miss ratio's. As well as a permanent
+    persist certain player information like K/D and Hit miss ratio's. As well as a permanent
     leader board. For this to work properly though we would need authentication.
 
 * Look into migrating the Kafka client to reactive streams
