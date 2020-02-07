@@ -12,6 +12,7 @@ A simple distributed arcade game.
 - [Production](#production)
     - [Setup Env](#setup-env)
     - [Cluster Commands](#cluster-commands)
+- [Bots](#bots)
 - [Architecture](#architecture)
 - [Future Improvements](#future-improvements)
     - [Techinical](#technical)
@@ -80,6 +81,10 @@ This particular setup runs everything in a single Host which is not something yo
 do for real. Regardless this allows us to test the service in a distributed fashion.
 
 > **IMPORTANT**: If running on multiple host their clocks must be synchronized.
+
+# Bots
+
+Bots can be simulated in the folder [bots](/bots).
 
 ## Setup ENV
 
