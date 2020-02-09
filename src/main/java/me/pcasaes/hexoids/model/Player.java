@@ -39,8 +39,6 @@ public interface Player {
 
     boolean is(EntityId playerId);
 
-    boolean isJoined();
-
     Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder);
 
     void join(JoinCommandDto command);
@@ -482,8 +480,7 @@ public interface Player {
             }
         }
 
-        @Override
-        public boolean isJoined() {
+        private boolean isJoined() {
             return this.name != null;
         }
 

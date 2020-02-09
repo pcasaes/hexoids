@@ -66,7 +66,7 @@ public class Players implements Iterable<Player> {
      * Returns a player, creating them if they don't exist.
      *
      * @param id the player's id.
-     * @return
+     * @return the player
      */
     public Player createOrGet(EntityId id) {
         return playerMap.computeIfAbsent(id, this::create);
@@ -74,13 +74,13 @@ public class Players implements Iterable<Player> {
 
     /**
      * Returns a specific player if they exist.
-     *
+     * <p>
      * This method can be called from outside the game loop thread
      * as long as weak consistency from the returned value can be
      * tolerated and no mutator methods are called.
      *
-     * @param id
-     * @return
+     * @param id player's identifier
+     * @return Returns the player if they exist
      */
     @IsThreadSafe
     public Optional<Player> get(EntityId id) {
@@ -96,7 +96,11 @@ public class Players implements Iterable<Player> {
         return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
     }
 
-    @IsThreadSafe
+    /**
+     * Requests the list of current players to be sent to a specific player
+     *
+     * @param requesterId player to have the current list sent to.
+     */
     public void requestListOfPlayers(EntityId requesterId) {
         PlayersListCommandDto.Builder playerListBuilder = PLAYERS_LIST_THREAD_SAFE_BUILDER
                 .get()
@@ -126,14 +130,23 @@ public class Players implements Iterable<Player> {
         );
     }
 
+    /**
+     * Iterator of players
+     *
+     * @return
+     */
     @Override
-    @IsThreadSafe
     public Iterator<Player> iterator() {
         return playerMap
                 .values()
                 .iterator();
     }
 
+    /**
+     * Stream of players
+     *
+     * @return
+     */
     public Stream<Player> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
@@ -143,14 +156,14 @@ public class Players implements Iterable<Player> {
         player.joined(event);
     }
 
-    void left(EntityId playerId) {
+    private void left(EntityId playerId) {
         Player player = createOrGet(playerId);
         playerMap.remove(playerId);
         playerServerUpdateSet.remove(playerId);
         player.left();
     }
 
-    public void consumeFromJoinTopic(DomainEvent domainEvent) {
+    void consumeFromJoinTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() == null) {
             left(EntityId.of(domainEvent.getKey()));
         } else if (domainEvent.getEvent().hasPlayerJoined()) {
@@ -158,7 +171,7 @@ public class Players implements Iterable<Player> {
         }
     }
 
-    public void consumeFromPlayerActionTopic(DomainEvent domainEvent) {
+    void consumeFromPlayerActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerMoved()) {
             get(domainEvent.getKey())
                     .ifPresent(p -> p.moved(domainEvent.getEvent().getPlayerMoved()));
@@ -173,11 +186,16 @@ public class Players implements Iterable<Player> {
         }
     }
 
+    /**
+     * This call marks the player is connected on this running instance.
+     * This is used to to update server calculated vector positions.
+     * @param playerId
+     */
     public void connected(EntityId playerId) {
         playerServerUpdateSet.add(playerId);
     }
 
-    public void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
+    void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltFired()) {
             BoltFiredEventDto boltFiredEventDto = domainEvent.getEvent().getBoltFired();
             get(EntityId.of(boltFiredEventDto.getOwnerPlayerId()))
@@ -185,7 +203,7 @@ public class Players implements Iterable<Player> {
         }
     }
 
-    public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
+    void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltExhausted()) {
             BoltExhaustedEventDto event = domainEvent.getEvent().getBoltExhausted();
             get(EntityId.of(event.getOwnerPlayerId()))
@@ -193,7 +211,12 @@ public class Players implements Iterable<Player> {
         }
     }
 
-    public void fixedUpdate(long timestamp) {
+    /**
+     * Updates all connected player models' vector positions.
+     *
+     * @param timestamp the timestamp to update the players to.
+     */
+    void fixedUpdate(long timestamp) {
         playerServerUpdateSet
                 .stream()
                 .map(playerMap::get)

@@ -20,7 +20,7 @@ A simple distributed arcade game.
     
 # Playing the Game
 
-The game is best play with a trackpad. 
+The game is best played with a trackpad. 
 
 * Press `C` to fire
 * Keep `Z` pressed to lock aim direction
