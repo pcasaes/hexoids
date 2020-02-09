@@ -122,6 +122,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
         long boltDurationFactor = this.configurationService.getBoltMaxDuration() * 2;
         props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
         props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
+        props.put(TopicConfig.SEGMENT_BYTES_CONFIG, String.valueOf(1024 * 1024 * 128));
         props.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.25");
         props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_DELETE);
         props.put(TopicConfig.MESSAGE_TIMESTAMP_TYPE_CONFIG, "LogAppendTime");

@@ -22,6 +22,7 @@ public class PlayerActionTopic implements TopicInfo {
         props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(600_000));
         props.put(TopicConfig.DELETE_RETENTION_MS_CONFIG, String.valueOf(1_000));
         props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(60_000));
+        props.put(TopicConfig.SEGMENT_BYTES_CONFIG, String.valueOf(1024 * 1024 * 128));
         props.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.25");
         props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT + ", " + TopicConfig.CLEANUP_POLICY_DELETE);
         props.put(TopicConfig.MESSAGE_TIMESTAMP_TYPE_CONFIG, "CreateTime");
