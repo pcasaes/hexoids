@@ -25,48 +25,146 @@ import static me.pcasaes.hexoids.model.DtoUtils.PLAYER_MOVED_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.PLAYER_SPAWNED_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.newDtoEvent;
 
+/**
+ * A model representation of the player. This model conflates player and ship information.
+ * As this model becomes richer it might be a good idea to split the two.
+ *
+ * Most action methods have a corresponding process method in the past tense, ex:
+ * fire
+ * fired
+ *
+ * The action method will generate a domain event which will be distributed to all nodes and processed in
+ * the corresponding process method.
+ *
+ */
 public interface Player {
 
+    /**
+     * Creates an instanceof a player
+     * @param id    the player's id
+     * @param players the collection of all players
+     * @param bolts the collection of all bolts
+     * @param clock the game clock.
+     * @param scoreBoard scoreboard
+     * @return an new instance of player
+     */
     static Player create(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
         return new Implementation(id, players, bolts, clock, scoreBoard);
     }
 
+    /**
+     * Fires a bolt. Will generate a {@link BoltFiredEventDto} domain event
+     */
     void fire();
 
+    /**
+     * Processes a bolt fired by this player.
+     * @param event
+     */
     void fired(BoltFiredEventDto event);
 
+    /**
+     * Returns the number of still active bolts fired by this player
+     * @return
+     */
     int getActiveBoltCount();
 
+    /**
+     * Returns true if this player's id matches the paramer
+     * @param playerId
+     * @return
+     */
     boolean is(EntityId playerId);
 
+    /**
+     * Generates a {@link PlayerDto} from the player's current states
+     * @param builder
+     * @return
+     */
     Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder);
 
+    /**
+     * The player will join the game
+     * @param command
+     */
     void join(JoinCommandDto command);
 
+    /**
+     * Processes a player joined game event
+     * @param event
+     */
     void joined(PlayerJoinedEventDto event);
 
+    /**
+     * Move the player by a vector
+     * @param moveX vector x component
+     * @param moveY vector y component
+     * @param angle fire direction
+     */
     void move(float moveX, float moveY, Float angle);
 
+    /**
+     * Processes a player moved event
+     * @param event
+     */
     void moved(PlayerMovedEventDto event);
 
+    /**
+     * Leaves the game
+     */
     void leave();
 
+    /**
+     * Processes a player left game event.
+     */
     void left();
 
+    /**
+     * Will return true if the player's ship collides with the supplied {@link PositionVector}
+     * @param velocityVector
+     * @param collisionRadius
+     * @return
+     */
     boolean collision(PositionVector velocityVector, float collisionRadius);
 
+    /**
+     * This informed player destroys this player
+     * @param playerId
+     */
     void destroy(EntityId playerId);
 
+    /**
+     * Processes the destroyed player domain event
+     * @param event
+     */
     void destroyed(PlayerDestroyedEventDto event);
 
+    /**
+     * Called whenever this player's bolts are exhausted
+     */
     void boltExhausted();
 
+    /**
+     * Spawns the player
+     */
     void spawn();
 
+    /**
+     * Processes the player spawned domain event
+     * @param event
+     */
     void spawned(PlayerSpawnedEventDto event);
 
+    /**
+     * Periodically called if the player has not spawned for a certain amount of time.
+     * This will cause the player to leave the game.
+     */
     void expungeIfStalled();
 
+    /**
+     * Updates the player's vector position up tot he supplied timestamp.
+     * @param timestamp
+     */
     void fixedUpdate(long timestamp);
 
     class Implementation implements Player {
