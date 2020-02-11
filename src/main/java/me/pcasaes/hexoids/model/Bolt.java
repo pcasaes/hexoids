@@ -7,6 +7,9 @@ import java.util.Optional;
 import static me.pcasaes.hexoids.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.BOLT_MOVED_BUILDER;
 
+/**
+ * A model representation of a bolt.
+ */
 public class Bolt {
 
     private final EntityId id;
@@ -36,6 +39,19 @@ public class Bolt {
         this.optionalThis = Optional.of(this);
     }
 
+    /**
+     * Creates a bolt
+     *
+     * @param players
+     * @param boltId
+     * @param ownerPlayerId
+     * @param x
+     * @param y
+     * @param angle
+     * @param speed
+     * @param startTimestamp
+     * @return
+     */
     static Bolt create(Players players,
                        EntityId boltId,
                        EntityId ownerPlayerId,
@@ -61,6 +77,12 @@ public class Bolt {
         return id;
     }
 
+    /**
+     * Return true if the id matches this bolt's id.
+     *
+     * @param id
+     * @return
+     */
     boolean is(EntityId id) {
         return this.id.equals(id);
     }
@@ -81,6 +103,11 @@ public class Bolt {
         return Optional.empty();
     }
 
+    /**
+     * If bolt is out of bounds or expired will be marked as exhausted
+     *
+     * @return
+     */
     Bolt tackleBoltExhaustion() {
         if (positionVector.isOutOfBounds() || isExpired()) {
             this.exhausted = true;
@@ -89,19 +116,28 @@ public class Bolt {
         return this;
     }
 
+    /**
+     *
+     * Fires a bolt move event.
+     *
+     * @return
+     */
     Bolt move() {
 
         DomainEvent event = generateMovedEvent();
 
-        if (event != null) {
-            GameEvents.getDomainEvents().register(
-                    event
-            );
-        }
+        GameEvents.getDomainEvents().register(
+                event
+        );
 
         return this;
     }
 
+    /**
+     * Returns true if exhausted.
+     *
+     * @return
+     */
     boolean isExhausted() {
         return this.exhausted;
     }
@@ -110,7 +146,7 @@ public class Bolt {
         return positionVector;
     }
 
-    boolean isExpired() {
+    private boolean isExpired() {
         return isExpired(this.timestamp, this.startTimestamp);
     }
 
@@ -118,11 +154,17 @@ public class Bolt {
         return now - startTimestamp > Config.get().getBoltMaxDuration();
     }
 
-
+    /**
+     * The inverse of isExhausted.
+     * @return
+     */
     boolean isActive() {
         return !isExhausted();
     }
 
+    /**
+     * Checks if this bolt hit a player
+     */
     void checkHits() {
         if (!this.exhausted) {
             this.players.forEach(this::hit);
