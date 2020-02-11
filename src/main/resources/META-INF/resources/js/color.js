@@ -197,6 +197,7 @@ const Colors = (function () {
             this.rgbNumber = null;
             this.hslNumber = null;
             this.rgbColorString = null;
+            this.lighter = null;
         }
 
         toRgbNumber() {
@@ -241,6 +242,13 @@ const Colors = (function () {
         scaleLight(scale) {
             const l = this.hsl.l * scale;
             return fromHsl(this.hsl.h, this.hsl.s, l);
+        }
+
+        getLighter() {
+            if (!this.lighter) {
+                this.lighter = this.scaleLight(1.1);
+            }
+            return this.lighter;
         }
     }
 

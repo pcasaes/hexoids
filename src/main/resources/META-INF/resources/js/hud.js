@@ -45,7 +45,7 @@ const Hud = (function () {
 
             this.centerMessage.forEach(t => {
                 t
-                    .setTint(color)
+                    .setTint(color.getLighter().toRgbNumber())
                     .setText(message);
 
                 t.x = (this.scene.game.config.width / 2) - (t.width / 2);
@@ -55,14 +55,14 @@ const Hud = (function () {
             if (!!showIfFunction) {
                 setTimeout(() => this.centerMessage.forEach(t =>
                     t
-                        .setTint(color)
+                        .setTint(color.getLighter().toRgbNumber())
                         .setActive(true)
                         .setVisible(true)
                 ), 700);
             } else {
                 this.centerMessage.forEach(t =>
                     t
-                        .setTint(color)
+                        .setTint(color.getLighter().toRgbNumber())
                         .setActive(true)
                         .setVisible(true)
                 );
@@ -403,7 +403,7 @@ const Hud = (function () {
                     'name': resp.name,
                     'displayName': toFixedWithName(resp.name, this.gameConfig.hud.nameLength),
                     'actionName': toFixedWithName(resp.name, this.gameConfig.hud.nameLength, '-'),
-                    'color': this.colors.get(resp.ship).toRgbNumber()
+                    'color': this.colors.get(resp.ship).getLighter().toRgbNumber()
                 };
             };
 

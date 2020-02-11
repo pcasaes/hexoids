@@ -32,10 +32,11 @@ const Bolts = (function () {
 
             this.owner = this.data.players.get(b.ownerPlayerId.guid);
             if (this.owner) {
-                this.sprite.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
-                this.bg.setTint(this.owner.ship.color, this.owner.ship.color, this.owner.ship.color, this.owner.ship.color);
+                const color = this.owner.ship.color.toRgbNumber();
+                this.sprite.setTint(color, color, color, color);
+                this.bg.setTint(color, color, color, color);
                 this.owner.ship.fireBolt.generate();
-                this.color = this.owner.ship.color;
+                this.color = color;
             } else {
                 this.color = 0xffffff;
             }

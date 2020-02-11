@@ -55,7 +55,8 @@ const Players = (function () {
             );
 
             this.sprite = this.scene.physics.add.sprite(-100, -100, 'ship');
-            const color = this.colors.get(p.ship).toRgbNumber();
+            this.color = this.colors.get(p.ship);
+            const color = this.color.toRgbNumber();
             this.sprite.setTint(color | 0x555555, color, color | 0x555555, color);
             this.sprite.setBounce(0, 0);
             this.sprite.setScale(0.3);
@@ -170,7 +171,6 @@ const Players = (function () {
             this.fireBolt = fireBolt;
             this.wake = wake;
             this.explosion = explosion;
-            this.color = color;
 
             return this;
         }

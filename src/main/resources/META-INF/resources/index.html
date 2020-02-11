@@ -190,7 +190,7 @@
                     n += ' ';
                 }
                 getHud().centerMessage.show('Enter Name: ' + n + "\n\nTrackpad/Mouse for movements.\nC to fire.\nZ pressed to lock direction.\nX pressed to lock position.",
-                    getColors().getPrimaryColor());
+                    getColors().get(0));
             };
 
             const currentName = USER.hasName() ? USER.name() : '';
