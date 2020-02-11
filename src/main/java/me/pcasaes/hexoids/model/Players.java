@@ -33,8 +33,14 @@ public class Players implements Iterable<Player> {
         return new Players(bolts, clock, scoreBoard);
     }
 
+    /**
+     * All players are maintained in this map
+     */
     private final Map<EntityId, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
 
+    /**
+     * Only players connected to this node are maintained in this set
+     */
     private final Set<EntityId> playerServerUpdateSet = new HashSet<>(5000, 0.5f);
 
     private final Bolts bolts;

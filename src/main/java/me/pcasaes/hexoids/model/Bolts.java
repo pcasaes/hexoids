@@ -11,8 +11,16 @@ import java.util.stream.StreamSupport;
 
 import static me.pcasaes.hexoids.model.DtoUtils.DTO_BUILDER;
 
+/**
+ * The collection of bolts. This collections only tracks bolts maintained
+ * by this node.
+ */
 public class Bolts implements Iterable<Bolt> {
 
+    /**
+     * Creates the collection.
+     * @return
+     */
     static Bolts create() {
         return new Bolts();
     }
@@ -20,6 +28,18 @@ public class Bolts implements Iterable<Bolt> {
     private final Map<EntityId, Bolt> activeBolts = new HashMap<>();
 
 
+    /**
+     * Processes a bolt fired event.
+     * @param players
+     * @param boltId
+     * @param ownerPlayerId
+     * @param x
+     * @param y
+     * @param angle
+     * @param speed
+     * @param startTimestamp
+     * @return
+     */
     Optional<Bolt> fired(
             Players players,
             EntityId boltId,
@@ -38,6 +58,11 @@ public class Bolts implements Iterable<Bolt> {
     }
 
 
+    /**
+     * Updates all tracked bolts updating their position vectors. Checks if they hit and are exhausted.
+     *
+     * @param timestamp the timestamp to update the players to.
+     */
     public void fixedUpdate(final long timestamp) {
         activeBolts
                 .values()
@@ -53,6 +78,10 @@ public class Bolts implements Iterable<Bolt> {
         cleanup();
     }
 
+    /**
+     * Returns an iterator of the collection.
+     * @return
+     */
     @Override
     public Iterator<Bolt> iterator() {
         return activeBolts
@@ -60,10 +89,18 @@ public class Bolts implements Iterable<Bolt> {
                 .iterator();
     }
 
+    /**
+     * Returns a stream of the collection.
+     * @return
+     */
     public Stream<Bolt> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
 
+    /**
+     * Handles bolt action domain events.
+     * @param domainEvent
+     */
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
                 (domainEvent.getEvent().hasBoltMoved() || domainEvent.getEvent().hasBoltExhausted())) {
