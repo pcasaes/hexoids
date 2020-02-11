@@ -106,9 +106,8 @@ public interface Player {
      * @param moveX       vector x component
      * @param moveY       vector y component
      * @param angle       fire direction
-     * @param commandTime time the command was received
      */
-    void move(float moveX, float moveY, Float angle, long commandTime);
+    void move(float moveX, float moveY, Float angle);
 
     /**
      * Processes a player moved event
@@ -397,10 +396,11 @@ public interface Player {
         }
 
         @Override
-        public void move(float moveX, float moveY, Float angle, long commandTime) {
+        public void move(float moveX, float moveY, Float angle) {
             if (!this.spawned) {
                 return;
             }
+            long now = clock.getTime();
 
             boolean angleChanged = false;
             if (angle != null) {
@@ -410,8 +410,8 @@ public interface Player {
             }
 
 
-            if (this.position.moveBy(moveX, moveY, commandTime) || angleChanged) {
-                fireMoveDomainEvent(commandTime);
+            if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
+                fireMoveDomainEvent(now);
             }
         }
 
