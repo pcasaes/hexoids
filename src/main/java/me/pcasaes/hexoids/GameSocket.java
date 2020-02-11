@@ -99,13 +99,15 @@ public class GameSocket {
 
     private void onCommand(EntityId userId, RequestCommand command) {
         if (command.hasMove()) {
+            long commandTime = Game.get().getClock().getTime();
             MoveCommandDto moveCommandDto = command.getMove();
 
             this.gameLoopService.enqueue(() -> Game.get().getPlayers()
                     .createOrGet(userId)
                     .move(moveCommandDto.getMoveX(),
                             moveCommandDto.getMoveY(),
-                            moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null
+                            moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null,
+                            commandTime
                     )
             );
         } else if (command.hasFire()) {

@@ -241,7 +241,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0.1f, 0.1f, (float) Math.PI);
+        player.move(0.1f, 0.1f, (float) Math.PI, clock.getTime());
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -269,7 +269,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0f, 2f, null);
+        player.move(0f, 2f, null, clock.getTime());
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -307,7 +307,7 @@ class PlayerTest {
 
         when(clock.getTime()).thenReturn(2025L);
         // from (0.1,0.1) should hit (0,0) and bounce to about (0.2,0.2)
-        player.move(-0.3f, -0.3f, -1f);
+        player.move(-0.3f, -0.3f, -1f, clock.getTime());
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -333,7 +333,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(75L);
-        player.move(0f, 0f, (float) Math.PI);
+        player.move(0f, 0f, (float) Math.PI, clock.getTime());
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -361,7 +361,7 @@ class PlayerTest {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().setConsumer(eventReference::set);
 
-        player.move(0f, 0f, null);
+        player.move(0f, 0f, null, clock.getTime());
 
         assertNull(eventReference.get());
     }
@@ -423,7 +423,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.5f, (float) Math.PI);
+        player.move(0.5f, 0.5f, (float) Math.PI, clock.getTime());
 
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
@@ -469,7 +469,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0, 0.5f, 0f);
+        player.move(0, 0.5f, 0f, clock.getTime());
 
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
@@ -507,7 +507,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0.5f, 0.5f, null);
+        player.move(0.5f, 0.5f, null, clock.getTime());
 
         PositionVector positionVector = PositionVector.of(
                 1f,
@@ -533,7 +533,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0.54f, 0.54f, null);
+        player.move(0.54f, 0.54f, null, clock.getTime());
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -560,7 +560,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.4f, 0.6f, null);
+        player.move(0.4f, 0.6f, null, clock.getTime());
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -587,7 +587,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.2f, 0.2f, null);
+        player.move(0.2f, 0.2f, null, clock.getTime());
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -612,7 +612,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.2f, null);
+        player.move(0.5f, 0.2f, null, clock.getTime());
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -647,7 +647,7 @@ class PlayerTest {
         player2.spawn();
 
         when(clock.getTime()).thenReturn(50L);
-        player1.move(0.5f, 0.5f, 1f);
+        player1.move(0.5f, 0.5f, 1f, clock.getTime());
 
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().setConsumer(domainEvents::add);
