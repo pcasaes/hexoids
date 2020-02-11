@@ -83,12 +83,7 @@ public class GameSocket {
 
     public void onClose(EntityId userId) {
         if (sessionService.remove(userId)) {
-            Optional<Player> player = Game.get().getPlayers().get(userId);
-            if (player.isPresent()) {
-                player.get().leave();
-            } else {
-                gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
-            }
+            gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
         }
     }
 

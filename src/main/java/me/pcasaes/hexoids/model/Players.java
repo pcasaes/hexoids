@@ -1,7 +1,5 @@
 package me.pcasaes.hexoids.model;
 
-import me.pcasaes.hexoids.model.annotations.IsThreadSafe;
-import me.pcasaes.hexoids.util.concurrent.SingleMutatorMultipleAccessorConcurrentHashMap;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
@@ -9,6 +7,7 @@ import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 import pcasaes.hexoids.proto.PlayersListCommandDto;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,7 +35,7 @@ public class Players implements Iterable<Player> {
     /**
      * All players are maintained in this map
      */
-    private final Map<EntityId, Player> playerMap = new SingleMutatorMultipleAccessorConcurrentHashMap<>(5000, 0.5f);
+    private final Map<EntityId, Player> playerMap = new HashMap<>(5000, 0.5f);
 
     /**
      * Only players connected to this node are maintained in this set
@@ -81,14 +80,10 @@ public class Players implements Iterable<Player> {
     /**
      * Returns a specific player if they exist.
      * <p>
-     * This method can be called from outside the game loop thread
-     * as long as weak consistency from the returned value can be
-     * tolerated and no mutator methods are called.
      *
      * @param id player's identifier
      * @return Returns the player if they exist
      */
-    @IsThreadSafe
     public Optional<Player> get(EntityId id) {
         return Optional.ofNullable(playerMap.get(id));
     }
@@ -195,6 +190,7 @@ public class Players implements Iterable<Player> {
     /**
      * This call marks the player is connected on this running instance.
      * This is used to to update server calculated vector positions.
+     *
      * @param playerId
      */
     public void connected(EntityId playerId) {

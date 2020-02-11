@@ -6,9 +6,12 @@ import io.vertx.core.http.ServerWebSocket;
 import me.pcasaes.hexoids.model.EntityId;
 import me.pcasaes.hexoids.model.Game;
 import me.pcasaes.hexoids.model.Player;
+import me.pcasaes.hexoids.service.eventqueue.EventQueueService;
+import me.pcasaes.hexoids.service.eventqueue.GameLoopService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +23,20 @@ public class SessionService {
 
     private static final Logger LOGGER = Logger.getLogger(SessionService.class.getName());
 
-    private final Map<EntityId, ServerWebSocket> sessions = new ConcurrentHashMap<>();
+    private final Map<EntityId, ServerWebSocket> sessions;
+
+    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+
+    SessionService() {
+        this.sessions = null;
+        this.gameLoopService = null;
+    }
+
+    @Inject
+    public SessionService(EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+        this.gameLoopService = gameLoopService;
+        this.sessions = new ConcurrentHashMap<>();
+    }
 
     public void add(EntityId id, ServerWebSocket session) {
         this.sessions.put(id, session);
@@ -54,7 +70,7 @@ public class SessionService {
                 }
                 close(removed, session);
                 if (removed) {
-                    Game.get().getPlayers().get(userId).ifPresent(Player::leave);
+                    this.gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
                 }
             }
         });

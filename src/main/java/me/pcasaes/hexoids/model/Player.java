@@ -1,6 +1,5 @@
 package me.pcasaes.hexoids.model;
 
-import me.pcasaes.hexoids.model.annotations.IsThreadSafe;
 import me.pcasaes.hexoids.model.vector.PositionVector;
 import me.pcasaes.hexoids.model.vector.Vector2;
 import me.pcasaes.hexoids.util.TrigUtil;
@@ -28,23 +27,23 @@ import static me.pcasaes.hexoids.model.DtoUtils.newDtoEvent;
 /**
  * A model representation of the player. This model conflates player and ship information.
  * As this model becomes richer it might be a good idea to split the two.
- *
+ * <p>
  * Most action methods have a corresponding process method in the past tense, ex:
  * fire
  * fired
- *
+ * <p>
  * The action method will generate a domain event which will be distributed to all nodes and processed in
  * the corresponding process method.
- *
  */
 public interface Player {
 
     /**
      * Creates an instanceof a player
-     * @param id    the player's id
-     * @param players the collection of all players
-     * @param bolts the collection of all bolts
-     * @param clock the game clock.
+     *
+     * @param id         the player's id
+     * @param players    the collection of all players
+     * @param bolts      the collection of all bolts
+     * @param clock      the game clock.
      * @param scoreBoard scoreboard
      * @return an new instance of player
      */
@@ -59,18 +58,21 @@ public interface Player {
 
     /**
      * Processes a bolt fired by this player.
+     *
      * @param event
      */
     void fired(BoltFiredEventDto event);
 
     /**
      * Returns the number of still active bolts fired by this player
+     *
      * @return
      */
     int getActiveBoltCount();
 
     /**
      * Returns true if this player's id matches the paramer
+     *
      * @param playerId
      * @return
      */
@@ -78,6 +80,7 @@ public interface Player {
 
     /**
      * Generates a {@link PlayerDto} from the player's current states
+     *
      * @param builder
      * @return
      */
@@ -85,18 +88,21 @@ public interface Player {
 
     /**
      * The player will join the game
+     *
      * @param command
      */
     void join(JoinCommandDto command);
 
     /**
      * Processes a player joined game event
+     *
      * @param event
      */
     void joined(PlayerJoinedEventDto event);
 
     /**
      * Move the player by a vector
+     *
      * @param moveX vector x component
      * @param moveY vector y component
      * @param angle fire direction
@@ -105,6 +111,7 @@ public interface Player {
 
     /**
      * Processes a player moved event
+     *
      * @param event
      */
     void moved(PlayerMovedEventDto event);
@@ -121,6 +128,7 @@ public interface Player {
 
     /**
      * Will return true if the player's ship collides with the supplied {@link PositionVector}
+     *
      * @param velocityVector
      * @param collisionRadius
      * @return
@@ -129,12 +137,14 @@ public interface Player {
 
     /**
      * This informed player destroys this player
+     *
      * @param playerId
      */
     void destroy(EntityId playerId);
 
     /**
      * Processes the destroyed player domain event
+     *
      * @param event
      */
     void destroyed(PlayerDestroyedEventDto event);
@@ -151,6 +161,7 @@ public interface Player {
 
     /**
      * Processes the player spawned domain event
+     *
      * @param event
      */
     void spawned(PlayerSpawnedEventDto event);
@@ -163,6 +174,7 @@ public interface Player {
 
     /**
      * Updates the player's vector position up tot he supplied timestamp.
+     *
      * @param timestamp
      */
     void fixedUpdate(long timestamp);
@@ -459,7 +471,6 @@ public interface Player {
         }
 
         @Override
-        @IsThreadSafe
         public void leave() {
             GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name(), this.id.getId()));
             GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
@@ -561,7 +572,6 @@ public interface Player {
         }
 
         @Override
-        @IsThreadSafe
         public void expungeIfStalled() {
             if ((!spawned || !isJoined()) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
                 leave();
