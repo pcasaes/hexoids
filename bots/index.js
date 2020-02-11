@@ -11,6 +11,7 @@ const Transform = require('../src/main/resources/META-INF/resources/js/transform
 const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
 const ProtoProcessor = require('../src/main/js-proto/main');
 const settings = require('./settings');
+const {Worker, isMainThread, parentPort} = require('worker_threads');
 
 
 const QUEUES = {
@@ -186,20 +187,28 @@ function getServer(userId) {
     return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor);
 }
 
-for (let i = 0; i < settings.bots; i++) {
-    const USER = getUsers().get(genUuid());
-    console.log("user id " + USER.get());
+if (isMainThread) {
+    const threads = [];
+    for (let i = 0; i < settings.workers; i++) {
+        threads.push(new Worker(__filename));
+
+    }
+} else {
+    for (let i = 0; i < settings.botsPerWorker; i++) {
+        const USER = getUsers().get(genUuid());
+        console.log("user id " + USER.get());
 
 
-    getPlayers()
-        .addControllableUser(USER.get());
-
-    const bot = new AiBot(USER,
-        getServer(USER.get()),
         getPlayers()
-            .addControllableUser(USER.get()),
-        transform,
-        GameConfig.get());
+            .addControllableUser(USER.get());
 
-    bot.start();
+        const bot = new AiBot(USER,
+            getServer(USER.get()),
+            getPlayers()
+                .addControllableUser(USER.get()),
+            transform,
+            GameConfig.get());
+
+        bot.start();
+    }
 }

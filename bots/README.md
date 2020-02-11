@@ -14,7 +14,7 @@ It should set up node. Then run:
     
 Copy the file `settings.local.sample.js` to `settings.local.js`.
 Edit the file to make sure the server's endpoint is correct as well as
-the number of desired bots.
+the number of desired bots and workers (these are threads).
 
 # Run
 
