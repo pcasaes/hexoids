@@ -109,7 +109,7 @@ It uses Apache Kafka to coordinate between servers nodes, WebGL via Phaser 3 on 
 WebSockets for client server communication.
 
 Kafka isn't always the best choice for low latency but it has some interesting properties that
-were exploited here. Primarily a node can be brought up and quickly get caught up to speed by replaying
+were exploited here. Primarily, a node can be started and quickly get caught up to speed by replaying
 compacted logs. In other words the state can be retrieved by replaying all events.
 
 A client request will reach its node which will enqueue some action onto the game model. The game model
