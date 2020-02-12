@@ -15,7 +15,7 @@ A simple distributed arcade game.
 - [Bots](#bots)
 - [Architecture](#architecture)
 - [Future Improvements](#future-improvements)
-    - [Techinical](#technical)
+    - [Technical](#technical)
     - [Game Play](#game-play)
     
 # Playing the Game
@@ -121,7 +121,7 @@ Bolt logic is handled by a special kind node that doesn't need to be directly av
 are responsible for moving the bolt and checking if they are a hit.
 
 Ships move with inertia. Player add vectors to their current vectors through the trackpad or mouse. The node 
-that the player is connected to is responsible for calculating the intertial movement of the ship. 
+that the player is connected to is responsible for calculating the inertial movement of the ship. 
 This is all done with basic vector math.
 
 # Future Improvements
@@ -187,7 +187,7 @@ This is all done with basic vector math.
 * Teams and different game modes
 
     With teams there could be different game modes like capture the flag and
-    eliminations.
+    elimination.
     
 # CREDIT
 
