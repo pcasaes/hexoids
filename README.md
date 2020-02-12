@@ -105,6 +105,24 @@ accessible on the hostname/ip on port 80: `http://HEXOIDS_HOST`.
 # Architecture
 
 Hexoids is server authoritative and is built around an event driven model.
+It uses Apache Kafka to coordinate between servers nodes, WebGL via Phaser 3 on the client side and
+WebSockets for client server communication.
+
+Kafka isn't always the best choice for low latency but it has some interesting properties that
+were exploited here. Primarily a node can be brought up and quickly get caught up to speed by replaying
+compacted logs. In other words the state can be retrieved by replaying all events.
+
+A client request will reach its node which will enqueue some action onto the game model. The game model
+will act upon it and fire a domain event onto Kafka which will the spread that to all nodes. The nodes
+will interpret those domain event and broadcast the corresponding dto to the clients. All domain events and dtos
+are represented in Protobuf.
+
+Bolt logic is handled by a special kind node that doesn't need to be directly available to clients. These nodes
+are responsible for moving the bolt and checking if they are a hit.
+
+Ships move with inertia. Player add vectors to their current vectors through the trackpad or mouse. The node 
+that the player is connected to is responsible for calculating the intertial movement of the ship. 
+This is all done with basic vector math.
 
 # Future Improvements
 
@@ -141,6 +159,11 @@ Hexoids is server authoritative and is built around an event driven model.
 * Look into migrating the Kafka client to reactive streams
 
     This promises to reduce the code base.
+    
+* Use a spatial index on the server.
+
+    Right now all events are broadcasted to all players. That might not always be necessary. Also,
+    Bolt collision is tested against all players when it should look up players in a spatial index first.
 
 ## Game Play
 
@@ -165,3 +188,8 @@ Hexoids is server authoritative and is built around an event driven model.
 
     With teams there could be different game modes like capture the flag and
     eliminations.
+    
+# CREDIT
+
+The code was originally created by Paulo Casaes. The name was given by [Lucio Paiva](https://github.com/luciopaiva).
+[João Pereira](https://github.com/jpereiramp) acted as a springboard for ideas.
