@@ -22,7 +22,7 @@ public class SessionService {
 
     private static final Logger LOGGER = Logger.getLogger(SessionService.class.getName());
 
-    private final Map<EntityId, WebSocketSession> sessions;
+    private final Map<EntityId, ServerWebSocket> sessions;
 
     private final GameQueueService gameLoopService;
 
@@ -38,34 +38,26 @@ public class SessionService {
     }
 
     public void add(EntityId id, ServerWebSocket session) {
-        this.sessions.put(id, new WebSocketSession(session));
+        this.sessions.put(id, session);
     }
 
     public boolean remove(EntityId id) {
         return this.sessions.remove(id) != null;
     }
 
-    private Optional<WebSocketSession> get(EntityId id) {
+    private Optional<ServerWebSocket> get(EntityId id) {
         return Optional.ofNullable(sessions.get(id));
     }
 
     public void direct(EntityId id, byte[] message) {
-        LazzyBuffer buffer = LazzyBuffer.buffer(message);
+        Buffer buffer = Buffer.buffer(message);
         get(id)
-                .ifPresent(s -> send(id, s, buffer));
+                .ifPresent(s -> asyncSend(id, s, buffer));
     }
 
     public void broadcast(byte[] message) {
-        LazzyBuffer buffer = LazzyBuffer.buffer(message);
-        sessions.forEach((key, value) -> send(key, value, buffer));
-    }
-
-    private void send(EntityId key, WebSocketSession session, LazzyBuffer buffer) {
-        if (session.socket.writeQueueFull()) {
-            session.backlog(buffer.bytes);
-        } else {
-            asyncSend(key, session.socket, buffer.getBuffer());
-        }
+        Buffer buffer = Buffer.buffer(message);
+        sessions.forEach((key, value) -> asyncSend(key, value, buffer));
     }
 
     private void asyncSend(EntityId userId, ServerWebSocket session, Buffer message) {
@@ -95,41 +87,5 @@ public class SessionService {
 
     void stop(@Observes ShutdownEvent event) {
         sessions.clear();
-    }
-
-    private static class WebSocketSession {
-        private final ServerWebSocket socket;
-
-        public WebSocketSession(ServerWebSocket socket) {
-            this.socket = socket;
-        }
-
-        /**
-         * For now this logs lost messages. We should look into backing them up for retry.
-         * @param bytes
-         */
-        public void backlog(byte[] bytes) {
-            LOGGER.severe("Out of space in ServerWebSocket");
-        }
-    }
-
-    private static class LazzyBuffer {
-        private final byte[] bytes;
-        private Buffer buffer;
-
-        public LazzyBuffer(byte[] bytes) {
-            this.bytes = bytes;
-        }
-
-        public static LazzyBuffer buffer(byte[] bytes) {
-            return new LazzyBuffer(bytes);
-        }
-
-        public Buffer getBuffer() {
-            if (buffer == null) {
-                buffer = Buffer.buffer(bytes);
-            }
-            return buffer;
-        }
     }
 }
