@@ -7,8 +7,7 @@ import me.pcasaes.hexoids.model.EntityId;
 import me.pcasaes.hexoids.model.Game;
 import me.pcasaes.hexoids.model.Player;
 import me.pcasaes.hexoids.service.SessionService;
-import me.pcasaes.hexoids.service.eventqueue.EventQueueService;
-import me.pcasaes.hexoids.service.eventqueue.GameLoopService;
+import me.pcasaes.hexoids.service.eventqueue.GameQueueService;
 import me.pcasaes.hexoids.service.kafka.KafkaService;
 import pcasaes.hexoids.proto.MoveCommandDto;
 import pcasaes.hexoids.proto.RequestCommand;
@@ -30,7 +29,7 @@ public class GameSocket {
 
     private final SessionService sessionService;
 
-    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+    private final GameQueueService gameLoopService;
 
     private final KafkaService kafkaService;
 
@@ -42,7 +41,7 @@ public class GameSocket {
 
     @Inject
     public GameSocket(SessionService sessionService,
-                      EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                      GameQueueService gameLoopService,
                       KafkaService kafkaService) {
         this.sessionService = sessionService;
         this.gameLoopService = gameLoopService;

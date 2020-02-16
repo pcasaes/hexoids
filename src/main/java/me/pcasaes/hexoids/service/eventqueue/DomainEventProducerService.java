@@ -2,12 +2,8 @@ package me.pcasaes.hexoids.service.eventqueue;
 
 import com.google.protobuf.GeneratedMessageLite;
 import me.pcasaes.hexoids.model.DomainEvent;
-import me.pcasaes.hexoids.model.Game;
-import me.pcasaes.hexoids.service.ConfigurationService;
 import me.pcasaes.hexoids.service.kafka.KafkaProducerService;
 import me.pcasaes.hexoids.service.kafka.KafkaProducerType;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import pcasaes.hexoids.proto.Sleep;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -18,29 +14,13 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent> {
 
-    private ThreadService threadService;
-
     private KafkaProducerService producerService;
 
-    private ConfigurationService configurationService;
-
-    private Sleep sleepDto = null;
-
-    private long sleepOnEmpty;
-
     @Inject
-    public DomainEventProducerService(ThreadService threadService,
-                                      @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService,
-                                      ConfigurationService configurationService,
-
-                                      @ConfigProperty(
-                                              name = "hexoids.config.service.domain-event.event-queue.sleep-on-empty",
-                                              defaultValue = "5"
-                                      ) long sleepOnEmpty) {
-        this.threadService = threadService;
+    public DomainEventProducerService(
+            @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService
+    ) {
         this.producerService = producerService;
-        this.configurationService = configurationService;
-        this.sleepOnEmpty = sleepOnEmpty;
     }
 
     private byte[] serialize(GeneratedMessageLite<?, ?> value) {
@@ -48,64 +28,15 @@ public class DomainEventProducerService implements EventQueueConsumerService<Dom
     }
 
     @Override
-    public boolean bypassEnqueue(DomainEvent event) {
-        if (threadService.isInGameLoop()) {
-            return false;
-        }
-        accept(event);
-        return true;
-    }
-
-    @Override
     public void accept(DomainEvent event) {
         if (event != null) {
-            if (event.getEvent() != null && event.getEvent().hasSleep()) {
-                this.sleepDto = event.getEvent().getSleep();
-            } else {
-                byte[] message = event.getEvent() == null ? null : serialize(event.getEvent());
-                this.producerService.send(event.getTopic(), event.getKey(), message);
-            }
+            byte[] message = event.getEvent() == null ? null : serialize(event.getEvent());
+            this.producerService.send(event.getTopic(), event.getKey(), message);
         }
-    }
-
-    @Override
-    public void empty() {
-        //do nothing on empty
-    }
-
-    @Override
-    public long getWaitTime() {
-        if (this.sleepDto == null) {
-            return this.sleepOnEmpty;
-        }
-        long waitTime = sleepDto.getSleepUntil() - Game.get().getClock().getTime();
-        this.sleepDto = null;
-
-        return waitTime;
-    }
-
-    @Override
-    public boolean useLinkedList() {
-        return configurationService.isDomainEventUseLinkedList();
-    }
-
-    @Override
-    public boolean useSingleProducer() {
-        return true;
-    }
-
-    @Override
-    public int getMaxSizeExponent() {
-        return configurationService.getDomainEventMaxSizeExponent();
     }
 
     @Override
     public String getName() {
-        return DomainEventProducerService.class.getSimpleName();
-    }
-
-    @Override
-    public Class<?> getEventType() {
-        return DomainEvent.class;
+        return "domain-event-producer";
     }
 }

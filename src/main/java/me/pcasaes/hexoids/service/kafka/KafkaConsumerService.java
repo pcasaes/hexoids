@@ -1,8 +1,7 @@
 package me.pcasaes.hexoids.service.kafka;
 
 import me.pcasaes.hexoids.model.DomainEvent;
-import me.pcasaes.hexoids.service.eventqueue.EventQueueService;
-import me.pcasaes.hexoids.service.eventqueue.GameLoopService;
+import me.pcasaes.hexoids.service.eventqueue.GameQueueService;
 import me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer;
 import me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -36,7 +35,7 @@ public class KafkaConsumerService {
 
     private final KafkaConfiguration configuration;
 
-    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+    private final GameQueueService gameLoopService;
 
     private List<KafkaThreadedConsumer> threads = Collections.synchronizedList(new ArrayList<>());
 
@@ -48,7 +47,7 @@ public class KafkaConsumerService {
 
     @Inject
     public KafkaConsumerService(KafkaConfiguration configuration,
-                                EventQueueService<GameLoopService.GameRunnable> gameLoopService,
+                                GameQueueService gameLoopService,
                                 @ConfigProperty(
                                         name = "hexoids.config.service.kafka.subscriber",
                                         defaultValue = "true"
@@ -158,7 +157,7 @@ public class KafkaConsumerService {
 
         private final Consumer<UUID, Event> kafkaConsumer;
 
-        private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+        private final GameQueueService gameLoopService;
 
         private Thread thread;
 
@@ -168,7 +167,7 @@ public class KafkaConsumerService {
 
         private KafkaThreadedConsumer(TopicInfo.ConsumerInfo consumerInfo,
                                       Consumer<UUID, Event> kafkaConsumer,
-                                      EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+                                      GameQueueService gameLoopService) {
             this.consumerInfo = consumerInfo;
             this.kafkaConsumer = kafkaConsumer;
             this.gameLoopService = gameLoopService;

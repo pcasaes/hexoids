@@ -48,18 +48,6 @@ public class ConfigurationService {
 
     private float boltInertiaNegativeProjectionScale;
 
-    private boolean clientBroadcastUseLinkedList;
-
-    private int clientBroadcastMaxSizeExponent;
-
-    private boolean domainEventUseLinkedList;
-
-    private int domainEventMaxSizeExponent;
-
-    private boolean gameLoopUseLinkedList;
-
-    private int gameLoopMaxSizeExponent;
-
 
     public void startup(@Observes StartupEvent event) {
         LOGGER.info("Eager load Configuration");
@@ -83,12 +71,6 @@ public class ConfigurationService {
         LOGGER.info("hexoids.config.bolt.inertia.rejection-scale=" + getBoltInertiaRejectionScale());
         LOGGER.info("hexoids.config.bolt.inertia.projection-scale=" + getBoltInertiaProjectionScale());
         LOGGER.info("hexoids.config.bolt.inertia.negative-projection-scale=" + getBoltInertiaNegativeProjectionScale());
-        LOGGER.info("hexoids.config.service.client-broadcast.event-queue.linked-list=" + isClientBroadcastUseLinkedList());
-        LOGGER.info("hexoids.config.service.client-broadcast.event-queue.exponent=" + getClientBroadcastMaxSizeExponent());
-        LOGGER.info("hexoids.config.service.domain-event.event-queue.linked-list=" + isDomainEventUseLinkedList());
-        LOGGER.info("hexoids.config.service.domain-event.event-queue.exponent=" + getDomainEventMaxSizeExponent());
-        LOGGER.info("hexoids.config.service.game-loop.event-queue.linked-list=" + isGameLoopUseLinkedList());
-        LOGGER.info("hexoids.config.service.game-loop.event-queue.exponent=" + getGameLoopMaxSizeExponent());
 
         Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis());
         Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
@@ -318,81 +300,5 @@ public class ConfigurationService {
         this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
     }
 
-    public boolean isClientBroadcastUseLinkedList() {
-        return clientBroadcastUseLinkedList;
-    }
 
-    @Inject
-    public void setClientBroadcastUseLinkedList(
-            @ConfigProperty(
-                    name = "hexoids.config.service.client-broadcast.event-queue.linked-list",
-                    defaultValue = "false"
-            ) boolean clientBroadcastUseLinkedList) {
-        this.clientBroadcastUseLinkedList = clientBroadcastUseLinkedList;
-    }
-
-    public int getClientBroadcastMaxSizeExponent() {
-        return clientBroadcastMaxSizeExponent;
-    }
-
-    @Inject
-    public void setClientBroadcastMaxSizeExponent(
-            @ConfigProperty(
-                    name = "hexoids.config.service.client-broadcast.event-queue.exponent",
-                    defaultValue = "17"
-            ) int clientBroadcastMaxSizeExponent) {
-        this.clientBroadcastMaxSizeExponent = clientBroadcastMaxSizeExponent;
-    }
-
-    public boolean isDomainEventUseLinkedList() {
-        return domainEventUseLinkedList;
-    }
-
-    @Inject
-    public void setDomainEventUseLinkedList(
-            @ConfigProperty(
-                    name = "hexoids.config.service.domain-event.event-queue.linked-list",
-                    defaultValue = "false"
-            ) boolean domainEventUseLinkedList) {
-        this.domainEventUseLinkedList = domainEventUseLinkedList;
-    }
-
-    public int getDomainEventMaxSizeExponent() {
-        return domainEventMaxSizeExponent;
-    }
-
-    @Inject
-    public void setDomainEventMaxSizeExponent(
-            @ConfigProperty(
-                    name = "hexoids.config.service.domain-event.event-queue.exponent",
-                    defaultValue = "17"
-            ) int domainEventMaxSizeExponent) {
-        this.domainEventMaxSizeExponent = domainEventMaxSizeExponent;
-    }
-
-    public boolean isGameLoopUseLinkedList() {
-        return gameLoopUseLinkedList;
-    }
-
-    @Inject
-    public void setGameLoopUseLinkedList(
-            @ConfigProperty(
-                    name = "hexoids.config.service.game-loop.event-queue.linked-list",
-                    defaultValue = "false"
-            ) boolean gameLoopUseLinkedList) {
-        this.gameLoopUseLinkedList = gameLoopUseLinkedList;
-    }
-
-    public int getGameLoopMaxSizeExponent() {
-        return gameLoopMaxSizeExponent;
-    }
-
-    @Inject
-    public void setGameLoopMaxSizeExponent(
-            @ConfigProperty(
-                    name = "hexoids.config.service.game-loop.event-queue.exponent",
-                    defaultValue = "17"
-            ) int gameLoopMaxSizeExponent) {
-        this.gameLoopMaxSizeExponent = gameLoopMaxSizeExponent;
-    }
 }

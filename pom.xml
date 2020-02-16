@@ -12,6 +12,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <mockito.version>1.10.19</mockito.version>
     <netty.version>4.1.42.Final</netty.version>
+    <lmax.disruptor.version>3.3.0</lmax.disruptor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus-plugin.version>1.2.0.Final</quarkus-plugin.version>
@@ -90,6 +91,11 @@
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-javalite</artifactId>
       <version>${protobuf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lmax</groupId>
+      <artifactId>disruptor</artifactId>
+      <version>${lmax.disruptor.version}</version>
     </dependency>
   </dependencies>
   <build>
