@@ -100,7 +100,6 @@ public class BoltLifeCycleTopic implements TopicInfo {
                             .singletonMap(new TopicPartition(recordToOffset[partition].topic(), partition),
                                     new OffsetAndMetadata(recordToOffset[partition].offset())
                             );
-                    LOGGER.info("Setting offset to " + recordToOffset[partition].offset() + " on partition " + partition);
                     kafkaConsumer.commitAsync(commitData, this::onComplete);
 
                     recordToOffset[partition] = record;

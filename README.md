@@ -143,13 +143,7 @@ This is all done with basic vector math.
 
    TCP connections are expensive, WebSockets even more so. High frequency events 
    like player and bolt movements would be better served over a UDP socket. 
-   
-* Replace the custom inter thread event queue with the [LMAX Disruptor](https://github.com/LMAX-Exchange/disruptor)
 
-    Rolling your own inter thread event queue is an interesting exercise in
-    writing concurrent code, but if we truly wish to reduce latency and
-    increase throughput then integrating with the disruptor is the way to go.
-    
 * Add persistence
 
     Right now nothing gets persisted long term. It would be interesting to

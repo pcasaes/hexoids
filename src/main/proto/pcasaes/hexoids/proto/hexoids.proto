@@ -114,7 +114,6 @@ message Event {
         PlayerScoreIncreasedEventDto playerScoreIncreased = 9;
         PlayerScoreUpdatedEventDto playerScoreUpdated = 10;
         ScoreBoardUpdatedEventDto scoreBoardUpdated = 11;
-        Sleep sleep = 12;
     }
 }
 
@@ -171,8 +170,7 @@ message DirectedCommand {
 
 // dto
 
-message Sleep {
-    int64 sleepUntil = 1;
+message Flush {
 }
 
 message Dto {
@@ -180,6 +178,6 @@ message Dto {
         DirectedCommand directedCommand = 1;
         Event event = 2;
         Events events = 3;
-        Sleep sleep = 4;
+        Flush flush = 4;
     }
 }

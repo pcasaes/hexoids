@@ -6,8 +6,7 @@ import io.vertx.core.http.ServerWebSocket;
 import me.pcasaes.hexoids.model.EntityId;
 import me.pcasaes.hexoids.model.Game;
 import me.pcasaes.hexoids.model.Player;
-import me.pcasaes.hexoids.service.eventqueue.EventQueueService;
-import me.pcasaes.hexoids.service.eventqueue.GameLoopService;
+import me.pcasaes.hexoids.service.eventqueue.GameQueueService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -25,7 +24,7 @@ public class SessionService {
 
     private final Map<EntityId, ServerWebSocket> sessions;
 
-    private final EventQueueService<GameLoopService.GameRunnable> gameLoopService;
+    private final GameQueueService gameLoopService;
 
     SessionService() {
         this.sessions = null;
@@ -33,7 +32,7 @@ public class SessionService {
     }
 
     @Inject
-    public SessionService(EventQueueService<GameLoopService.GameRunnable> gameLoopService) {
+    public SessionService(GameQueueService gameLoopService) {
         this.gameLoopService = gameLoopService;
         this.sessions = new ConcurrentHashMap<>();
     }
