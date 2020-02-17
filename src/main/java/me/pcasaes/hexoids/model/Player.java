@@ -389,6 +389,7 @@ public interface Player {
 
         @Override
         public void joined(PlayerJoinedEventDto event) {
+            this.name = event.getName();
             this.ship = event.getShip();
             GameEvents
                     .getClientEvents()
