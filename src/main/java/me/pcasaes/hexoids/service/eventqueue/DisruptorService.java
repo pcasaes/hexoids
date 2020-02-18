@@ -21,9 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 @ApplicationScoped
 public class DisruptorService {
+
+    private static final Consumer<Dto> CLIENT_EVENT_NOOP = v -> {
+    };
+
+    private static final Consumer<DomainEvent> DOMAIN_EVENT_NOOP = v -> {
+    };
 
     private final EventQueueConsumerService<GameLoopService.GameRunnable> gameRunnableEventQueueConsumerService;
     private final EventQueueConsumerService<DomainEvent> domainEventEventQueueConsumerService;
@@ -117,12 +124,21 @@ public class DisruptorService {
         if (event.getGameRunnable() != null) {
             this.metrics.get(0).startClock();
             try {
-                GameEvents.getDomainEvents().setConsumer(event::add);
-                GameEvents.getClientEvents().setConsumer(event::add);
+                if (domainEventEventQueueConsumerService.isEnabled()) {
+                    GameEvents.getDomainEvents().setConsumer(event::add);
+                } else {
+                    GameEvents.getDomainEvents().setConsumer(DOMAIN_EVENT_NOOP);
+                }
+                if (clientEventEventQueueConsumerService.isEnabled()) {
+                    GameEvents.getClientEvents().setConsumer(event::add);
+                } else {
+                    GameEvents.getClientEvents().setConsumer(CLIENT_EVENT_NOOP);
+                }
                 this.gameRunnableEventQueueConsumerService.accept(event.getGameRunnable());
             } finally {
                 this.metrics.get(0).stopClock();
             }
+            event.gameRunnable = null;
         }
     }
 
@@ -133,6 +149,7 @@ public class DisruptorService {
                 event.getDomainEventList()
                         .forEach(this.domainEventEventQueueConsumerService::accept);
             } finally {
+                event.getDomainEventList().clear();
                 this.metrics.get(1).stopClock();
             }
         }
@@ -145,6 +162,7 @@ public class DisruptorService {
                 event.getClientEventList()
                         .forEach(this.clientEventEventQueueConsumerService::accept);
             } finally {
+                event.getClientEventList().clear();
                 this.metrics.get(2).stopClock();
             }
         }
