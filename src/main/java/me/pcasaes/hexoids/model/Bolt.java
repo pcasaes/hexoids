@@ -2,7 +2,9 @@ package me.pcasaes.hexoids.model;
 
 import me.pcasaes.hexoids.model.vector.PositionVector;
 
+import java.util.ArrayDeque;
 import java.util.Optional;
+import java.util.Queue;
 
 import static me.pcasaes.hexoids.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.BOLT_MOVED_BUILDER;
@@ -12,9 +14,12 @@ import static me.pcasaes.hexoids.model.DtoUtils.BOLT_MOVED_BUILDER;
  */
 public class Bolt {
 
-    private final EntityId id;
-    private final EntityId ownerPlayerId;
-    private final PositionVector positionVector;
+    private static final Queue<Bolt> POOL = new ArrayDeque<>(1024);
+
+    private EntityId id;
+    private EntityId ownerPlayerId;
+    private PositionVector positionVector;
+
     private long timestamp;
     private long startTimestamp;
     private boolean exhausted;
@@ -60,17 +65,33 @@ public class Bolt {
                        float angle,
                        float speed,
                        long startTimestamp) {
-        return new Bolt(
-                players,
-                boltId,
-                ownerPlayerId,
-                PositionVector.of(
-                        x,
-                        y,
-                        angle,
-                        speed,
-                        startTimestamp),
-                startTimestamp);
+        Bolt bolt = POOL.poll();
+        if (bolt == null) {
+            return new Bolt(
+                    players,
+                    boltId,
+                    ownerPlayerId,
+                    PositionVector.of(
+                            x,
+                            y,
+                            angle,
+                            speed,
+                            startTimestamp),
+                    startTimestamp);
+        } else {
+            bolt.id = boltId;
+            bolt.ownerPlayerId = ownerPlayerId;
+            bolt.startTimestamp = startTimestamp;
+            bolt.timestamp = startTimestamp;
+            bolt.exhausted = false;
+            bolt.positionVector.initialized(x, y, angle, speed, startTimestamp);
+
+            return bolt;
+        }
+    }
+
+    static void destroyObject(Bolt bolt) {
+        POOL.offer(bolt);
     }
 
     EntityId getId() {

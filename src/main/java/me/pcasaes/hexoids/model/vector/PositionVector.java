@@ -74,6 +74,11 @@ public class PositionVector {
         );
     }
 
+    public void initialized(float x, float y, float angle, float magnitude, long timestamp) {
+        initialized(x, y, timestamp);
+        this.velocity.setAngleMagnitude(angle, magnitude);
+        this.previousVelocity.setAngleMagnitude(angle, magnitude);
+    }
 
     public void initialized(float x, float y, long timestamp) {
         this.velocity.setAngleMagnitude(0, 0);

@@ -121,7 +121,8 @@ public class Bolts implements Iterable<Bolt> {
                 .collect(Collectors.toList());
 
         toRemove
-                .forEach(activeBolts::remove);
-
+                .stream()
+                .map(activeBolts::remove)
+                .forEach(Bolt::destroyObject);
     }
 }
