@@ -91,6 +91,8 @@ public class Bolt {
     }
 
     static void destroyObject(Bolt bolt) {
+        bolt.id = null;
+        bolt.ownerPlayerId = null;
         POOL.offer(bolt);
     }
 
