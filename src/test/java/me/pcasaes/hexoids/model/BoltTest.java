@@ -72,6 +72,7 @@ class BoltTest {
                 0f,
                 Config.get().getBoltSpeed(),
                 clock.getTime()).orElse(null);
+        EntityId boltId = bolt.getId();
         assertNotNull(bolt);
 
         assertTrue(bolt.isOwnedBy(one));
@@ -100,7 +101,7 @@ class BoltTest {
         BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
         assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
+        assertEquals(boltId.getGuid().getGuid(), movedEvent.getBoltId().getGuid());
 
         assertFalse(bolt.isExhausted());
         assertTrue(bolt.isActive());
@@ -116,7 +117,7 @@ class BoltTest {
         BoltExhaustedEventDto exhaustedEvent = domainEvent.getEvent().getBoltExhausted();
 
         assertNotNull(exhaustedEvent);
-        assertTrue(bolt.is(EntityId.of(exhaustedEvent.getBoltId())));
+        assertEquals(boltId.getGuid().getGuid(), exhaustedEvent.getBoltId().getGuid());
 
         assertTrue(bolt.isExhausted());
         assertFalse(bolt.isActive());
@@ -386,6 +387,7 @@ class BoltTest {
                 Config.get().getBoltSpeed(),
                 clock.getTime()).orElse(null);
         assertNotNull(bolt);
+        EntityId boltId = bolt.getId();
 
         doReturn(1_000L).when(clock).getTime();
 
@@ -420,7 +422,7 @@ class BoltTest {
                 .findFirst().orElse(null);
 
         assertNotNull(boltExhaustedEventDto);
-        assertTrue(bolt.is(EntityId.of(boltExhaustedEventDto.getBoltId())));
+        assertEquals(boltId.getGuid().getGuid(), boltExhaustedEventDto.getBoltId().getGuid());
 
     }
 
