@@ -42,14 +42,6 @@ message BoltFiredEventDto {
     float speed = 7;
 }
 
-message BoltMovedEventDto {
-    GUID boltId = 1;
-    GUID ownerPlayerId = 2;
-    float x = 3;
-    float y = 4;
-    float angle = 5;
-}
-
 message PlayerDestroyedEventDto {
     GUID playerId = 1;
     GUID destroyedByPlayerId = 2;
@@ -105,7 +97,7 @@ message Event {
     oneof event {
         BoltExhaustedEventDto boltExhausted = 1;
         BoltFiredEventDto boltFired = 2;
-        BoltMovedEventDto boltMoved = 3;
+        BoltFiredEventDto playerFired = 3;
         PlayerDestroyedEventDto playerDestroyed = 4;
         PlayerJoinedEventDto playerJoined = 5;
         PlayerLeftEventDto playerLeft = 6;

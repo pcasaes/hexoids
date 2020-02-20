@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
-import pcasaes.hexoids.proto.BoltMovedEventDto;
 import pcasaes.hexoids.proto.Event;
 
 import java.util.ArrayList;
@@ -92,25 +91,16 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        assertEquals(1, events.size());
-        DomainEvent domainEvent = events.get(0);
-        assertNotNull(domainEvent);
-        events.clear();
-
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
-
-        assertNotNull(movedEvent);
-        assertEquals(boltId.getGuid().getGuid(), movedEvent.getBoltId().getGuid());
 
         assertFalse(bolt.isExhausted());
         assertTrue(bolt.isActive());
 
         when(clock.getTime()).thenReturn(2_000L);
 
+        events.clear();
         bolts.fixedUpdate(clock.getTime());
         assertEquals(1, events.size());
-        domainEvent = events.get(0);
+        DomainEvent domainEvent = events.get(0);
         assertNotNull(domainEvent);
 
         assertTrue(domainEvent.getEvent().hasBoltExhausted());
@@ -150,16 +140,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(0.01f, movedEvent.getX());
-        assertEquals(0f, movedEvent.getY());
+        assertEquals(0.01f, bolt.getPositionVector().getX());
+        assertEquals(0f, bolt.getPositionVector().getY());
 
     }
 
@@ -184,16 +167,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(0.0070710676f, movedEvent.getX());
-        assertEquals(0.0070710676f, movedEvent.getY());
+        assertEquals(0.0070710676f, bolt.getPositionVector().getX());
+        assertEquals(0.0070710676f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -217,16 +193,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(0f, movedEvent.getX());
-        assertEquals(0.01f, movedEvent.getY());
+        assertEquals(0f, bolt.getPositionVector().getX());
+        assertEquals(0.01f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -250,17 +219,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
 
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
-
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(1f - 0.0070710676f, movedEvent.getX());
-        assertEquals(0.0070710676f, movedEvent.getY());
+        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getX());
+        assertEquals(0.0070710676f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -284,16 +245,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(0.99f, movedEvent.getX());
-        assertEquals(0f, movedEvent.getY());
+        assertEquals(0.99f, bolt.getPositionVector().getX());
+        assertEquals(0f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -317,16 +271,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(1f - 0.0070710676f, movedEvent.getX());
-        assertEquals(1f - 0.0070710676f, movedEvent.getY());
+        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getX());
+        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -349,16 +296,9 @@ class BoltTest {
         when(clock.getTime()).thenReturn(1_000L);
 
         bolts.fixedUpdate(clock.getTime());
-        DomainEvent domainEvent = eventReference.get();
-        assertNotNull(domainEvent);
-        assertTrue(domainEvent.getEvent().hasBoltMoved());
-        BoltMovedEventDto movedEvent = domainEvent.getEvent().getBoltMoved();
 
-        assertNotNull(movedEvent);
-        assertTrue(bolt.is(EntityId.of(movedEvent.getBoltId())));
-        assertEquals(one.getGuid(), movedEvent.getOwnerPlayerId());
-        assertEquals(1f, movedEvent.getX());
-        assertEquals(0.99f, movedEvent.getY());
+        assertEquals(1f, bolt.getPositionVector().getX());
+        assertEquals(0.99f, bolt.getPositionVector().getY());
     }
 
     @Test
@@ -406,14 +346,6 @@ class BoltTest {
                 .map(DomainEvent::getEvent)
                 .collect(Collectors.toList());
 
-        BoltMovedEventDto boltMovedEventDto = events
-                .stream()
-                .filter(Event::hasBoltMoved)
-                .map(Event::getBoltMoved)
-                .findFirst().orElse(null);
-
-        assertNotNull(boltMovedEventDto);
-        assertEquals(one.getGuid(), boltMovedEventDto.getOwnerPlayerId());
 
         BoltExhaustedEventDto boltExhaustedEventDto = events
                 .stream()
@@ -460,15 +392,11 @@ class BoltTest {
         bolts.fixedUpdate(clock.getTime());
 
 
-        BoltMovedEventDto boltMovedEventDto = events
+        assertEquals(0, events
                 .stream()
                 .map(DomainEvent::getEvent)
-                .filter(Event::hasBoltMoved)
-                .map(Event::getBoltMoved)
-                .findFirst().orElse(null);
-
-        assertNotNull(boltMovedEventDto);
-        assertEquals(one.getGuid(), boltMovedEventDto.getOwnerPlayerId());
+                .filter(Event::hasBoltExhausted)
+                .count());
 
     }
 

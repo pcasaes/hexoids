@@ -19,6 +19,7 @@ public class Bolts implements Iterable<Bolt> {
 
     /**
      * Creates the collection.
+     *
      * @return
      */
     static Bolts create() {
@@ -30,6 +31,7 @@ public class Bolts implements Iterable<Bolt> {
 
     /**
      * Processes a bolt fired event.
+     *
      * @param players
      * @param boltId
      * @param ownerPlayerId
@@ -72,7 +74,6 @@ public class Bolts implements Iterable<Bolt> {
                 .map(Optional::get)
                 .map(Bolt::tackleBoltExhaustion)
                 .filter(Bolt::isActive)
-                .map(Bolt::move)
                 .forEach(Bolt::checkHits);
 
         cleanup();
@@ -80,6 +81,7 @@ public class Bolts implements Iterable<Bolt> {
 
     /**
      * Returns an iterator of the collection.
+     *
      * @return
      */
     @Override
@@ -91,6 +93,7 @@ public class Bolts implements Iterable<Bolt> {
 
     /**
      * Returns a stream of the collection.
+     *
      * @return
      */
     public Stream<Bolt> stream() {
@@ -99,11 +102,12 @@ public class Bolts implements Iterable<Bolt> {
 
     /**
      * Handles bolt action domain events.
+     *
      * @param domainEvent
      */
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
-                (domainEvent.getEvent().hasBoltMoved() || domainEvent.getEvent().hasBoltExhausted())) {
+                (domainEvent.getEvent().hasBoltExhausted() || domainEvent.getEvent().hasBoltFired())) {
             GameEvents.getClientEvents()
                     .register(DTO_BUILDER
                             .clear()

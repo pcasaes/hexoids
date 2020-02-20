@@ -2,7 +2,6 @@ package me.pcasaes.hexoids.model;
 
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
-import pcasaes.hexoids.proto.BoltMovedEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
@@ -65,8 +64,6 @@ public class DtoUtils {
     static final PlayerJoinedEventDto.Builder PLAYER_JOINED_BUILDER = PlayerJoinedEventDto.newBuilder();
 
     static final BoltFiredEventDto.Builder BOLT_FIRED_BUILDER = BoltFiredEventDto.newBuilder();
-
-    static final BoltMovedEventDto.Builder BOLT_MOVED_BUILDER = BoltMovedEventDto.newBuilder();
 
     static final BoltExhaustedEventDto.Builder BOLT_EXHAUSTED_BUILDER = BoltExhaustedEventDto.newBuilder();
 

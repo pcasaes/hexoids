@@ -1,13 +1,13 @@
 package me.pcasaes.hexoids.model;
 
 import me.pcasaes.hexoids.model.vector.PositionVector;
+import pcasaes.hexoids.proto.BoltFiredEventDto;
 
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
 
 import static me.pcasaes.hexoids.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
-import static me.pcasaes.hexoids.model.DtoUtils.BOLT_MOVED_BUILDER;
 
 /**
  * A model representation of a bolt.
@@ -110,6 +110,20 @@ public class Bolt {
         return this.id.equals(id);
     }
 
+    public void fire(BoltFiredEventDto event) {
+        GameEvents.getDomainEvents()
+                .register(
+                        DomainEvent
+                                .create(GameTopic.BOLT_ACTION_TOPIC.name(),
+                                        this.id.getId(),
+                                        DtoUtils
+                                                .newEvent()
+                                                .setBoltFired(event)
+                                                .build()
+                                )
+                );
+    }
+
     /**
      * Updates the this bolt's internal timestamp.
      *
@@ -140,23 +154,6 @@ public class Bolt {
     }
 
     /**
-     *
-     * Fires a bolt move event.
-     *
-     * @return
-     */
-    Bolt move() {
-
-        DomainEvent event = generateMovedEvent();
-
-        GameEvents.getDomainEvents().register(
-                event
-        );
-
-        return this;
-    }
-
-    /**
      * Returns true if exhausted.
      *
      * @return
@@ -179,6 +176,7 @@ public class Bolt {
 
     /**
      * The inverse of isExhausted.
+     *
      * @return
      */
     boolean isActive() {
@@ -208,26 +206,6 @@ public class Bolt {
                 );
             }
         }
-    }
-
-    DomainEvent generateMovedEvent() {
-        return DomainEvent
-                .create(
-                        GameTopic.BOLT_ACTION_TOPIC.name(),
-                        this.id.getId(),
-                        DtoUtils
-                                .newEvent()
-                                .setBoltMoved(
-                                        BOLT_MOVED_BUILDER
-                                                .clear()
-                                                .setBoltId(id.getGuid())
-                                                .setOwnerPlayerId(ownerPlayerId.getGuid())
-                                                .setX(positionVector.getX())
-                                                .setY(positionVector.getY())
-                                                .setAngle(positionVector.getVelocity().getAngle())
-                                )
-                                .build()
-                );
     }
 
     private DomainEvent generateExhaustedEvent() {

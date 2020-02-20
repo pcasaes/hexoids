@@ -432,19 +432,14 @@ class PlayerTest {
 
         DomainEvent event = eventReference.get();
         assertNotNull(event);
+        assertTrue(event.getEvent().hasPlayerFired());
+
+        player.fired(event.getEvent().getPlayerFired());
+
+        event = eventReference.get();
+        assertNotNull(event);
         assertTrue(event.getEvent().hasBoltFired());
-
-        player.fired(event.getEvent().getBoltFired());
-
-        assertEquals(1, bolts
-                .stream()
-                .filter(b -> b.isOwnedBy(one))
-                .map(Bolt::generateMovedEvent)
-                .map(DomainEvent::getEvent)
-                .filter(Event::hasBoltMoved)
-                .map(Event::getBoltMoved)
-                .filter(b -> b.getAngle() == (float) Math.PI)
-                .count());
+        assertEquals((float) Math.PI, event.getEvent().getBoltFired().getAngle(), Float.MIN_VALUE);
 
     }
 
@@ -478,20 +473,14 @@ class PlayerTest {
 
         DomainEvent event = eventReference.get();
         assertNotNull(event);
-        assertTrue(event.getEvent().hasBoltFired());
+        assertTrue(event.getEvent().hasPlayerFired());
 
         player.fired(event.getEvent().getBoltFired());
 
-        assertEquals(1, bolts
-                .stream()
-                .filter(b -> b.isOwnedBy(one))
-                .map(Bolt::generateMovedEvent)
-                .map(DomainEvent::getEvent)
-                .filter(Event::hasBoltMoved)
-                .map(Event::getBoltMoved)
-                .filter(b -> b.getAngle() == (float) Math.PI / 4f)
-                .count());
-
+        event = eventReference.get();
+        assertNotNull(event);
+        assertTrue(event.getEvent().hasBoltFired());
+        assertEquals((float) Math.PI / 4f, event.getEvent().getBoltFired().getAngle(), Float.MIN_VALUE);
     }
 
     @Test

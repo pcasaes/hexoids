@@ -197,11 +197,11 @@ public class Players implements Iterable<Player> {
         playerServerUpdateSet.add(playerId);
     }
 
-    void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltFired()) {
-            BoltFiredEventDto boltFiredEventDto = domainEvent.getEvent().getBoltFired();
-            get(EntityId.of(boltFiredEventDto.getOwnerPlayerId()))
-                    .ifPresent(p -> p.fired(domainEvent.getEvent().getBoltFired()));
+    void consumeFromPlayerFiredTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerFired()) {
+            BoltFiredEventDto playerFiredEventDto = domainEvent.getEvent().getPlayerFired();
+            get(EntityId.of(playerFiredEventDto.getOwnerPlayerId()))
+                    .ifPresent(p -> p.fired(domainEvent.getEvent().getPlayerFired()));
         }
     }
 

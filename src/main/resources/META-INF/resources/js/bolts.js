@@ -17,9 +17,25 @@ const Bolts = (function () {
 
             this.isNew = true;
             this.viewable = false;
+
+            this.startX = null;
+            this.startY = null;
+            this.startTimestamp = null;
+            this.angle = null;
+            this.speed = null;
+            this.velX = null;
+            this.velY = null;
         }
 
         create(b) {
+            this.startX = b.x;
+            this.startY = b.y;
+            this.velX = Math.cos(b.angle);
+            this.velY = Math.sin(b.angle);
+            this.startTimestamp = b.startTimestamp;
+            this.angle = b.angle;
+            this.speed = b.speed / 1000;
+
             const move = this.data.transform.view(b.x, b.y);
 
             if (this.isNew) {
@@ -74,8 +90,8 @@ const Bolts = (function () {
             return this;
         }
 
-        move(b) {
-            const move = this.data.transform.view(b.x, b.y);
+        move(x, y) {
+            const move = this.data.transform.view(x, y);
 
             const newViewable = this.data.transform.inView(move.x, move.y, this.data.scene.cameras.main.worldView);
             const viewableChanged = this.viewable !== newViewable;
@@ -143,6 +159,14 @@ const Bolts = (function () {
             }
         }
 
+        fired(b) {
+            if (!this.bolts[b.boltId.guid]) {
+                const bolt = POOL.pop();
+
+                this.bolts[b.boltId.guid] = (!bolt ? new Bolt(this.data) : bolt).create(b).fired();
+            }
+        }
+
         move(b) {
             if (!this.bolts[b.boltId.guid]) {
                 const bolt = POOL.pop();
@@ -162,11 +186,23 @@ const Bolts = (function () {
             return this;
         }
 
-        setupQueues(queues) {
+        update() {
+            const now = Date.now();
+            Object.keys(this.bolts).forEach((boltId) => {
+                const bolt = this.bolts[boltId];
+                const velocityDelta = bolt.speed * (now - bolt.startTimestamp);
 
+                const newX = bolt.startX + velocityDelta * bolt.velX;
+                const newY = bolt.startY + velocityDelta * bolt.velY;
+
+                bolt.move(newX, newY);
+            });
+        }
+
+        setupQueues(queues) {
             queues.event
-                .add('boltMoved', resp => {
-                    this.move(resp)
+                .add('boltFired', resp => {
+                    this.fired(resp)
                 })
                 .add('boltExhausted', resp => {
                     this.destroyById(resp.boltId.guid);
