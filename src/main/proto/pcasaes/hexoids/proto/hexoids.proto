@@ -165,11 +165,17 @@ message DirectedCommand {
 message Flush {
 }
 
+message ClockSync {
+    int64 time = 1;
+}
+
 message Dto {
     oneof dto {
         DirectedCommand directedCommand = 1;
         Event event = 2;
         Events events = 3;
         Flush flush = 4;
+        ClockSync clock = 5;
     }
 }
+

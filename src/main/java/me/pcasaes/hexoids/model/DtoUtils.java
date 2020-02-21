@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.model;
 
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.ClockSync;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
@@ -28,7 +29,7 @@ public class DtoUtils {
 
     }
 
-    static final ThreadLocal<Dto.Builder> DTO_THREAD_SAFE_BUILDER = ThreadLocal
+    public static final ThreadLocal<Dto.Builder> DTO_THREAD_SAFE_BUILDER = ThreadLocal
             .withInitial(Dto::newBuilder);
 
     public static final ThreadLocal<Event.Builder> EVENT_THREAD_SAFE_BUILDER = ThreadLocal
@@ -45,6 +46,9 @@ public class DtoUtils {
 
     public static final ThreadLocal<RequestCommand.Builder> REQUEST_COMMAND_THREAD_SAFE_BUILDER = ThreadLocal
             .withInitial(RequestCommand::newBuilder);
+
+    public static final ThreadLocal<ClockSync.Builder> CLOCK_SYNC_THREAD_SAFE_BUILDER = ThreadLocal
+            .withInitial(ClockSync::newBuilder);
 
 
     static final Dto.Builder DTO_BUILDER = Dto.newBuilder();

@@ -135,7 +135,7 @@ const Bolts = (function () {
     }
 
     class BoltsClass {
-        constructor(server, scene, players, gameConfig, transform, sounds) {
+        constructor(server, scene, players, gameConfig, transform, sounds, clock) {
             this.data = {
                 'server': server,
                 'scene': scene,
@@ -143,6 +143,7 @@ const Bolts = (function () {
                 'gameConfig': gameConfig,
                 'transform': transform,
                 'sounds': sounds,
+                'clock': clock,
             };
 
             this.bolts = {};
@@ -151,8 +152,9 @@ const Bolts = (function () {
 
 
         fire() {
-            if (Date.now() - this.lastFire > this.data.gameConfig.bolt.debounce) {
-                this.lastFire = Date.now();
+            const now = this.data.clock.clientTime();
+            if (now - this.lastFire > this.data.gameConfig.bolt.debounce) {
+                this.lastFire = now;
                 this.data.server.sendMessage({
                     "fire": EMPTY_OBJ
                 });
@@ -187,7 +189,7 @@ const Bolts = (function () {
         }
 
         update() {
-            const now = Date.now();
+            const now = this.data.clock.gameTime();
             Object.keys(this.bolts).forEach((boltId) => {
                 const bolt = this.bolts[boltId];
                 const velocityDelta = bolt.speed * (now - bolt.startTimestamp);
@@ -231,9 +233,9 @@ const Bolts = (function () {
     let instance;
 
     return {
-        'get': (server, scene, players, gameConfig, transform, sounds, queues, playerInputs) => {
+        'get': (server, scene, players, gameConfig, transform, sounds, clock, queues, playerInputs) => {
             if (!instance) {
-                instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds)
+                instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds, clock)
                     .setupSounds()
                     .setupPlayerInputs(playerInputs)
                     .setupQueues(queues);

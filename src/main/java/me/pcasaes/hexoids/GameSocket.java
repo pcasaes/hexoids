@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
@@ -20,6 +21,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static me.pcasaes.hexoids.model.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.DTO_THREAD_SAFE_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
 
 @ApplicationScoped
@@ -59,7 +62,7 @@ public class GameSocket {
             ctx.closeHandler(n -> this.onClose(userId));
             ctx.exceptionHandler(n -> this.onClose(userId));
 
-            ctx.handler(buff -> onMessage(buff.getBytes(), userId));
+            ctx.handler(buff -> onMessage(ctx, buff.getBytes(), userId));
 
             ctx.accept();
         });
@@ -86,17 +89,17 @@ public class GameSocket {
         }
     }
 
-    public void onMessage(byte[] message, EntityId userId) {
+    public void onMessage(ServerWebSocket ctx, byte[] message, EntityId userId) {
         try {
             getCommand(message)
-                    .ifPresent(command -> onCommand(userId, command));
+                    .ifPresent(command -> onCommand(ctx, userId, command));
 
         } catch (RuntimeException ex) {
             LOGGER.warning(ex.getMessage());
         }
     }
 
-    private void onCommand(EntityId userId, RequestCommand command) {
+    private void onCommand(ServerWebSocket ctx, EntityId userId, RequestCommand command) {
         if (command.hasMove()) {
             MoveCommandDto moveCommandDto = command.getMove();
 
@@ -112,6 +115,14 @@ public class GameSocket {
         } else if (command.hasSpawn()) {
             this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
         } else if (command.hasJoin()) {
+            Buffer buffer = Buffer.buffer(DTO_THREAD_SAFE_BUILDER
+                    .get()
+                    .setClock(CLOCK_SYNC_THREAD_SAFE_BUILDER
+                            .get()
+                            .setTime(Game.get().getClock().getTime())
+                    ).build()
+                    .toByteArray());
+            ctx.write(buffer);
             this.gameLoopService.enqueue(() -> {
                 Optional<Player> player = Game.get()
                         .getPlayers()

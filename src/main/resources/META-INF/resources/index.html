@@ -7,6 +7,7 @@
     <script src="js/optional.js"></script>
     <script src="js/phaser-arcade-physics.min.js"></script>
     <script src="js/color.js"></script>
+    <script src="js/clock.js"></script>
     <script src="js/user.js"></script>
     <script src="js/game-config.js"></script>
     <script src="js/uuid.js"></script>
@@ -43,6 +44,10 @@
 
     function gameScene() {
         return game.scene.scenes[0];
+    }
+
+    function getClock() {
+        return Clock;
     }
 
     function getColors() {
@@ -93,12 +98,13 @@
             GameConfig.get(),
             transform,
             getSounds(),
+            getClock(),
             QUEUES,
             getPlayerInputs());
     }
 
     function getServer() {
-        return Server.get(USER, QUEUES, location.host, ProtoProcessor);
+        return Server.get(USER, QUEUES, location.host, ProtoProcessor, getClock());
     }
 
     function sendMessage(value) {
