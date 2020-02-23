@@ -17,9 +17,27 @@ const Bolts = (function () {
 
             this.isNew = true;
             this.viewable = false;
+
+            this.startX = null;
+            this.startY = null;
+            this.startTimestamp = null;
+            this.endTimestamp = null;
+            this.angle = null;
+            this.speed = null;
+            this.velX = null;
+            this.velY = null;
         }
 
         create(b) {
+            this.startX = b.x;
+            this.startY = b.y;
+            this.velX = Math.cos(b.angle);
+            this.velY = Math.sin(b.angle);
+            this.startTimestamp = b.startTimestamp;
+            this.endTimestamp = b.startTimestamp + b.ttl;
+            this.angle = b.angle;
+            this.speed = b.speed / 1000;
+
             const move = this.data.transform.view(b.x, b.y);
 
             if (this.isNew) {
@@ -74,8 +92,8 @@ const Bolts = (function () {
             return this;
         }
 
-        move(b) {
-            const move = this.data.transform.view(b.x, b.y);
+        move(x, y) {
+            const move = this.data.transform.view(x, y);
 
             const newViewable = this.data.transform.inView(move.x, move.y, this.data.scene.cameras.main.worldView);
             const viewableChanged = this.viewable !== newViewable;
@@ -119,7 +137,7 @@ const Bolts = (function () {
     }
 
     class BoltsClass {
-        constructor(server, scene, players, gameConfig, transform, sounds) {
+        constructor(server, scene, players, gameConfig, transform, sounds, clock) {
             this.data = {
                 'server': server,
                 'scene': scene,
@@ -127,6 +145,7 @@ const Bolts = (function () {
                 'gameConfig': gameConfig,
                 'transform': transform,
                 'sounds': sounds,
+                'clock': clock,
             };
 
             this.bolts = {};
@@ -135,11 +154,20 @@ const Bolts = (function () {
 
 
         fire() {
-            if (Date.now() - this.lastFire > this.data.gameConfig.bolt.debounce) {
-                this.lastFire = Date.now();
+            const now = this.data.clock.clientTime();
+            if (now - this.lastFire > this.data.gameConfig.bolt.debounce) {
+                this.lastFire = now;
                 this.data.server.sendMessage({
                     "fire": EMPTY_OBJ
                 });
+            }
+        }
+
+        fired(b) {
+            if (!this.bolts[b.boltId.guid]) {
+                const bolt = POOL.pop();
+
+                this.bolts[b.boltId.guid] = (!bolt ? new Bolt(this.data) : bolt).create(b).fired();
             }
         }
 
@@ -162,11 +190,32 @@ const Bolts = (function () {
             return this;
         }
 
+        update() {
+            const now = this.data.clock.gameTime();
+            Object.keys(this.bolts).forEach((boltId) => {
+                const bolt = this.bolts[boltId];
+                if (bolt.endTimestamp < this.data.clock.gameTime()) {
+                    this.destroyById(boltId);
+                } else {
+                    const velocityDelta = bolt.speed * (now - bolt.startTimestamp);
+
+                    const newX = bolt.startX + velocityDelta * bolt.velX;
+                    const newY = bolt.startY + velocityDelta * bolt.velY;
+
+                    bolt.move(newX, newY);
+                }
+            });
+        }
+
         setupQueues(queues) {
+            queues.command
+                .add('liveBoltsList', resp => {
+                    resp.bolts.forEach(r => this.fired(r));
+                });
 
             queues.event
-                .add('boltMoved', resp => {
-                    this.move(resp)
+                .add('boltFired', resp => {
+                    this.fired(resp)
                 })
                 .add('boltExhausted', resp => {
                     this.destroyById(resp.boltId.guid);
@@ -195,9 +244,9 @@ const Bolts = (function () {
     let instance;
 
     return {
-        'get': (server, scene, players, gameConfig, transform, sounds, queues, playerInputs) => {
+        'get': (server, scene, players, gameConfig, transform, sounds, clock, queues, playerInputs) => {
             if (!instance) {
-                instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds)
+                instance = new BoltsClass(server, scene, players, gameConfig, transform, sounds, clock)
                     .setupSounds()
                     .setupPlayerInputs(playerInputs)
                     .setupQueues(queues);

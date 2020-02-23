@@ -20,7 +20,7 @@ public enum GameTopic {
     /**
      * Topic used to track a bolts being fired (created)
      */
-    BOLT_LIFECYCLE_TOPIC(d -> getGame().getPlayers().consumeFromBoltFiredTopic(d)),
+    BOLT_LIFECYCLE_TOPIC(d -> getGame().getPlayers().consumeFromPlayerFiredTopic(d)),
 
     /**
      * Topic used to track bolt action: moved, exhausted

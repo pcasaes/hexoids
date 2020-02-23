@@ -11,13 +11,15 @@ const Server = (function () {
 
 
     class ServerClass {
-        constructor(userId, queues, host, proto) {
+        constructor(userId, queues, host, proto, clock) {
             this.userId = userId;
             this.queues = queues;
             this.socket = null;
             this.host = host;
             this.booted = false;
             this.proto = proto;
+            this.clock = clock;
+            this.joinTime = 0;
         }
 
         createSocket() {
@@ -27,6 +29,7 @@ const Server = (function () {
             this.socket.binaryType = "arraybuffer";
             this.socket.onopen = () => {
                 console.log("Connected to the web socket");
+                this.joinTime = this.clock.clientTime();
                 this.sendMessage({
                     "join": {
                         "name": this.userId.name()
@@ -56,7 +59,9 @@ const Server = (function () {
                 backOff = 50;
                 //console.log("Got message: " + m.data);
                 lastMessageReceived = this.proto.readDto(m.data);
-                if (lastMessageReceived.dto === 'events') {
+                if (lastMessageReceived.dto === 'clock') {
+                    this.clock.onClockSync(this.joinTime, lastMessageReceived.clock)
+                } else if (lastMessageReceived.dto === 'events') {
                     lastMessageReceived
                         .events
                         .events
@@ -96,9 +101,9 @@ const Server = (function () {
     const instances = {};
 
     return {
-        'get': (userId, queues, host, proto) => {
+        'get': (userId, queues, host, proto, clock) => {
             if (!instances[userId.get()]) {
-                instances[userId.get()] = new ServerClass(userId, queues, host, proto).setup();
+                instances[userId.get()] = new ServerClass(userId, queues, host, proto, clock).setup();
             }
             return instances[userId.get()];
         }

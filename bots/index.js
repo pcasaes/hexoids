@@ -19,6 +19,7 @@ if (isMainThread) {
     const Users = require('../src/main/resources/META-INF/resources/js/user');
     const Transform = require('../src/main/resources/META-INF/resources/js/transform');
     const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
+    const Clock = require('../src/main/resources/META-INF/resources/js/clock');
     const ProtoProcessor = require('../src/main/js-proto/main');
 
 
@@ -39,6 +40,10 @@ if (isMainThread) {
 
     function getUsers() {
         return Users.get(GameConfig.get(), null, genUuid);
+    }
+
+    function getClock() {
+        return Clock;
     }
 
     function getColors() {
@@ -192,7 +197,7 @@ if (isMainThread) {
     }
 
     function getServer(userId) {
-        return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor);
+        return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor, getClock());
     }
 
 

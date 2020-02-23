@@ -103,9 +103,9 @@ public interface Player {
     /**
      * Move the player by a vector
      *
-     * @param moveX       vector x component
-     * @param moveY       vector y component
-     * @param angle       fire direction
+     * @param moveX vector x component
+     * @param moveY vector y component
+     * @param angle fire direction
      */
     void move(float moveX, float moveY, Float angle);
 
@@ -287,7 +287,7 @@ public interface Player {
                             boltId.getId(),
                             DtoUtils
                                     .newEvent()
-                                    .setBoltFired(BOLT_FIRED_BUILDER
+                                    .setPlayerFired(BOLT_FIRED_BUILDER
                                             .clear()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
@@ -296,6 +296,7 @@ public interface Player {
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
+                                            .setTtl(Config.get().getBoltMaxDuration())
                                     )
                                     .build()
                     ));
@@ -308,8 +309,13 @@ public interface Player {
                         .flatMap(b -> b.updateTimestamp(now))
                         .ifPresent(Bolt::tackleBoltExhaustion);
             } else if (this.liveBolts < Config.get().getMaxBolts()) {
-                toBolt(event).ifPresent(b -> this.liveBolts++);
+                toBolt(event).ifPresent(b -> this.firedNew(event, b));
             }
+        }
+
+        private void firedNew(BoltFiredEventDto event, Bolt bolt) {
+            this.liveBolts++;
+            bolt.fire(event);
         }
 
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {

@@ -3,7 +3,6 @@ package me.pcasaes.hexoids.model;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
-import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 import pcasaes.hexoids.proto.PlayersListCommandDto;
 
@@ -18,10 +17,10 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static me.pcasaes.hexoids.model.DtoUtils.DIRECTED_COMMAND_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.model.DtoUtils.DTO_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.model.DtoUtils.PLAYERS_LIST_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.model.DtoUtils.PLAYER_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.DIRECTED_COMMAND_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.DTO_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.PLAYERS_LIST_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.PLAYER_BUILDER;
 
 /**
  * The collection of Players.
@@ -103,28 +102,24 @@ public class Players implements Iterable<Player> {
      * @param requesterId player to have the current list sent to.
      */
     public void requestListOfPlayers(EntityId requesterId) {
-        PlayersListCommandDto.Builder playerListBuilder = PLAYERS_LIST_THREAD_SAFE_BUILDER
-                .get()
+        PlayersListCommandDto.Builder playerListBuilder = PLAYERS_LIST_BUILDER
                 .clear();
 
-        PlayerDto.Builder playerBuilder = PLAYER_THREAD_SAFE_BUILDER.get();
         playerMap
                 .values()
                 .stream()
-                .map(p -> p.toDtoIfJoined(playerBuilder))
+                .map(p -> p.toDtoIfJoined(PLAYER_BUILDER))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(playerListBuilder::addPlayers);
 
-        DirectedCommand.Builder builder = DIRECTED_COMMAND_THREAD_SAFE_BUILDER
-                .get()
+        DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
                 .clear()
                 .setPlayerId(requesterId.getGuid())
                 .setPlayersList(playerListBuilder);
 
         GameEvents.getClientEvents().register(
-                DTO_THREAD_SAFE_BUILDER
-                        .get()
+                DTO_BUILDER
                         .clear()
                         .setDirectedCommand(builder)
                         .build()
@@ -197,11 +192,11 @@ public class Players implements Iterable<Player> {
         playerServerUpdateSet.add(playerId);
     }
 
-    void consumeFromBoltFiredTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltFired()) {
-            BoltFiredEventDto boltFiredEventDto = domainEvent.getEvent().getBoltFired();
-            get(EntityId.of(boltFiredEventDto.getOwnerPlayerId()))
-                    .ifPresent(p -> p.fired(domainEvent.getEvent().getBoltFired()));
+    void consumeFromPlayerFiredTopic(DomainEvent domainEvent) {
+        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerFired()) {
+            BoltFiredEventDto playerFiredEventDto = domainEvent.getEvent().getPlayerFired();
+            get(EntityId.of(playerFiredEventDto.getOwnerPlayerId()))
+                    .ifPresent(p -> p.fired(domainEvent.getEvent().getPlayerFired()));
         }
     }
 

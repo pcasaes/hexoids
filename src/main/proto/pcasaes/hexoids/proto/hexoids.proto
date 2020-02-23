@@ -40,14 +40,7 @@ message BoltFiredEventDto {
     float angle = 5;
     int64 startTimestamp = 6;
     float speed = 7;
-}
-
-message BoltMovedEventDto {
-    GUID boltId = 1;
-    GUID ownerPlayerId = 2;
-    float x = 3;
-    float y = 4;
-    float angle = 5;
+    int32 ttl = 8;
 }
 
 message PlayerDestroyedEventDto {
@@ -105,7 +98,7 @@ message Event {
     oneof event {
         BoltExhaustedEventDto boltExhausted = 1;
         BoltFiredEventDto boltFired = 2;
-        BoltMovedEventDto boltMoved = 3;
+        BoltFiredEventDto playerFired = 3;
         PlayerDestroyedEventDto playerDestroyed = 4;
         PlayerJoinedEventDto playerJoined = 5;
         PlayerLeftEventDto playerLeft = 6;
@@ -160,11 +153,16 @@ message PlayerScoreUpdateCommandDto {
     int64 score = 1;
 }
 
+message LiveBoltListCommandDto {
+    repeated BoltFiredEventDto bolts = 1;
+}
+
 message DirectedCommand {
     GUID playerId = 1;
     oneof command {
         PlayersListCommandDto playersList = 2;
         PlayerScoreUpdateCommandDto playerScoreUpdate = 3;
+        LiveBoltListCommandDto liveBoltsList = 4;
     }
 }
 
@@ -173,11 +171,17 @@ message DirectedCommand {
 message Flush {
 }
 
+message ClockSync {
+    int64 time = 1;
+}
+
 message Dto {
     oneof dto {
         DirectedCommand directedCommand = 1;
         Event event = 2;
         Events events = 3;
         Flush flush = 4;
+        ClockSync clock = 5;
     }
 }
+
