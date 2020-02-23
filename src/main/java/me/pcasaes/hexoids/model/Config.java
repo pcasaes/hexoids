@@ -18,7 +18,7 @@ public class Config {
     private float playerMaxAngle;
     private String playerResetPosition;
     private int maxBolts;
-    private long boltMaxDuration;
+    private int boltMaxDuration;
     private float boltSpeed;
     private float boltCollisionRadius;
     private boolean boltInertiaEnabled;
@@ -110,11 +110,11 @@ public class Config {
         this.maxBolts = maxBolts;
     }
 
-    public long getBoltMaxDuration() {
+    public int getBoltMaxDuration() {
         return boltMaxDuration;
     }
 
-    public void setBoltMaxDuration(long boltMaxDuration) {
+    public void setBoltMaxDuration(int boltMaxDuration) {
         this.boltMaxDuration = boltMaxDuration;
     }
 

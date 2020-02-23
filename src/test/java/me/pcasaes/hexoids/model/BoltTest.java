@@ -46,7 +46,7 @@ class BoltTest {
 
         when(clock.getTime()).thenReturn(0L);
 
-        Config.get().setBoltMaxDuration(10_000L);
+        Config.get().setBoltMaxDuration(10_000);
         Config.get().setBoltSpeed(0.01f);
         Config.get().setBoltCollisionRadius(0.001f);
         Config.get().setMinMove(0.000000001f);
@@ -62,7 +62,7 @@ class BoltTest {
         GameEvents.getDomainEvents().setConsumer(events::add);
 
         EntityId one = EntityId.newId();
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
                 one,
@@ -124,7 +124,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -151,7 +151,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -177,7 +177,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -203,7 +203,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -229,7 +229,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -255,7 +255,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -281,7 +281,7 @@ class BoltTest {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
         GameEvents.getDomainEvents().setConsumer(eventReference::set);
 
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
         final Bolt bolt = bolts.fired(players,
                 EntityId.newId(),
@@ -303,7 +303,7 @@ class BoltTest {
 
     @Test
     void testCollisionHit() {
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
 
         Player player = mock(Player.class);
 
@@ -360,7 +360,7 @@ class BoltTest {
 
     @Test
     void testCollisionMiss() {
-        Config.get().setBoltMaxDuration(1_500L);
+        Config.get().setBoltMaxDuration(1_500);
 
         Player player = mock(Player.class);
 

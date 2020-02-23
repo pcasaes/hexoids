@@ -21,6 +21,7 @@ const Bolts = (function () {
             this.startX = null;
             this.startY = null;
             this.startTimestamp = null;
+            this.endTimestamp = null;
             this.angle = null;
             this.speed = null;
             this.velX = null;
@@ -33,6 +34,7 @@ const Bolts = (function () {
             this.velX = Math.cos(b.angle);
             this.velY = Math.sin(b.angle);
             this.startTimestamp = b.startTimestamp;
+            this.endTimestamp = b.startTimestamp + b.ttl;
             this.angle = b.angle;
             this.speed = b.speed / 1000;
 
@@ -192,16 +194,25 @@ const Bolts = (function () {
             const now = this.data.clock.gameTime();
             Object.keys(this.bolts).forEach((boltId) => {
                 const bolt = this.bolts[boltId];
-                const velocityDelta = bolt.speed * (now - bolt.startTimestamp);
+                if (bolt.endTimestamp < this.data.clock.gameTime()) {
+                    this.destroyById(boltId);
+                } else {
+                    const velocityDelta = bolt.speed * (now - bolt.startTimestamp);
 
-                const newX = bolt.startX + velocityDelta * bolt.velX;
-                const newY = bolt.startY + velocityDelta * bolt.velY;
+                    const newX = bolt.startX + velocityDelta * bolt.velX;
+                    const newY = bolt.startY + velocityDelta * bolt.velY;
 
-                bolt.move(newX, newY);
+                    bolt.move(newX, newY);
+                }
             });
         }
 
         setupQueues(queues) {
+            queues.command
+                .add('liveBoltsList', resp => {
+                    resp.bolts.forEach(r => this.fired(r));
+                });
+
             queues.event
                 .add('boltFired', resp => {
                     this.fired(resp)

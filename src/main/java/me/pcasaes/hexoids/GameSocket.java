@@ -115,14 +115,8 @@ public class GameSocket {
         } else if (command.hasSpawn()) {
             this.gameLoopService.enqueue(() -> Game.get().getPlayers().createOrGet(userId).spawn());
         } else if (command.hasJoin()) {
-            Buffer buffer = Buffer.buffer(DTO_THREAD_SAFE_BUILDER
-                    .get()
-                    .setClock(CLOCK_SYNC_THREAD_SAFE_BUILDER
-                            .get()
-                            .setTime(Game.get().getClock().getTime())
-                    ).build()
-                    .toByteArray());
-            ctx.write(buffer);
+            syncClock(ctx);
+
             this.gameLoopService.enqueue(() -> {
                 Optional<Player> player = Game.get()
                         .getPlayers()
@@ -133,6 +127,7 @@ public class GameSocket {
                 } else {
                     Game.get().getPlayers().requestListOfPlayers(userId);
                 }
+                Game.get().getBolts().requestListOfLiveBolts(userId);
                 Game.get().getPlayers().connected(userId);
             });
         }
@@ -148,5 +143,16 @@ public class GameSocket {
             LOGGER.warning(ex.getMessage());
             return Optional.empty();
         }
+    }
+
+    private void syncClock(ServerWebSocket ctx) {
+        Buffer buffer = Buffer.buffer(DTO_THREAD_SAFE_BUILDER
+                .get()
+                .setClock(CLOCK_SYNC_THREAD_SAFE_BUILDER
+                        .get()
+                        .setTime(Game.get().getClock().getTime())
+                ).build()
+                .toByteArray());
+        ctx.write(buffer);
     }
 }

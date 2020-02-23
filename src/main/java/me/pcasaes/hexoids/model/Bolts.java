@@ -1,5 +1,10 @@
 package me.pcasaes.hexoids.model;
 
+import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.DirectedCommand;
+import pcasaes.hexoids.proto.GUID;
+import pcasaes.hexoids.proto.LiveBoltListCommandDto;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -9,7 +14,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static me.pcasaes.hexoids.model.DtoUtils.DIRECTED_COMMAND_BUILDER;
 import static me.pcasaes.hexoids.model.DtoUtils.DTO_BUILDER;
+import static me.pcasaes.hexoids.model.DtoUtils.LIVE_BOLTS_LIST_BUILDER;
 
 /**
  * The collection of bolts. This collections only tracks bolts maintained
@@ -27,6 +34,7 @@ public class Bolts implements Iterable<Bolt> {
     }
 
     private final Map<EntityId, Bolt> activeBolts = new HashMap<>();
+    private final Map<GUID, BoltFiredEventDto> publishableBoltDtos = new HashMap<>();
 
 
     /**
@@ -108,11 +116,21 @@ public class Bolts implements Iterable<Bolt> {
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
                 (domainEvent.getEvent().hasBoltExhausted() || domainEvent.getEvent().hasBoltFired())) {
+
             GameEvents.getClientEvents()
                     .register(DTO_BUILDER
                             .clear()
                             .setEvent(domainEvent.getEvent())
                             .build());
+
+            if (domainEvent.getEvent().hasBoltFired()) {
+                publishableBoltDtos.put(
+                        domainEvent.getEvent().getBoltFired().getBoltId(),
+                        domainEvent.getEvent().getBoltFired());
+
+            } else if (domainEvent.getEvent().hasBoltExhausted()) {
+                publishableBoltDtos.remove(domainEvent.getEvent().getBoltExhausted().getBoltId());
+            }
         }
     }
 
@@ -128,5 +146,24 @@ public class Bolts implements Iterable<Bolt> {
                 .stream()
                 .map(activeBolts::remove)
                 .forEach(Bolt::destroyObject);
+    }
+
+    public void requestListOfLiveBolts(EntityId requesterId) {
+        LiveBoltListCommandDto.Builder liveBoltsList = LIVE_BOLTS_LIST_BUILDER
+                .clear()
+                .addAllBolts(publishableBoltDtos.values());
+
+
+        DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
+                .clear()
+                .setPlayerId(requesterId.getGuid())
+                .setLiveBoltsList(liveBoltsList);
+
+        GameEvents.getClientEvents().register(
+                DTO_BUILDER
+                        .clear()
+                        .setDirectedCommand(builder)
+                        .build()
+        );
     }
 }

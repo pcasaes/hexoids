@@ -296,6 +296,7 @@ public interface Player {
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
+                                            .setTtl(Config.get().getBoltMaxDuration())
                                     )
                                     .build()
                     ));

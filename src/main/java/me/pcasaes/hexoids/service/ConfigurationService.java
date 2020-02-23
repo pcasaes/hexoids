@@ -34,7 +34,7 @@ public class ConfigurationService {
 
     private int playerNameLength;
 
-    private long boltMaxDuration;
+    private int boltMaxDuration;
 
     private float boltSpeed;
 
@@ -209,7 +209,7 @@ public class ConfigurationService {
         this.playerNameLength = playerNameLength;
     }
 
-    public long getBoltMaxDuration() {
+    public int getBoltMaxDuration() {
         return boltMaxDuration;
     }
 
@@ -218,7 +218,7 @@ public class ConfigurationService {
             @ConfigProperty(
                     name = "hexoids.config.bolt.max.duration",
                     defaultValue = "10000"
-            ) long boltMaxDuration) {
+            ) int boltMaxDuration) {
         this.boltMaxDuration = boltMaxDuration;
     }
 

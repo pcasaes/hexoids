@@ -40,6 +40,7 @@ message BoltFiredEventDto {
     float angle = 5;
     int64 startTimestamp = 6;
     float speed = 7;
+    int32 ttl = 8;
 }
 
 message PlayerDestroyedEventDto {
@@ -152,11 +153,16 @@ message PlayerScoreUpdateCommandDto {
     int64 score = 1;
 }
 
+message LiveBoltListCommandDto {
+    repeated BoltFiredEventDto bolts = 1;
+}
+
 message DirectedCommand {
     GUID playerId = 1;
     oneof command {
         PlayersListCommandDto playersList = 2;
         PlayerScoreUpdateCommandDto playerScoreUpdate = 3;
+        LiveBoltListCommandDto liveBoltsList = 4;
     }
 }
 
