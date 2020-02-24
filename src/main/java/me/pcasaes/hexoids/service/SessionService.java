@@ -61,18 +61,26 @@ public class SessionService {
     }
 
     private void asyncSend(EntityId userId, ServerWebSocket session, Buffer message) {
-        session.write(message, result -> {
-            if (result.failed()) {
-                boolean removed = this.remove(userId);
-                if (removed && LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.warning("Session closed: " + userId + ", " + result.cause());
+        try {
+            session.write(message, result -> {
+                if (result.failed()) {
+                    removeAndClose(userId, session, result.cause());
                 }
-                close(removed, session);
-                if (removed) {
-                    this.gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
-                }
-            }
-        });
+            });
+        } catch (RuntimeException ex) {
+            removeAndClose(userId, session, ex);
+        }
+    }
+
+    private void removeAndClose(EntityId userId, ServerWebSocket session, Throwable ex) {
+        boolean removed = this.remove(userId);
+        if (removed && LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.warning("Session closed: " + userId + ", " + ex);
+        }
+        close(removed, session);
+        if (removed) {
+            this.gameLoopService.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
+        }
     }
 
     private void close(boolean removed, ServerWebSocket session) {
