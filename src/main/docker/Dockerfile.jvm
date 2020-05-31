@@ -22,10 +22,6 @@ COPY target/*-runner.jar /deployments/app.jar
 COPY src/main/docker/docker-entrypoint.sh /deployments/docker-entrypoint.sh
 EXPOSE 8080
 
-RUN mkdir -p /deployments/sockets
-RUN chmod 777 /deployments/sockets
-RUN chown 101:root /deployments/sockets
-
 # run with user 101 and be prepared for be running in OpenShift too
 RUN adduser -G root --no-create-home --disabled-password 101 \
   && chown -R 101 /deployments \
