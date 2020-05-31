@@ -23,10 +23,6 @@ import java.util.Properties;
 public class ScoreBoardControlTopic implements TopicInfo {
 
     private final Collection<ConsumerInfo> consumerInfos = Collections.singleton(new ConsumerInfo() {
-        @Override
-        public boolean useSubscription() {
-            return true;
-        }
 
         @Override
         public Optional<Properties> consumerConfig() {
@@ -35,6 +31,7 @@ public class ScoreBoardControlTopic implements TopicInfo {
             properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "hexoids-server");
             properties.setProperty(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "10000");
             properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+            properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
             return Optional.of(properties);
         }

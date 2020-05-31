@@ -10,7 +10,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Event;
@@ -20,7 +19,6 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -63,6 +61,8 @@ public class KafkaConsumerService {
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configuration.getConnectionUrl());
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, UUIDBytesDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventDtoDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "hexoids-" + UUID.randomUUID());
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         this.startedAt = System.currentTimeMillis();
         topicInfo
@@ -71,27 +71,14 @@ public class KafkaConsumerService {
                     consumerInfo.consumerConfig()
                             .ifPresent(properties::putAll);
 
-                    if (consumerInfo.useSubscription()) {
-                        if (this.subscriber) {
-                            threads.add(startWithSubscription(
-                                    properties,
-                                    topicInfo.topic().name(),
-                                    consumerInfo
-                            ));
-                        } else {
-                            this.started = true;
-                        }
+                    if (this.subscriber) {
+                        threads.add(startWithSubscription(
+                                properties,
+                                topicInfo.topic().name(),
+                                consumerInfo
+                        ));
                     } else {
-                        try (Consumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties)) {
-                            kafkaConsumer.partitionsFor(topicInfo.topic().name())
-                                    .stream()
-                                    .map(pInfo -> new TopicPartition(pInfo.topic(), pInfo.partition()))
-                                    .map(topicPartition -> startWithoutSubscription(
-                                            properties,
-                                            topicPartition,
-                                            consumerInfo))
-                                    .forEach(threads::add);
-                        }
+                        this.started = true;
                     }
                 });
     }
@@ -105,29 +92,6 @@ public class KafkaConsumerService {
 
     boolean isStarted() {
         return started;
-    }
-
-    private KafkaThreadedConsumer startWithoutSubscription(
-            Properties properties,
-            TopicPartition topicPartition,
-            TopicInfo.ConsumerInfo consumerInfo) {
-
-        Consumer<UUID, Event> kafkaConsumer = new KafkaConsumer<>(properties);
-
-
-        Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
-        kafkaConsumer.assign(partitions);
-        kafkaConsumer.seekToBeginning(partitions);
-
-        KafkaThreadedConsumer kafkaThreadedConsumer = new KafkaThreadedConsumer(
-                consumerInfo,
-                kafkaConsumer,
-                gameLoopService);
-
-        kafkaThreadedConsumer.thread = new Thread(kafkaThreadedConsumer::run, "kafka-consumer-" + topicPartition.topic());
-        kafkaThreadedConsumer.thread.start();
-
-        return kafkaThreadedConsumer;
     }
 
     private KafkaThreadedConsumer startWithSubscription(

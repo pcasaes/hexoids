@@ -62,16 +62,12 @@ public class BoltLifeCycleTopic implements TopicInfo {
             private final ConsumerRecord<UUID, Event>[] recordToOffset = new ConsumerRecord[partitions];
 
             @Override
-            public boolean useSubscription() {
-                return true;
-            }
-
-            @Override
             public Optional<Properties> consumerConfig() {
                 Properties properties = new Properties();
 
                 properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "hexoids-server");
                 properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+                properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
                 return Optional.of(properties);
             }
@@ -108,7 +104,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
 
             void onComplete(Map<TopicPartition, OffsetAndMetadata> offsets, Exception exception) {
                 if (exception != null) {
-                    LOGGER.log(Level.WARNING, "Could not commit off data " + offsets, exception);
+                    LOGGER.log(Level.WARNING, exception, () -> "Could not commit off data " + offsets);
                 }
             }
         });
@@ -118,7 +114,7 @@ public class BoltLifeCycleTopic implements TopicInfo {
     @Override
     public NewTopic newTopic() {
         final Map<String, String> props = new HashMap<>();
-        long boltDurationFactor = this.configurationService.getBoltMaxDuration() * 2;
+        long boltDurationFactor = this.configurationService.getBoltMaxDuration() * 2L;
         props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
         props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
         props.put(TopicConfig.SEGMENT_BYTES_CONFIG, String.valueOf(1024 * 1024 * 128));
