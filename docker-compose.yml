@@ -30,6 +30,17 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - service-network
+  hexoids-kafka-topic-create:
+    build:
+      context: src/main/docker/topics/
+      dockerfile: Dockerfile
+    image: me.pcasaes/hexoids-topics
+    environment:
+      BROKERS_LIST: hexoids-kafka:9092
+    depends_on:
+      - hexoids-kafka
+    networks:
+      - service-network
 
   hexoids:
     build:
@@ -42,6 +53,7 @@ services:
       - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false
     depends_on:
       - hexoids-kafka
+      - hexoids-kafka-topic-create
     networks:
       - service-network
 

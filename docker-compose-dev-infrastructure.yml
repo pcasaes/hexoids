@@ -13,12 +13,27 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: hexoids-kafka
       KAFKA_ZOOKEEPER_CONNECT: hexoids-zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - hexoids-zookeeper
     networks:
       - service-network
+
+  hexoids-kafka-topic-create:
+    build:
+      context: src/main/docker/topics/
+      dockerfile: Dockerfile
+    image: me.pcasaes/hexoids-topics
+    environment:
+      BROKERS_LIST: hexoids-kafka:9092
+    depends_on:
+      - hexoids-kafka
+    networks:
+      - service-network
+
+
   hexoids-kafka-manager:
     container_name: kafka-manager
     hostname: kafka-manager
