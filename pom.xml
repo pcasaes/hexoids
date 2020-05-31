@@ -71,10 +71,6 @@
       <artifactId>quarkus-vertx-web</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-undertow</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-javalite</artifactId>
       <version>${protobuf.version}</version>
@@ -202,7 +198,7 @@
 
         </executions>
         <configuration>
-          <nodeVersion>v13.7.0</nodeVersion>
+          <nodeVersion>v14.3.0</nodeVersion>
           <workingDirectory>src/main/js-proto</workingDirectory>
         </configuration>
       </plugin>
