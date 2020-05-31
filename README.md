@@ -64,7 +64,7 @@ Hexoids is built using [Quarkus](https://quarkus.io/)
 
 To start the service run:
 
-    mvn compile quarkus:dev
+    ./mvnw compile quarkus:dev
     
 and open in a WebGL capable browser:
 
@@ -72,7 +72,7 @@ and open in a WebGL capable browser:
     
 If you wish to use a different port run:
 
-    mvn compile quarkus:dev -Dquarkus.http.port=8180
+    ./mvnw compile quarkus:dev -Dquarkus.http.port=8180
     
 # Production
 
