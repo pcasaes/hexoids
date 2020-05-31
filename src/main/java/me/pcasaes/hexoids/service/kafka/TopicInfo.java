@@ -47,18 +47,6 @@ public interface TopicInfo {
     interface ConsumerInfo {
 
         /**
-         * If true the consumer specifies a kafka subscription (with group.id).
-         * Otherwise will read the topic from the beginning.
-         *
-         * @return
-         * @see org.apache.kafka.clients.consumer.KafkaConsumer#subscribe(Collection)
-         * @see org.apache.kafka.clients.consumer.KafkaConsumer#assign(Collection)
-         */
-        default boolean useSubscription() {
-            return false;
-        }
-
-        /**
          * Returns properties used to configure the consumer
          *
          * @return
