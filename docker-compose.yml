@@ -9,7 +9,7 @@ services:
       - service-network
 
   hexoids-kafka:
-    image: 'wurstmeister/kafka:2.12-2.3.1'
+    image: 'wurstmeister/kafka:2.12-2.5.0'
     ports:
       - "9092:9092"
     environment:
