@@ -6,13 +6,11 @@ import me.pcasaes.hexoids.model.GameTopic;
 import me.pcasaes.hexoids.service.ConfigurationService;
 import me.pcasaes.hexoids.service.kafka.TopicInfo;
 import me.pcasaes.hexoids.service.kafka.TopicInfoPriority;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.config.TopicConfig;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Event;
 
@@ -21,7 +19,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -36,8 +33,6 @@ public class BoltLifeCycleTopic implements TopicInfo {
 
     private static final Logger LOGGER = Logger.getLogger(BoltLifeCycleTopic.class.getName());
 
-    private final ConfigurationService configurationService;
-
     private final int partitions;
 
     private final Collection<ConsumerInfo> consumerInfos;
@@ -49,7 +44,6 @@ public class BoltLifeCycleTopic implements TopicInfo {
                     name = "hexoids.config.service.kafka.topics.bolt-life-cycle.partitions",
                     defaultValue = "1"
             ) int partitions) {
-        this.configurationService = configurationService;
         this.partitions = partitions;
 
         if (LOGGER.isLoggable(Level.INFO)) {
@@ -108,22 +102,6 @@ public class BoltLifeCycleTopic implements TopicInfo {
                 }
             }
         });
-    }
-
-
-    @Override
-    public NewTopic newTopic() {
-        final Map<String, String> props = new HashMap<>();
-        long boltDurationFactor = this.configurationService.getBoltMaxDuration() * 2L;
-        props.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
-        props.put(TopicConfig.SEGMENT_MS_CONFIG, String.valueOf(Math.max(60_000, boltDurationFactor)));
-        props.put(TopicConfig.SEGMENT_BYTES_CONFIG, String.valueOf(1024 * 1024 * 128));
-        props.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.25");
-        props.put(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_DELETE);
-        props.put(TopicConfig.MESSAGE_TIMESTAMP_TYPE_CONFIG, "LogAppendTime");
-
-        return new NewTopic(topic().name(), this.partitions, (short) 1)
-                .configs(props);
     }
 
     @Override

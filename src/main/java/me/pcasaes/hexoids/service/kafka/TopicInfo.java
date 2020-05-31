@@ -2,7 +2,6 @@ package me.pcasaes.hexoids.service.kafka;
 
 import me.pcasaes.hexoids.model.DomainEvent;
 import me.pcasaes.hexoids.model.GameTopic;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -19,13 +18,6 @@ import java.util.UUID;
  * This interface sets up a Kafka topic with a list of consumers.
  */
 public interface TopicInfo {
-
-    /**
-     * Must return a {@link NewTopic} that will be used to create the topic
-     *
-     * @return
-     */
-    NewTopic newTopic();
 
     /**
      * Specified which game {@link GameTopic} this Kafka topic is linked to.
