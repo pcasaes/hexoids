@@ -60,7 +60,6 @@ public class BoltLifeCycleTopic implements TopicInfo {
                 Properties properties = new Properties();
 
                 properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "hexoids-server");
-                properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
                 properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
                 return Optional.of(properties);
