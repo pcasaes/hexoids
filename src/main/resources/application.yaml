@@ -69,6 +69,137 @@ hexoids:
           bolt-life-cycle:
             partitions: 1
 
+mp:
+  messaging:
+    incoming:
+      join-game:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: JOIN_GAME_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: false
+        auto:
+          offset:
+            reset: earliest
+        group:
+          instance:
+            id: static
+        session:
+          timeout:
+            ms: 60000
+
+      player-action:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: PLAYER_ACTION_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: false
+        auto:
+          offset:
+            reset: earliest
+        group:
+          instance:
+            id: static
+        session:
+          timeout:
+            ms: 60000
+
+      bolt-life-cycle:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: BOLT_LIFECYCLE_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: false
+        auto:
+          offset:
+            reset: earliest
+        group:
+          id: hexoids-server-bolt-life-cycle
+
+      bolt-action:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: BOLT_ACTION_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: false
+        auto:
+          offset:
+            reset: earliest
+        group:
+          instance:
+            id: static
+        session:
+          timeout:
+            ms: 60000
+
+      score-board-control:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: SCORE_BOARD_CONTROL_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: true
+        auto:
+          commit:
+            interval:
+              ms: 10000
+          offset:
+            reset: latest
+        group:
+          id: hexoids-server-score-board-control
+
+      score-board-update:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: SCORE_BOARD_UPDATE_TOPIC
+        value:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+        key:
+          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+        enable:
+          auto:
+            commit: false
+        auto:
+          offset:
+            reset: earliest
+        group:
+          instance:
+            id: static
+        session:
+          timeout:
+            ms: 60000
+
+
 quarkus:
   vertx:
     prefer-native-transport: true
