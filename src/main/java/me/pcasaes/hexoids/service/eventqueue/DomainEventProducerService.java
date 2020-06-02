@@ -1,9 +1,11 @@
 package me.pcasaes.hexoids.service.eventqueue;
 
-import com.google.protobuf.GeneratedMessageLite;
+import io.smallrye.reactive.messaging.kafka.KafkaRecord;
 import me.pcasaes.hexoids.model.DomainEvent;
-import me.pcasaes.hexoids.service.kafka.KafkaProducerService;
-import me.pcasaes.hexoids.service.kafka.KafkaProducerType;
+import me.pcasaes.hexoids.model.GameTopic;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
+import pcasaes.hexoids.proto.Event;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,24 +16,33 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class DomainEventProducerService implements EventQueueConsumerService<DomainEvent> {
 
-    private KafkaProducerService producerService;
+    private final Emitter<Event>[] emitters;
 
     @Inject
     public DomainEventProducerService(
-            @KafkaProducerType(KafkaProducerType.Type.FAST) KafkaProducerService producerService
+            @Channel("join-game-out") Emitter<Event> joinGameEmitter,
+            @Channel("player-action-out") Emitter<Event> playerActionEmitter,
+            @Channel("bolt-life-cycle-out") Emitter<Event> boltLifeCycleEmitter,
+            @Channel("bolt-action-out") Emitter<Event> boltActionEmitter,
+            @Channel("score-board-control-out") Emitter<Event> scoreBoardControlEmitter,
+            @Channel("score-board-update-out") Emitter<Event> scoreBoardUpdateEmitter
     ) {
-        this.producerService = producerService;
-    }
+        Emitter<Event>[] em = new Emitter[GameTopic.values().length];
+        em[GameTopic.JOIN_GAME_TOPIC.ordinal()] = joinGameEmitter;
+        em[GameTopic.PLAYER_ACTION_TOPIC.ordinal()] = playerActionEmitter;
+        em[GameTopic.BOLT_LIFECYCLE_TOPIC.ordinal()] = boltLifeCycleEmitter;
+        em[GameTopic.BOLT_ACTION_TOPIC.ordinal()] = boltActionEmitter;
+        em[GameTopic.SCORE_BOARD_CONTROL_TOPIC.ordinal()] = scoreBoardControlEmitter;
+        em[GameTopic.SCORE_BOARD_UPDATE_TOPIC.ordinal()] = scoreBoardUpdateEmitter;
 
-    private byte[] serialize(GeneratedMessageLite<?, ?> value) {
-        return value.toByteArray();
+        this.emitters = em;
     }
 
     @Override
     public void accept(DomainEvent event) {
         if (event != null) {
-            byte[] message = event.getEvent() == null ? null : serialize(event.getEvent());
-            this.producerService.send(event.getTopic(), event.getKey(), message);
+            this.emitters[GameTopic.valueOf(event.getTopic()).ordinal()]
+                    .send(KafkaRecord.of(event.getKey(), event.getEvent()));
         }
     }
 
