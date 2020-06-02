@@ -71,6 +71,79 @@ hexoids:
 
 mp:
   messaging:
+    outgoing:
+      join-game-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: JOIN_GAME_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
+      player-action-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: PLAYER_ACTION_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
+      bolt-life-cycle-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: BOLT_LIFECYCLE_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
+      bolt-action-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: BOLT_ACTION_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
+      score-board-control-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: SCORE_BOARD_CONTROL_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
+      score-board-update-out:
+        connector: smallrye-kafka
+        bootstrap:
+          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
+        topic: SCORE_BOARD_UPDATE_TOPIC
+        value:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+        key:
+          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+        acks: 0
+        waitForWriteCompletion: false
+
     incoming:
       join-game:
         connector: smallrye-kafka

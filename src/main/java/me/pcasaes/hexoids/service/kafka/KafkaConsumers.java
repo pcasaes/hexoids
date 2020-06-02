@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids.service.kafka;
 
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.vertx.AsyncResultUni;
 import io.smallrye.reactive.messaging.kafka.IncomingKafkaRecord;
 import io.vertx.core.AsyncResult;
@@ -17,6 +18,7 @@ import pcasaes.hexoids.proto.Event;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.UUID;
@@ -57,6 +59,10 @@ public class KafkaConsumers implements KafkaService {
         } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException(ex);
         }
+    }
+
+    public void startup(@Observes StartupEvent event) {
+        LOGGER.info("Starting up consumers");
     }
 
     @PostConstruct
