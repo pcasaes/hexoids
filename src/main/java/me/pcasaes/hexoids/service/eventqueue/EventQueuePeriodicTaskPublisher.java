@@ -24,7 +24,7 @@ public class EventQueuePeriodicTaskPublisher {
             .setFlush(Flush.newBuilder())
             .build();
 
-    private final DisruptorService disruptorService;
+    private final DisruptorInService disruptorInService;
 
     private final GameLoopService gameLoopService;
     private final ClientBroadcastService clientBroadcastService;
@@ -36,20 +36,12 @@ public class EventQueuePeriodicTaskPublisher {
     private long lastGamePublish;
     private long lastClientFlush;
 
-
-    public EventQueuePeriodicTaskPublisher() {
-        this.disruptorService = null;
-        this.gameLoopService = null;
-        this.clientBroadcastService = null;
-        this.configurationService = null;
-    }
-
     @Inject
-    public EventQueuePeriodicTaskPublisher(DisruptorService disruptorService,
+    public EventQueuePeriodicTaskPublisher(DisruptorInService disruptorInService,
                                            GameLoopService gameLoopService,
                                            ClientBroadcastService clientBroadcastService,
                                            ConfigurationService configurationService) {
-        this.disruptorService = disruptorService;
+        this.disruptorInService = disruptorInService;
         this.gameLoopService = gameLoopService;
         this.clientBroadcastService = clientBroadcastService;
         this.configurationService = configurationService;
@@ -85,7 +77,7 @@ public class EventQueuePeriodicTaskPublisher {
 
     private void publish(GameLoopService.GameRunnable event) {
         this.lastGamePublish = Game.get().getClock().getTime();
-        disruptorService.enqueueGame(event);
+        disruptorInService.enqueueGame(event);
     }
 
     private void clientFlushPeriodicTask() {
@@ -98,7 +90,7 @@ public class EventQueuePeriodicTaskPublisher {
 
     private void flush() {
         this.lastClientFlush = Game.get().getClock().getTime();
-        disruptorService.enqueueClient(FLUSH);
+        disruptorInService.enqueueClient(FLUSH);
     }
 
     @PreDestroy
