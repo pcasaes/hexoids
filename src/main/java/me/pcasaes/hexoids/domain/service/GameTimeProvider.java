@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.application.clock;
+package me.pcasaes.hexoids.domain.service;
 
 import me.pcasaes.hexoids.domain.model.Game;
 

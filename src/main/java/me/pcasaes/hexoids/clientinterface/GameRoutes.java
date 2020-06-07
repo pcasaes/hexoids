@@ -5,7 +5,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
 import me.pcasaes.hexoids.application.eventhandlers.Consumers;
-import me.pcasaes.hexoids.application.clock.GameTime;
+import me.pcasaes.hexoids.domain.service.GameTime;
 import me.pcasaes.hexoids.application.commands.CommandsService;
 import me.pcasaes.hexoids.domain.model.EntityId;
 import pcasaes.hexoids.proto.MoveCommandDto;

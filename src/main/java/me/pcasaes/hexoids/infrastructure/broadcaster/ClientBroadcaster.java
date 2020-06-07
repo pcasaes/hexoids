@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.infrastructure.broadcaster;
 
 import me.pcasaes.hexoids.clientinterface.SessionsService;
-import me.pcasaes.hexoids.application.clock.GameTime;
+import me.pcasaes.hexoids.domain.service.GameTime;
 import me.pcasaes.hexoids.domain.model.EntityId;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.DirectedCommand;

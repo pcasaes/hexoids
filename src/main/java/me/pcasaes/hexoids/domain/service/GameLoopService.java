@@ -1,6 +1,5 @@
 package me.pcasaes.hexoids.domain.service;
 
-import me.pcasaes.hexoids.application.clock.GameTime;
 import me.pcasaes.hexoids.domain.model.Config;
 import me.pcasaes.hexoids.domain.model.Game;
 
