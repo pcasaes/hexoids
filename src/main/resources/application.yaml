@@ -74,86 +74,72 @@ mp:
     outgoing:
       join-game-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: JOIN_GAME_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
       player-action-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: PLAYER_ACTION_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
       bolt-life-cycle-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: BOLT_LIFECYCLE_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
       bolt-action-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: BOLT_ACTION_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
       score-board-control-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: SCORE_BOARD_CONTROL_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
       score-board-update-out:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: SCORE_BOARD_UPDATE_TOPIC
         value:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
         key:
-          serializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesSerializer
+          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         waitForWriteCompletion: false
 
     incoming:
       join-game:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: JOIN_GAME_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: false
@@ -169,13 +155,11 @@ mp:
 
       player-action:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: PLAYER_ACTION_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: false
@@ -191,13 +175,11 @@ mp:
 
       bolt-life-cycle:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: BOLT_LIFECYCLE_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: false
@@ -209,13 +191,11 @@ mp:
 
       bolt-action:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: BOLT_ACTION_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: false
@@ -231,13 +211,11 @@ mp:
 
       score-board-control:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: SCORE_BOARD_CONTROL_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: true
@@ -252,13 +230,11 @@ mp:
 
       score-board-update:
         connector: smallrye-kafka
-        bootstrap:
-          servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
         topic: SCORE_BOARD_UPDATE_TOPIC
         value:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.EventDtoDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
-          deserializer: me.pcasaes.hexoids.service.kafka.converter.UUIDBytesDeserializer
+          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
         enable:
           auto:
             commit: false
@@ -272,6 +248,9 @@ mp:
           timeout:
             ms: 60000
 
+kafka:
+  bootstrap:
+    servers: ${KAFKA_BROKER_LIST:hexoids-kafka:9092}
 
 quarkus:
   vertx:
