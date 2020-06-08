@@ -17,10 +17,10 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.DIRECTED_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.DTO_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYERS_LIST_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYER_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.DTO_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYERS_LIST_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYER_BUILDER;
 
 /**
  * The collection of Players.
@@ -118,7 +118,7 @@ public class Players implements Iterable<Player> {
                 .setPlayerId(requesterId.getGuid())
                 .setPlayersList(playerListBuilder);
 
-        GameEvents.getClientEvents().register(
+        GameEvents.getClientEvents().dispatch(
                 DTO_BUILDER
                         .clear()
                         .setDirectedCommand(builder)

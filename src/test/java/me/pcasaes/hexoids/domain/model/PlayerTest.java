@@ -1,6 +1,7 @@
 package me.pcasaes.hexoids.domain.model;
 
 
+import me.pcasaes.hexoids.domain.config.Config;
 import me.pcasaes.hexoids.domain.vector.PositionVector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -24,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYER_JOINED_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYER_JOINED_BUILDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -76,8 +77,8 @@ class PlayerTest {
 
         GameTopic.setGame(game);
 
-        GameEvents.getClientEvents().setConsumer(null);
-        GameEvents.getDomainEvents().setConsumer(domainEvent ->
+        GameEvents.getClientEvents().registerEventDispatcher(event -> {});
+        GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
                 GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
         );
 
@@ -113,7 +114,7 @@ class PlayerTest {
     @Test
     void testJoin() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         this.players.createOrGet(one).join(JoinCommandDto
@@ -130,7 +131,7 @@ class PlayerTest {
     @Test
     void testJoinNoName() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         this.players.createOrGet(one).join(JoinCommandDto
@@ -146,7 +147,7 @@ class PlayerTest {
     @Test
     void testJoined() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
 
@@ -167,7 +168,7 @@ class PlayerTest {
     @Test
     void testLeave() {
         List<Dto> dtos = new ArrayList<>();
-        GameEvents.getClientEvents().setConsumer(dtos::add);
+        GameEvents.getClientEvents().registerEventDispatcher(dtos::add);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -192,7 +193,7 @@ class PlayerTest {
     @Test
     void testRequestListOfPlayers() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         EntityId two = EntityId.newId();
@@ -230,7 +231,7 @@ class PlayerTest {
     @Test
     void testMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -258,7 +259,7 @@ class PlayerTest {
     @Test
     void testLimitedMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -284,7 +285,7 @@ class PlayerTest {
     @Test
     void testBounceMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -322,7 +323,7 @@ class PlayerTest {
     @Test
     void testOnlyAngleMove() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
@@ -359,7 +360,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(50L);
 
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         player.move(0f, 0f, null);
 
@@ -426,7 +427,7 @@ class PlayerTest {
         player.move(0.5f, 0.5f, (float) Math.PI);
 
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         player.fire();
 
@@ -467,7 +468,7 @@ class PlayerTest {
         player.move(0, 0.5f, 0f);
 
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         player.fire();
 
@@ -639,7 +640,7 @@ class PlayerTest {
         player1.move(0.5f, 0.5f, 1f);
 
         List<DomainEvent> domainEvents = new ArrayList<>();
-        GameEvents.getDomainEvents().setConsumer(domainEvents::add);
+        GameEvents.getDomainEvents().registerEventDispatcher(domainEvents::add);
 
         player1.destroy(two);
 
@@ -659,7 +660,7 @@ class PlayerTest {
     @Test
     void testSpawn() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);

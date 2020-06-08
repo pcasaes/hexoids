@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids.domain.model;
 
+import me.pcasaes.hexoids.domain.config.Config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -39,8 +40,8 @@ class BoltTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
 
-        GameEvents.getClientEvents().setConsumer(null);
-        GameEvents.getDomainEvents().setConsumer(null);
+        GameEvents.getClientEvents().registerEventDispatcher(null);
+        GameEvents.getDomainEvents().registerEventDispatcher(null);
 
         bolts = Bolts.create();
 
@@ -59,7 +60,7 @@ class BoltTest {
     @Test
     void testFireMoveAndExhaust() {
         List<DomainEvent> events = new ArrayList<>();
-        GameEvents.getDomainEvents().setConsumer(events::add);
+        GameEvents.getDomainEvents().registerEventDispatcher(events::add);
 
         EntityId one = EntityId.newId();
         Config.get().setBoltMaxDuration(1_500);
@@ -122,7 +123,7 @@ class BoltTest {
     @Test
     void testMoveRight() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -149,7 +150,7 @@ class BoltTest {
     @Test
     void testMoveRightDown() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -175,7 +176,7 @@ class BoltTest {
     @Test
     void testMoveDown() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -201,7 +202,7 @@ class BoltTest {
     @Test
     void testMoveLeftDown() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -227,7 +228,7 @@ class BoltTest {
     @Test
     void testMoveLeft() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -253,7 +254,7 @@ class BoltTest {
     @Test
     void testMoveLefUp() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -279,7 +280,7 @@ class BoltTest {
     @Test
     void testMoveUp() {
         AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().setConsumer(eventReference::set);
+        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
 
         Config.get().setBoltMaxDuration(1_500);
         EntityId one = EntityId.newId();
@@ -337,7 +338,7 @@ class BoltTest {
 
 
         List<DomainEvent> domainEvents = new ArrayList<>();
-        GameEvents.getDomainEvents().setConsumer(domainEvents::add);
+        GameEvents.getDomainEvents().registerEventDispatcher(domainEvents::add);
 
         bolts.fixedUpdate(clock.getTime());
 
@@ -387,7 +388,7 @@ class BoltTest {
                 .collision(bolt.getPositionVector(), Config.get().getBoltCollisionRadius());
 
         List<DomainEvent> events = new ArrayList<>();
-        GameEvents.getDomainEvents().setConsumer(events::add);
+        GameEvents.getDomainEvents().registerEventDispatcher(events::add);
 
         bolts.fixedUpdate(clock.getTime());
 

@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids.domain.model;
 
+import me.pcasaes.hexoids.domain.utils.DtoUtils;
 import pcasaes.hexoids.proto.PlayerScoreIncreasedEventDto;
 import pcasaes.hexoids.proto.ScoreBoardUpdatedEventDto;
 import pcasaes.hexoids.proto.ScoreEntry;
@@ -12,11 +13,11 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYER_SCORE_INCREASED_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYER_SCORE_UPDATED_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.PLAYER_SCORE_UPDATE_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.SCORE_BOARD_ENTRY_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.SCORE_BOARD_UPDATE_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYER_SCORE_INCREASED_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYER_SCORE_UPDATED_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.PLAYER_SCORE_UPDATE_COMMAND_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.SCORE_BOARD_ENTRY_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.SCORE_BOARD_UPDATE_BUILDER;
 
 public interface ScoreBoard {
 
@@ -56,7 +57,7 @@ public interface ScoreBoard {
 
         @Override
         public void updateScore(EntityId playerId, int deltaScore) {
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent.create(
                             GameTopic.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId.getId(),
@@ -82,7 +83,7 @@ public interface ScoreBoard {
                 int score = this.scores.getOrDefault(playerId, 0) + event.getGained();
                 this.scores.put(playerId, score);
 
-                GameEvents.getDomainEvents().register(
+                GameEvents.getDomainEvents().dispatch(
                         DomainEvent.create(
                                 GameTopic.SCORE_BOARD_UPDATE_TOPIC.name(),
                                 playerId.getId(),
@@ -104,7 +105,7 @@ public interface ScoreBoard {
             this.scores.remove(playerId);
             this.scoresTimestamps.remove(playerId);
 
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent.delete(
                             GameTopic.SCORE_BOARD_UPDATE_TOPIC.name(),
                             playerId.getId()
@@ -124,7 +125,7 @@ public interface ScoreBoard {
             this.updatedScores.put(playerId, score);
             GameEvents
                     .getClientEvents()
-                    .register(
+                    .dispatch(
                             DtoUtils.newDtoDirectedCommand(playerId.getGuid(), cmd ->
                                     cmd.setPlayerScoreUpdate(
                                             PLAYER_SCORE_UPDATE_COMMAND_BUILDER
@@ -137,7 +138,7 @@ public interface ScoreBoard {
 
         @Override
         public void resetScore(EntityId playerId) {
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent.delete(
                             GameTopic.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId.getId()
@@ -178,7 +179,7 @@ public interface ScoreBoard {
                 updatedScores.clear();
                 if (!rankedScoreBoard.isEmpty()) {
                     rankedScoreBoard.sort(Entry::compare);
-                    GameEvents.getClientEvents().register(
+                    GameEvents.getClientEvents().dispatch(
                             DtoUtils
                                     .newDtoEvent(evt -> {
                                         ScoreBoardUpdatedEventDto.Builder scoreBuilder = SCORE_BOARD_UPDATE_BUILDER

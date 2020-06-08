@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.clientinterface;
+package me.pcasaes.hexoids.entrypoints.web;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;

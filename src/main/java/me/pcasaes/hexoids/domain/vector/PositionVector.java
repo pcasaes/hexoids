@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.domain.vector;
 
-import me.pcasaes.hexoids.domain.model.Config;
+import me.pcasaes.hexoids.domain.config.Config;
 import me.pcasaes.hexoids.domain.utils.TrigUtil;
 
 import java.util.OptionalDouble;

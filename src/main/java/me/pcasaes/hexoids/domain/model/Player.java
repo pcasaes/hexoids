@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.domain.model;
 
+import me.pcasaes.hexoids.domain.config.Config;
+import me.pcasaes.hexoids.domain.utils.DtoUtils;
 import me.pcasaes.hexoids.domain.utils.TrigUtil;
 import me.pcasaes.hexoids.domain.vector.PositionVector;
 import me.pcasaes.hexoids.domain.vector.Vector2;
@@ -274,7 +276,7 @@ public interface Player {
 
             final EntityId boltId = EntityId.newId();
             GameEvents.getDomainEvents()
-                    .register(DomainEvent.create(
+                    .dispatch(DomainEvent.create(
                             GameTopic.BOLT_LIFECYCLE_TOPIC.name(),
                             boltId.getId(),
                             DtoUtils
@@ -369,7 +371,7 @@ public interface Player {
         public void join(JoinCommandDto command) {
             setName(command.getName());
 
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent
                             .create(GameTopic.JOIN_GAME_TOPIC.name(),
                                     this.id.getId(),
@@ -391,7 +393,7 @@ public interface Player {
             this.ship = event.getShip();
             GameEvents
                     .getClientEvents()
-                    .register(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(event)));
+                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(event)));
         }
 
         @Override
@@ -432,7 +434,7 @@ public interface Player {
             this.angle = movedEvent.getAngle();
             GameEvents
                     .getClientEvents()
-                    .register(DtoUtils.newDtoEvent(ev -> {
+                    .dispatch(DtoUtils.newDtoEvent(ev -> {
                         if (spawnedEvent != null) {
                             ev.setPlayerSpawned(spawnedEvent);
                         } else {
@@ -443,7 +445,7 @@ public interface Player {
         }
 
         private void fireMoveDomainEvent(long eventTime) {
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
                             DtoUtils
@@ -464,14 +466,14 @@ public interface Player {
 
         @Override
         public void leave() {
-            GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name(), this.id.getId()));
-            GameEvents.getDomainEvents().register(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
+            GameEvents.getDomainEvents().dispatch(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name(), this.id.getId()));
+            GameEvents.getDomainEvents().dispatch(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
         }
 
         @Override
         public void left() {
             scoreBoard.resetScore(this.id);
-            GameEvents.getClientEvents().register(
+            GameEvents.getClientEvents().dispatch(
                     DtoUtils.newDtoEvent(ev -> ev.setPlayerLeft(DtoUtils.PLAYER_LEFT_BUILDER
                             .clear()
                             .setPlayerId(id.getGuid())))
@@ -488,7 +490,7 @@ public interface Player {
 
         @Override
         public void destroy(EntityId byPlayerId) {
-            GameEvents.getDomainEvents().register(
+            GameEvents.getDomainEvents().dispatch(
                     DomainEvent.create(
                             GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
@@ -510,7 +512,7 @@ public interface Player {
         public void destroyed(PlayerDestroyedEventDto event) {
             setSpawned(false);
             this.scoreBoard.resetScore(this.id);
-            GameEvents.getClientEvents().register(
+            GameEvents.getClientEvents().dispatch(
                     DtoUtils.newDtoEvent(ev -> ev.setPlayerDestroyed(event))
             );
         }
@@ -526,7 +528,7 @@ public interface Player {
                 setSpawned(true);
                 long now = clock.getTime();
                 resetPosition(now);
-                GameEvents.getDomainEvents().register(
+                GameEvents.getDomainEvents().dispatch(
                         DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                                 this.id.getId(),
                                 DtoUtils

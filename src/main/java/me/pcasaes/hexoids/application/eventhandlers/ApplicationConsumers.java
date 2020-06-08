@@ -4,22 +4,22 @@ import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.domain.model.DomainEvent;
 import me.pcasaes.hexoids.domain.model.GameTopic;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@ApplicationScoped
-public class Consumers {
+public class ApplicationConsumers {
 
-    private static final Logger LOGGER = Logger.getLogger(Consumers.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ApplicationConsumers.class.getName());
 
     private final GameQueue gameQueue;
 
-    @Inject
-    public Consumers(GameQueue gameQueue) {
+    private ApplicationConsumers(GameQueue gameQueue) {
         this.gameQueue = gameQueue;
+    }
+
+    public static ApplicationConsumers create(GameQueue gameQueue) {
+        return new ApplicationConsumers(gameQueue);
     }
 
 

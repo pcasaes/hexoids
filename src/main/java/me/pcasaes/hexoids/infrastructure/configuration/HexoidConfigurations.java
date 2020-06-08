@@ -2,7 +2,7 @@ package me.pcasaes.hexoids.infrastructure.configuration;
 
 
 import io.quarkus.runtime.StartupEvent;
-import me.pcasaes.hexoids.domain.model.Config;
+import me.pcasaes.hexoids.domain.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;

@@ -1,11 +1,11 @@
-package me.pcasaes.hexoids.clientinterface;
+package me.pcasaes.hexoids.entrypoints.web;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
-import me.pcasaes.hexoids.application.commands.CommandsService;
-import me.pcasaes.hexoids.application.eventhandlers.Consumers;
+import me.pcasaes.hexoids.application.commands.ApplicationCommands;
+import me.pcasaes.hexoids.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.domain.model.EntityId;
 import me.pcasaes.hexoids.domain.service.GameTimeService;
 import pcasaes.hexoids.proto.MoveCommandDto;
@@ -19,30 +19,30 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.DTO_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.DTO_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
 
 @ApplicationScoped
 public class GameRoutes {
 
     private static final Logger LOGGER = Logger.getLogger(GameRoutes.class.getName());
 
-    private final SessionsService sessionService;
+    private final ClientSessions clientSessions;
 
     private final GameTimeService gameTime;
 
-    private final CommandsService commandsService;
+    private final ApplicationCommands applicationCommands;
 
-    private final Consumers.HaveStarted consumersHaveStarted;
+    private final ApplicationConsumers.HaveStarted consumersHaveStarted;
 
     @Inject
-    public GameRoutes(SessionsService sessionService,
+    public GameRoutes(ClientSessions clientSessions,
                       GameTimeService gameTime,
-                      CommandsService commandsService,
-                      Consumers.HaveStarted consumersHaveStarted) {
-        this.sessionService = sessionService;
-        this.commandsService = commandsService;
+                      ApplicationCommands applicationCommands,
+                      ApplicationConsumers.HaveStarted consumersHaveStarted) {
+        this.clientSessions = clientSessions;
+        this.applicationCommands = applicationCommands;
         this.gameTime = gameTime;
         this.consumersHaveStarted = consumersHaveStarted;
     }
@@ -76,12 +76,12 @@ public class GameRoutes {
             return;
         }
 
-        this.sessionService.add(userId, session);
+        this.clientSessions.add(userId, session);
     }
 
     public void onClose(EntityId userId) {
-        if (sessionService.remove(userId)) {
-            this.commandsService.getLeaveGameCommand().leave(userId);
+        if (clientSessions.remove(userId)) {
+            this.applicationCommands.getLeaveGameCommand().leave(userId);
         }
     }
 
@@ -98,14 +98,14 @@ public class GameRoutes {
     private void onCommand(ServerWebSocket ctx, EntityId userId, RequestCommand command) {
         if (command.hasMove()) {
             MoveCommandDto moveCommandDto = command.getMove();
-            this.commandsService.getMoveCommand().move(userId, moveCommandDto);
+            this.applicationCommands.getMoveCommand().move(userId, moveCommandDto);
         } else if (command.hasFire()) {
-            this.commandsService.getFireCommand().fire(userId);
+            this.applicationCommands.getFireCommand().fire(userId);
         } else if (command.hasSpawn()) {
-            this.commandsService.getSpawn().spawn(userId);
+            this.applicationCommands.getSpawn().spawn(userId);
         } else if (command.hasJoin()) {
             syncClock(ctx);
-            this.commandsService.getJoinGameCommand().join(userId, command.getJoin());
+            this.applicationCommands.getJoinGameCommand().join(userId, command.getJoin());
         }
     }
 
