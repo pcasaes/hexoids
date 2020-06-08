@@ -1,8 +1,8 @@
 package me.pcasaes.hexoids.infrastructure.broadcaster;
 
 import me.pcasaes.hexoids.clientinterface.SessionsService;
-import me.pcasaes.hexoids.domain.service.GameTime;
 import me.pcasaes.hexoids.domain.model.EntityId;
+import me.pcasaes.hexoids.domain.service.GameTimeService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
@@ -10,7 +10,6 @@ import pcasaes.hexoids.proto.Events;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.function.LongSupplier;
 
 /**
  * Used to broadcast events to the game clients
@@ -26,26 +25,26 @@ public class ClientBroadcaster {
     private final int batchTimeout;
     private final Dto.Builder dtoBuilder;
     private final Events.Builder eventsBuilder;
-    private final LongSupplier gameTime;
+    private final GameTimeService gameTime;
 
     private long flushTimestamp;
 
 
     @Inject
     public ClientBroadcaster(SessionsService sessionService,
-                             @GameTime LongSupplier gameTime,
+                             GameTimeService gameTime,
                              @ConfigProperty(
-                                          name = "hexoids.config.service.client-broadcast.enabled",
-                                          defaultValue = "true"
-                                  ) boolean enabled,
+                                     name = "hexoids.config.service.client-broadcast.enabled",
+                                     defaultValue = "true"
+                             ) boolean enabled,
                              @ConfigProperty(
-                                          name = "hexoids.config.service.client-broadcast.batch.size",
-                                          defaultValue = "64"
-                                  ) int batchSize,
+                                     name = "hexoids.config.service.client-broadcast.batch.size",
+                                     defaultValue = "64"
+                             ) int batchSize,
                              @ConfigProperty(
-                                          name = "hexoids.config.service.client-broadcast.batch.timeout",
-                                          defaultValue = "20"
-                                  ) int batchTimeout) {
+                                     name = "hexoids.config.service.client-broadcast.batch.timeout",
+                                     defaultValue = "20"
+                             ) int batchTimeout) {
         this.sessionService = sessionService;
         this.gameTime = gameTime;
         this.enabled = enabled;
@@ -70,7 +69,7 @@ public class ClientBroadcaster {
                 this.sessionService.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
             }
         }
-        long now = this.gameTime.getAsLong();
+        long now = this.gameTime.getTime();
         if (eventsBuilder.getEventsCount() > this.batchSize ||
                 now - this.flushTimestamp > this.batchTimeout) {
             flushEvents(now);
@@ -101,7 +100,7 @@ public class ClientBroadcaster {
     }
 
     public boolean canFlush() {
-        return this.gameTime.getAsLong() - this.flushTimestamp > this.batchTimeout;
+        return this.gameTime.getTime() - this.flushTimestamp > this.batchTimeout;
     }
 
     public int getBatchTimeout() {

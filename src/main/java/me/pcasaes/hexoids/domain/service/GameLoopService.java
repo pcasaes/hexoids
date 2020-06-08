@@ -3,19 +3,20 @@ package me.pcasaes.hexoids.domain.service;
 import me.pcasaes.hexoids.domain.model.Config;
 import me.pcasaes.hexoids.domain.model.Game;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Optional;
-import java.util.function.LongSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Used to add events into the game loop.
  */
-@ApplicationScoped
 public class GameLoopService {
+
+    private static final GameLoopService INSTANCE = new GameLoopService(GameTimeService.getInstance());
+
+    public static GameLoopService getInstance() {
+        return INSTANCE;
+    }
 
     private static final String NAME = "game-loop";
     private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
@@ -25,22 +26,17 @@ public class GameLoopService {
     );
 
 
-    private final LongSupplier gameTime;
+    private final GameTimeService gameTime;
 
     private long lastTimestamp;
 
-    @Inject
-    public GameLoopService(@GameTime LongSupplier gameTime) {
+    private GameLoopService(GameTimeService gameTime) {
         this.gameTime = gameTime;
-    }
-
-    @PostConstruct
-    public void start() {
-        this.lastTimestamp = this.gameTime.getAsLong();
+        this.lastTimestamp = this.gameTime.getTime();
     }
 
     private long fixedUpdate(long lastTimestamp) {
-        long timestamp = this.gameTime.getAsLong();
+        long timestamp = this.gameTime.getTime();
         if (timestamp - lastTimestamp > Config.get().getUpdateFrequencyInMillis()) {
             Game.get()
                     .fixedUpdate(timestamp);
@@ -64,7 +60,7 @@ public class GameLoopService {
     }
 
     public Optional<Runnable> getFixedUpdateRunnable() {
-        long timestamp = this.gameTime.getAsLong();
+        long timestamp = this.gameTime.getTime();
         if (timestamp - lastTimestamp > Config.get().getUpdateFrequencyInMillis()) {
             return fixedUpdateRunnable;
         }

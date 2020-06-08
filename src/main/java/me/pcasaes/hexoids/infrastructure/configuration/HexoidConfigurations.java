@@ -14,9 +14,9 @@ import javax.interceptor.Interceptor;
 import java.util.logging.Logger;
 
 @ApplicationScoped
-public class ConfigurationService {
+public class HexoidConfigurations {
 
-    private static final Logger LOGGER = Logger.getLogger(ConfigurationService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(HexoidConfigurations.class.getName());
 
     private float inertiaDampenCoefficient;
 

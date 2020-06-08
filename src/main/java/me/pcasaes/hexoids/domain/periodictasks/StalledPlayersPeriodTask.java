@@ -1,30 +1,42 @@
 package me.pcasaes.hexoids.domain.periodictasks;
 
-import io.quarkus.scheduler.Scheduled;
+import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.domain.model.Game;
 import me.pcasaes.hexoids.domain.model.Player;
-import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import java.util.concurrent.TimeUnit;
 
-@ApplicationScoped
-public class StalledPlayersPeriodTask {
+public class StalledPlayersPeriodTask implements GamePeriodicTask {
 
-    private final GameQueue gameLoopService;
+    private final GameQueue gameQueue;
 
-    StalledPlayersPeriodTask() {
-        this.gameLoopService = null;
+    private StalledPlayersPeriodTask(GameQueue gameQueue) {
+        this.gameQueue = gameQueue;
     }
 
-    @Inject
-    public StalledPlayersPeriodTask(GameQueue gameLoopService) {
-        this.gameLoopService = gameLoopService;
+    public static StalledPlayersPeriodTask create(GameQueue gameQueue) {
+        return new StalledPlayersPeriodTask(gameQueue);
     }
 
-    @Scheduled(every = "1m")
-    public void checkForStalledPlayers() {
-        gameLoopService.enqueue(() -> Game.get().getPlayers()
+
+    @Override
+    public long getPeriod() {
+        return 60;
+    }
+
+    @Override
+    public void run() {
+        gameQueue.enqueue(() -> Game.get().getPlayers()
                 .forEach(Player::expungeIfStalled));
+    }
+
+    @Override
+    public long getDelay() {
+        return 0;
+    }
+
+    @Override
+    public TimeUnit getTimeUnit() {
+        return TimeUnit.SECONDS;
     }
 }
