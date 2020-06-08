@@ -4,10 +4,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
-import me.pcasaes.hexoids.application.eventhandlers.Consumers;
-import me.pcasaes.hexoids.domain.service.GameTime;
 import me.pcasaes.hexoids.application.commands.CommandsService;
+import me.pcasaes.hexoids.application.eventhandlers.Consumers;
 import me.pcasaes.hexoids.domain.model.EntityId;
+import me.pcasaes.hexoids.domain.service.GameTimeService;
 import pcasaes.hexoids.proto.MoveCommandDto;
 import pcasaes.hexoids.proto.RequestCommand;
 
@@ -16,7 +16,6 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.LongSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +30,7 @@ public class GameRoutes {
 
     private final SessionsService sessionService;
 
-    private final LongSupplier gameTime;
+    private final GameTimeService gameTime;
 
     private final CommandsService commandsService;
 
@@ -39,7 +38,7 @@ public class GameRoutes {
 
     @Inject
     public GameRoutes(SessionsService sessionService,
-                      @GameTime LongSupplier gameTime,
+                      GameTimeService gameTime,
                       CommandsService commandsService,
                       Consumers.HaveStarted consumersHaveStarted) {
         this.sessionService = sessionService;
@@ -127,7 +126,7 @@ public class GameRoutes {
                 .get()
                 .setClock(CLOCK_SYNC_THREAD_SAFE_BUILDER
                         .get()
-                        .setTime(this.gameTime.getAsLong())
+                        .setTime(this.gameTime.getTime())
                 ).build()
                 .toByteArray());
         ctx.write(buffer);

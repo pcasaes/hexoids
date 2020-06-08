@@ -11,7 +11,7 @@ import io.vertx.kafka.client.consumer.KafkaConsumer;
 import me.pcasaes.hexoids.application.eventhandlers.Consumers;
 import me.pcasaes.hexoids.domain.model.DomainEvent;
 import me.pcasaes.hexoids.domain.model.GameTopic;
-import me.pcasaes.hexoids.infrastructure.configuration.ConfigurationService;
+import me.pcasaes.hexoids.infrastructure.configuration.HexoidConfigurations;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import pcasaes.hexoids.proto.Event;
 
@@ -36,7 +36,7 @@ public class KafkaConsumers {
     private static final Logger LOGGER = Logger.getLogger(KafkaConsumers.class.getName());
 
     private final Consumers consumers;
-    private final ConfigurationService configurationService;
+    private final HexoidConfigurations configurationService;
 
     private volatile boolean caughtUp = false;
 
@@ -51,7 +51,7 @@ public class KafkaConsumers {
 
     @Inject
     public KafkaConsumers(Consumers consumers,
-                          ConfigurationService configurationService) {
+                          HexoidConfigurations configurationService) {
         this.consumers = consumers;
         this.configurationService = configurationService;
 

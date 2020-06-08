@@ -1,21 +1,9 @@
 package me.pcasaes.hexoids.domain.periodictasks;
 
-import io.quarkus.runtime.StartupEvent;
-import me.pcasaes.hexoids.domain.service.GameLoopService;
 import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import me.pcasaes.hexoids.domain.service.GameLoopService;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-@ApplicationScoped
-public class GameLoopPeriodicTask {
+public class GameLoopPeriodicTask implements GamePeriodicTask {
 
     private final GameQueue gameQueue;
 
@@ -23,35 +11,18 @@ public class GameLoopPeriodicTask {
 
     private final long period;
 
-    private volatile ScheduledExecutorService scheduledExecutorService;
-
-
-    @Inject
-    public GameLoopPeriodicTask(GameQueue gameQueue,
-                                GameLoopService gameLoopService,
-                                @ConfigProperty(
-                                        name = "hexoids.config.update-frequency-in-millis",
-                                        defaultValue = "50"
-                                ) long period) {
+    private GameLoopPeriodicTask(GameQueue gameQueue,
+                                 GameLoopService gameLoopService,
+                                 long period) {
         this.gameQueue = gameQueue;
         this.gameLoopService = gameLoopService;
         this.period = period;
     }
 
-    public void startup(@Observes StartupEvent event) {
-        //eager load
-    }
-
-
-    @PostConstruct
-    public void start() {
-        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
-        scheduledExecutorService.scheduleAtFixedRate(
-                this::gameLoopPeriodicTask,
-                1000,
-                this.period,
-                TimeUnit.MILLISECONDS);
+    public static GameLoopPeriodicTask create(GameQueue gameQueue,
+                                              GameLoopService gameLoopService,
+                                              long period) {
+        return new GameLoopPeriodicTask(gameQueue, gameLoopService, period);
     }
 
     private void gameLoopPeriodicTask() {
@@ -64,8 +35,14 @@ public class GameLoopPeriodicTask {
         this.gameQueue.enqueue(event);
     }
 
-    @PreDestroy
-    public void stop() {
-        scheduledExecutorService.shutdown();
+    @Override
+    public long getPeriod() {
+        return period;
     }
+
+    @Override
+    public void run() {
+        this.gameLoopPeriodicTask();
+    }
+
 }
