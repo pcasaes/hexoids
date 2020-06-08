@@ -10,7 +10,7 @@ import io.quarkus.scheduler.Scheduled;
 import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
 import me.pcasaes.hexoids.domain.model.DomainEvent;
 import me.pcasaes.hexoids.domain.model.GameEvents;
-import me.pcasaes.hexoids.infrastructure.broadcaster.ClientBroadcaster;
+import me.pcasaes.hexoids.entrypoints.web.ClientBroadcaster;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
@@ -83,16 +83,8 @@ public class DisruptorOut {
                 ProducerType.SINGLE,
                 new BlockingWaitStrategy());
 
-        // Connect the handler
-        if (this.clientBroadcaster.isEnabled()) {
-            disruptor.handleEventsWith(this::handleDomainEventHandler, this::handleClientEventHandler);
-            GameEvents.getDomainEvents().setConsumer(this::enqueueDomainEvent);
-            GameEvents.getClientEvents().setConsumer(this::enqueueClient);
-        } else {
-            disruptor.handleEventsWith(this::handleDomainEventHandler);
-            GameEvents.getDomainEvents().setConsumer(this::enqueueDomainEvent);
-            GameEvents.getClientEvents().setConsumer(CLIENT_EVENT_NOOP);
-        }
+
+        wireDomainEventsInterfaces();
 
         // Start the Disruptor, starts all threads running
         disruptor.start();
@@ -100,6 +92,23 @@ public class DisruptorOut {
         // Get the ring buffer from the Disruptor to be used for publishing.
         this.ringBuffer = disruptor.getRingBuffer();
     }
+
+    /**
+     * @see GameEvents#registerEventDispatcher(Consumer)
+     */
+    private void wireDomainEventsInterfaces() {
+        // Connect the handler
+        if (this.clientBroadcaster.isEnabled()) {
+            disruptor.handleEventsWith(this::handleDomainEventHandler, this::handleClientEventHandler);
+            GameEvents.getDomainEvents().registerEventDispatcher(this::enqueueDomainEvent);
+            GameEvents.getClientEvents().registerEventDispatcher(this::enqueueClient);
+        } else {
+            disruptor.handleEventsWith(this::handleDomainEventHandler);
+            GameEvents.getDomainEvents().registerEventDispatcher(this::enqueueDomainEvent);
+            GameEvents.getClientEvents().registerEventDispatcher(CLIENT_EVENT_NOOP);
+        }
+    }
+
 
     @PreDestroy
     public void destroy() {

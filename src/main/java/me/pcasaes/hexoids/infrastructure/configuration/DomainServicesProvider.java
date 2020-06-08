@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.infrastructure.providers;
+package me.pcasaes.hexoids.infrastructure.configuration;
 
 import me.pcasaes.hexoids.domain.service.GameLoopService;
 import me.pcasaes.hexoids.domain.service.GameTimeService;

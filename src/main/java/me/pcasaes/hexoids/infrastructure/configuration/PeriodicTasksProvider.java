@@ -1,10 +1,9 @@
-package me.pcasaes.hexoids.infrastructure.providers;
+package me.pcasaes.hexoids.infrastructure.configuration;
 
 import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.domain.periodictasks.GameLoopPeriodicTask;
 import me.pcasaes.hexoids.domain.periodictasks.StalledPlayersPeriodTask;
 import me.pcasaes.hexoids.domain.service.GameLoopService;
-import me.pcasaes.hexoids.infrastructure.configuration.HexoidConfigurations;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;

@@ -1,9 +1,8 @@
 package me.pcasaes.hexoids.application.commands;
 
-import javax.enterprise.context.ApplicationScoped;
+import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
 
-@ApplicationScoped
-public class CommandsService {
+public class ApplicationCommands {
 
     private final Fire fireCommand;
     private final JoinGame joinGameCommand;
@@ -11,16 +10,16 @@ public class CommandsService {
     private final Move moveCommand;
     private final Spawn spawn;
 
-    public CommandsService(Fire fireCommand,
-                           JoinGame joinGameCommand,
-                           LeaveGame leaveGameCommand,
-                           Move moveCommand,
-                           Spawn spawn) {
-        this.fireCommand = fireCommand;
-        this.joinGameCommand = joinGameCommand;
-        this.leaveGameCommand = leaveGameCommand;
-        this.moveCommand = moveCommand;
-        this.spawn = spawn;
+    private ApplicationCommands(GameQueue gameQueue) {
+        this.fireCommand = new Fire(gameQueue);
+        this.joinGameCommand = new JoinGame(gameQueue);
+        this.leaveGameCommand = new LeaveGame(gameQueue);
+        this.moveCommand = new Move(gameQueue);
+        this.spawn = new Spawn(gameQueue);
+    }
+
+    public static ApplicationCommands create(GameQueue gameQueue) {
+        return new ApplicationCommands(gameQueue);
     }
 
     public Fire getFireCommand() {

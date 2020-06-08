@@ -28,14 +28,14 @@ class ScoreBoardTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.initMocks(this);
-        GameEvents.getClientEvents().setConsumer(null);
+        GameEvents.getClientEvents().registerEventDispatcher(null);
 
         GameTopic.setGame(game);
 
         scoreBoard = ScoreBoard.create(Clock.create());
         doReturn(scoreBoard).when(game).getScoreBoard();
 
-        GameEvents.getDomainEvents().setConsumer(domainEvent ->
+        GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
                 GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
         );
     }
@@ -43,7 +43,7 @@ class ScoreBoardTest {
     @Test
     void testNotEnoughTime() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         scoreBoard.fixedUpdate(500L);
 
@@ -53,7 +53,7 @@ class ScoreBoardTest {
     @Test
     void testEmptyLeaderBoard() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         scoreBoard.fixedUpdate(1000L);
 
@@ -63,7 +63,7 @@ class ScoreBoardTest {
     @Test
     void testSimpleReset() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
 
         EntityId one = EntityId.newId();
@@ -90,7 +90,7 @@ class ScoreBoardTest {
     @Test
     void testSimpleFull() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
 
@@ -121,7 +121,7 @@ class ScoreBoardTest {
     @Test
     void testSimplePastFull() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().setConsumer(eventReference::set);
+        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
         List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
 

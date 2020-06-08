@@ -110,7 +110,7 @@ WebSockets for client server communication.
 
 Kafka isn't always the best choice for low latency but it has some interesting properties that
 were exploited here. Primarily, a node can be started and quickly get caught up to speed by replaying
-compacted logs. In other words the state can be retrieved by replaying all events.
+logs. In other words the state can be retrieved by replaying all events.
 
 A client request will reach its node which will enqueue some action onto the game model. The game model
 will act upon it and fire a domain event onto Kafka which will the spread that to all nodes. The nodes
@@ -123,6 +123,30 @@ are responsible for moving the bolt and checking if they are a hit.
 Ships move with inertia. Player add vectors to their current vectors through the trackpad or mouse. The node 
 that the player is connected to is responsible for calculating the inertial movement of the ship. 
 This is all done with basic vector math.
+
+The code itself follows a domain driven design and is organized in a clean architecture style, but certain trade-offs 
+had to be made. Generating large amounts of temporary objects in a realtime system poses problems, so we keep data as 
+protobuf throughout all layers. Quarkus' support for multi module project is a bit rough, so instead we separate layers 
+by packages with dependency flow and lib usage enforced through ArchUnit.
+
+## Domain Layer
+
+All game logic resides here. We expect the model code to run in a single thread with that responsibility delegated to
+the infrastructure layer. POJO only.
+
+## Application Layer
+
+Groups commands and Event Handlers. POJO only.
+
+## Entrypoint layer
+
+Here we have web socket requests and responses as well as asynchronous requests from domain events. This layer relies on
+CDI, Kafka, Vert.x (web sockets). 
+
+
+## Infrastructure Layer
+Here we set up the low latency event loop using the LMAX Disruptor. We also find domain event producers and 
+wiring configuration. This layer leverages CDI to perform the IOC wiring.
 
 # Future Improvements
 

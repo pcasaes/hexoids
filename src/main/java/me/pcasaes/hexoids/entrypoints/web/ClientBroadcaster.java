@@ -1,6 +1,5 @@
-package me.pcasaes.hexoids.infrastructure.broadcaster;
+package me.pcasaes.hexoids.entrypoints.web;
 
-import me.pcasaes.hexoids.clientinterface.SessionsService;
 import me.pcasaes.hexoids.domain.model.EntityId;
 import me.pcasaes.hexoids.domain.service.GameTimeService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -19,7 +18,7 @@ public class ClientBroadcaster {
 
     private static final String NAME = "client-broadcast";
 
-    private final SessionsService sessionService;
+    private final ClientSessions clientSessions;
     private final boolean enabled;
     private final int batchSize;
     private final int batchTimeout;
@@ -31,7 +30,7 @@ public class ClientBroadcaster {
 
 
     @Inject
-    public ClientBroadcaster(SessionsService sessionService,
+    public ClientBroadcaster(ClientSessions clientSessions,
                              GameTimeService gameTime,
                              @ConfigProperty(
                                      name = "hexoids.config.service.client-broadcast.enabled",
@@ -45,7 +44,7 @@ public class ClientBroadcaster {
                                      name = "hexoids.config.service.client-broadcast.batch.timeout",
                                      defaultValue = "20"
                              ) int batchTimeout) {
-        this.sessionService = sessionService;
+        this.clientSessions = clientSessions;
         this.gameTime = gameTime;
         this.enabled = enabled;
         this.batchSize = batchSize;
@@ -66,19 +65,22 @@ public class ClientBroadcaster {
                         .addEvents(dto.getEvent());
             } else if (dto.hasDirectedCommand()) {
                 DirectedCommand command = dto.getDirectedCommand();
-                this.sessionService.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
+                this.clientSessions.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
+            } else if (dto.hasFlush() && canFlush()) {
+                flushEvents(this.gameTime.getTime());
+                return;
             }
         }
         long now = this.gameTime.getTime();
         if (eventsBuilder.getEventsCount() > this.batchSize ||
-                now - this.flushTimestamp > this.batchTimeout) {
+                now > this.flushTimestamp) {
             flushEvents(now);
         }
     }
 
     private void flushEvents(long now) {
         if (eventsBuilder.getEventsCount() > 0) {
-            this.sessionService.broadcast(dtoBuilder
+            this.clientSessions.broadcast(dtoBuilder
                     .setEvents(
                             eventsBuilder
                     )
@@ -88,7 +90,7 @@ public class ClientBroadcaster {
             dtoBuilder.clearEvents();
             eventsBuilder.clear();
         }
-        this.flushTimestamp = now;
+        this.flushTimestamp = now + this.batchTimeout;
     }
 
     public String getName() {
@@ -99,8 +101,8 @@ public class ClientBroadcaster {
         return enabled;
     }
 
-    public boolean canFlush() {
-        return this.gameTime.getTime() - this.flushTimestamp > this.batchTimeout;
+    private boolean canFlush() {
+        return this.gameTime.getTime() > this.flushTimestamp;
     }
 
     public int getBatchTimeout() {

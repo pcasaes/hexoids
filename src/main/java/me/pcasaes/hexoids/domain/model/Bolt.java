@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.domain.model;
 
+import me.pcasaes.hexoids.domain.config.Config;
+import me.pcasaes.hexoids.domain.utils.DtoUtils;
 import me.pcasaes.hexoids.domain.vector.PositionVector;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 
@@ -7,7 +9,7 @@ import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.BOLT_EXHAUSTED_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.BOLT_EXHAUSTED_BUILDER;
 
 /**
  * A model representation of a bolt.
@@ -112,7 +114,7 @@ public class Bolt {
 
     public void fire(BoltFiredEventDto event) {
         GameEvents.getDomainEvents()
-                .register(
+                .dispatch(
                         DomainEvent
                                 .create(GameTopic.BOLT_ACTION_TOPIC.name(),
                                         this.id.getId(),
@@ -148,7 +150,7 @@ public class Bolt {
     Bolt tackleBoltExhaustion() {
         if (positionVector.isOutOfBounds() || isExpired()) {
             this.exhausted = true;
-            GameEvents.getDomainEvents().register(generateExhaustedEvent());
+            GameEvents.getDomainEvents().dispatch(generateExhaustedEvent());
         }
         return this;
     }
@@ -201,7 +203,7 @@ public class Bolt {
             if (!this.exhausted) {
                 this.exhausted = true;
 
-                GameEvents.getDomainEvents().register(
+                GameEvents.getDomainEvents().dispatch(
                         generateExhaustedEvent()
                 );
             }

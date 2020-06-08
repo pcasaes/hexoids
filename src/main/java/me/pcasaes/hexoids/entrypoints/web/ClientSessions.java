@@ -1,9 +1,9 @@
-package me.pcasaes.hexoids.clientinterface;
+package me.pcasaes.hexoids.entrypoints.web;
 
 import io.quarkus.runtime.ShutdownEvent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
-import me.pcasaes.hexoids.application.commands.CommandsService;
+import me.pcasaes.hexoids.application.commands.ApplicationCommands;
 import me.pcasaes.hexoids.domain.model.EntityId;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -16,16 +16,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ApplicationScoped
-public class SessionsService {
+public class ClientSessions {
 
-    private static final Logger LOGGER = Logger.getLogger(SessionsService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ClientSessions.class.getName());
 
     private final Map<EntityId, ServerWebSocket> sessions;
 
-    private final CommandsService commandsService;
+    private final ApplicationCommands commandsService;
 
     @Inject
-    public SessionsService(CommandsService commandsService) {
+    public ClientSessions(ApplicationCommands commandsService) {
         this.commandsService = commandsService;
         this.sessions = new ConcurrentHashMap<>();
     }

@@ -5,16 +5,11 @@ import me.pcasaes.hexoids.domain.model.EntityId;
 import me.pcasaes.hexoids.domain.model.Game;
 import pcasaes.hexoids.proto.JoinCommandDto;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-
-@Dependent
 public class JoinGame {
 
     private final GameQueue gameQueue;
 
-    @Inject
-    public JoinGame(GameQueue gameQueue) {
+    JoinGame(GameQueue gameQueue) {
         this.gameQueue = gameQueue;
     }
 

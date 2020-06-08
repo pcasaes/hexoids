@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.infrastructure.periodictasks;
+package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
 
 import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.domain.periodictasks.GamePeriodicTask;

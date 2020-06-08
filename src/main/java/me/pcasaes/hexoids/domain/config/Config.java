@@ -1,6 +1,4 @@
-package me.pcasaes.hexoids.domain.model;
-
-import me.pcasaes.hexoids.domain.utils.TrigUtil;
+package me.pcasaes.hexoids.domain.config;
 
 public class Config {
 
@@ -91,7 +89,7 @@ public class Config {
     }
 
     public void setPlayerMaxAngleDivisor(float playerMaxAngleDivisor) {
-        this.playerMaxAngle = TrigUtil.PI / playerMaxAngleDivisor;
+        this.playerMaxAngle = (float) Math.PI / playerMaxAngleDivisor;
     }
 
     public void setPlayerMaxMove(float playerMaxMove) {

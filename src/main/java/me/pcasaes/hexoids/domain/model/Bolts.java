@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static me.pcasaes.hexoids.domain.model.DtoUtils.DIRECTED_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.DTO_BUILDER;
-import static me.pcasaes.hexoids.domain.model.DtoUtils.LIVE_BOLTS_LIST_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.DTO_BUILDER;
+import static me.pcasaes.hexoids.domain.utils.DtoUtils.LIVE_BOLTS_LIST_BUILDER;
 
 /**
  * The collection of bolts. This collections only tracks bolts maintained
@@ -118,7 +118,7 @@ public class Bolts implements Iterable<Bolt> {
                 (domainEvent.getEvent().hasBoltExhausted() || domainEvent.getEvent().hasBoltFired())) {
 
             GameEvents.getClientEvents()
-                    .register(DTO_BUILDER
+                    .dispatch(DTO_BUILDER
                             .clear()
                             .setEvent(domainEvent.getEvent())
                             .build());
@@ -159,7 +159,7 @@ public class Bolts implements Iterable<Bolt> {
                 .setPlayerId(requesterId.getGuid())
                 .setLiveBoltsList(liveBoltsList);
 
-        GameEvents.getClientEvents().register(
+        GameEvents.getClientEvents().dispatch(
                 DTO_BUILDER
                         .clear()
                         .setDirectedCommand(builder)

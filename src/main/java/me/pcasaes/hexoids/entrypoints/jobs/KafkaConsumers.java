@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.infrastructure.kafka;
+package me.pcasaes.hexoids.entrypoints.jobs;
 
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.vertx.AsyncResultUni;
@@ -8,10 +8,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.kafka.client.common.TopicPartition;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
-import me.pcasaes.hexoids.application.eventhandlers.Consumers;
+import me.pcasaes.hexoids.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.domain.model.DomainEvent;
 import me.pcasaes.hexoids.domain.model.GameTopic;
-import me.pcasaes.hexoids.infrastructure.configuration.HexoidConfigurations;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import pcasaes.hexoids.proto.Event;
 
@@ -35,8 +35,8 @@ public class KafkaConsumers {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaConsumers.class.getName());
 
-    private final Consumers consumers;
-    private final HexoidConfigurations configurationService;
+    private final ApplicationConsumers applicationConsumers;
+    private final int boltMaxDuration;
 
     private volatile boolean caughtUp = false;
 
@@ -50,10 +50,13 @@ public class KafkaConsumers {
     private volatile long allowSeekOnBoltLifeCycle = 0L;
 
     @Inject
-    public KafkaConsumers(Consumers consumers,
-                          HexoidConfigurations configurationService) {
-        this.consumers = consumers;
-        this.configurationService = configurationService;
+    public KafkaConsumers(ApplicationConsumers applicationConsumers,
+                          @ConfigProperty(
+                                  name = "hexoids.config.bolt.max.duration",
+                                  defaultValue = "10000"
+                          ) int boltMaxDuration) {
+        this.applicationConsumers = applicationConsumers;
+        this.boltMaxDuration = boltMaxDuration;
 
         try {
             consumerField = IncomingKafkaRecord.class.getDeclaredField("consumer");
@@ -104,7 +107,7 @@ public class KafkaConsumers {
 
     @Incoming("join-game")
     public CompletionStage<Void> onJoinGame(IncomingKafkaRecord<UUID, Event> record) {
-        consumers.onJoinGame(toDomainEvent(record));
+        applicationConsumers.onJoinGame(toDomainEvent(record));
         boolean c = caughtUpLocal;
         if (!c) {
             if (record.getTimestamp().toEpochMilli() >= this.startedAt) {
@@ -119,14 +122,14 @@ public class KafkaConsumers {
     @Incoming("player-action")
     public CompletionStage<Void> onPlayerAction(IncomingKafkaRecord<UUID, Event> record) {
         waitForStarted();
-        consumers.onPlayerAction(toDomainEvent(record));
+        applicationConsumers.onPlayerAction(toDomainEvent(record));
         return CompletableFuture.completedFuture(null);
     }
 
     @Incoming("bolt-life-cycle")
     public CompletionStage<Void> onBoltLifeCycle(IncomingKafkaRecord<UUID, Event> record) {
         long now = System.currentTimeMillis();
-        long shouldStartAt = now - (configurationService.getBoltMaxDuration() + 10_000L);
+        long shouldStartAt = now - (this.boltMaxDuration + 10_000L);
 
         /*
         This is a very ugly hack. We'd like to start off from events that we're created since bolt_max_duration ago.
@@ -140,7 +143,7 @@ public class KafkaConsumers {
             if (allowSeekOnBoltLifeCycle > now) {
                 return CompletableFuture.completedFuture(null);
             }
-            allowSeekOnBoltLifeCycle = now + (configurationService.getBoltMaxDuration() + 10_000L);
+            allowSeekOnBoltLifeCycle = now + (this.boltMaxDuration + 10_000L);
 
             final KafkaConsumer<UUID, Event> consumer = getConsumer(record);
             final TopicPartition topicPartition = new TopicPartition(GameTopic.BOLT_LIFECYCLE_TOPIC.name(), record.getPartition());
@@ -172,7 +175,7 @@ public class KafkaConsumers {
                     .subscribeAsCompletionStage();
         } else {
             waitForStarted();
-            consumers.onBoltLifeCycle(toDomainEvent(record));
+            applicationConsumers.onBoltLifeCycle(toDomainEvent(record));
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -180,21 +183,21 @@ public class KafkaConsumers {
     @Incoming("bolt-action")
     public CompletionStage<Void> onBoltAction(IncomingKafkaRecord<UUID, Event> record) {
         waitForStarted();
-        consumers.onBoltAction(toDomainEvent(record));
+        applicationConsumers.onBoltAction(toDomainEvent(record));
         return CompletableFuture.completedFuture(null);
     }
 
     @Incoming("score-board-control")
     public CompletionStage<Void> onScoreBoardControl(IncomingKafkaRecord<UUID, Event> record) {
         waitForStarted();
-        consumers.onScoreBoardControl(toDomainEvent(record));
+        applicationConsumers.onScoreBoardControl(toDomainEvent(record));
         return CompletableFuture.completedFuture(null);
     }
 
     @Incoming("score-board-update")
     public CompletionStage<Void> onScoreBoardUpdate(IncomingKafkaRecord<UUID, Event> record) {
         waitForStarted();
-        consumers.onScoreBoardUpdate(toDomainEvent(record));
+        applicationConsumers.onScoreBoardUpdate(toDomainEvent(record));
         return CompletableFuture.completedFuture(null);
     }
 
@@ -207,7 +210,7 @@ public class KafkaConsumers {
     }
 
     @Produces
-    public Consumers.HaveStarted getHaveStarted() {
+    public ApplicationConsumers.HaveStarted getHaveStarted() {
         return this::hasStarted;
     }
 
