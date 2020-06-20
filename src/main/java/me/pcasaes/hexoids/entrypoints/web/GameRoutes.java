@@ -4,11 +4,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
-import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 import me.pcasaes.hexoids.core.domain.service.GameTimeService;
-import pcasaes.hexoids.proto.MoveCommandDto;
 import pcasaes.hexoids.proto.RequestCommand;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -32,17 +30,17 @@ public class GameRoutes {
 
     private final GameTimeService gameTime;
 
-    private final ApplicationCommands applicationCommands;
+    private final CommandDelegate commandDelegate;
 
     private final ApplicationConsumers.HaveStarted consumersHaveStarted;
 
     @Inject
     public GameRoutes(ClientSessions clientSessions,
                       GameTimeService gameTime,
-                      ApplicationCommands applicationCommands,
+                      CommandDelegate commandDelegate,
                       ApplicationConsumers.HaveStarted consumersHaveStarted) {
         this.clientSessions = clientSessions;
-        this.applicationCommands = applicationCommands;
+        this.commandDelegate = commandDelegate;
         this.gameTime = gameTime;
         this.consumersHaveStarted = consumersHaveStarted;
     }
@@ -81,7 +79,7 @@ public class GameRoutes {
 
     public void onClose(EntityId userId) {
         if (clientSessions.remove(userId)) {
-            this.applicationCommands.getLeaveGameCommand().leave(userId);
+            this.commandDelegate.leave(userId);
         }
     }
 
@@ -97,15 +95,17 @@ public class GameRoutes {
 
     private void onCommand(ServerWebSocket ctx, EntityId userId, RequestCommand command) {
         if (command.hasMove()) {
-            MoveCommandDto moveCommandDto = command.getMove();
-            this.applicationCommands.getMoveCommand().move(userId, moveCommandDto);
+            this.commandDelegate.move(
+                    userId,
+                    command.getMove()
+            );
         } else if (command.hasFire()) {
-            this.applicationCommands.getFireCommand().fire(userId);
+            this.commandDelegate.fire(userId);
         } else if (command.hasSpawn()) {
-            this.applicationCommands.getSpawn().spawn(userId);
+            this.commandDelegate.spawn(userId);
         } else if (command.hasJoin()) {
             syncClock(ctx);
-            this.applicationCommands.getJoinGameCommand().join(userId, command.getJoin());
+            this.commandDelegate.join(userId, command.getJoin());
         }
     }
 
