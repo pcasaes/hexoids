@@ -25,11 +25,16 @@ public class LoadFactorMetric {
         this.queueMetricList = queueMetricList;
     }
 
-    public void startup(@Observes @Priority(Interceptor.Priority.APPLICATION + 700) StartupEvent event) {
+    public void startup(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) StartupEvent event) {
         // do nothing
     }
 
-    @Gauge(name = DisruptorOut.METRIC_DOMAIN_EVENT_OUT + "-load-factor", unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.")
+    @Gauge(
+            name = DisruptorOut.METRIC_DOMAIN_EVENT_OUT + "-load-factor",
+            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
+            absolute = true,
+            tags = "layer=infrastructure"
+    )
     public double getDomainEventOutLF() {
         return queueMetricList
                 .stream()
@@ -39,7 +44,12 @@ public class LoadFactorMetric {
                 .orElse(0.);
     }
 
-    @Gauge(name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-load-factor", unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.")
+    @Gauge(
+            name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-load-factor",
+            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
+            absolute = true,
+            tags = "layer=infrastructure"
+    )
     public double getClientEventOutLF() {
         return queueMetricList
                 .stream()
@@ -49,7 +59,11 @@ public class LoadFactorMetric {
                 .orElse(0.);
     }
 
-    @Gauge(name = DisruptorIn.METRIC_GAME_LOOP_IN + "-load-factor", unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.")
+    @Gauge(
+            name = DisruptorIn.METRIC_GAME_LOOP_IN + "-load-factor",
+            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
+            absolute = true
+    )
     public double getGameLoopLF() {
         return queueMetricList
                 .stream()
@@ -59,7 +73,13 @@ public class LoadFactorMetric {
                 .orElse(0.);
     }
 
-    @Gauge(name = "load-factor", unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.")
+    @Gauge(
+            name = "load-factor",
+            unit = MetricUnits.PERCENT,
+            description = "Percentage of a fixed time processing events.",
+            absolute = true,
+            tags = "layer=infrastructure"
+    )
     public double getLF() {
         return queueMetricList
                 .stream()

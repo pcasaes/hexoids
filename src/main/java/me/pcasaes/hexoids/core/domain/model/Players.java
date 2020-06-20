@@ -220,4 +220,22 @@ public class Players implements Iterable<Player> {
                 .filter(Objects::nonNull)
                 .forEach(p -> p.fixedUpdate(timestamp));
     }
+
+    /**
+     * Return the total number of players in the game.
+     * Is weakly consistent and thread safe.
+     * @return
+     */
+    public int getTotalNumberOfPlayers() {
+        return this.playerMap.size();
+    }
+
+    /**
+     * Return the number of players connected this node.
+     * Is weakly consistent and thread safe.
+     * @return
+     */
+    public int getNumberOfConnectedPlayers() {
+        return this.playerServerUpdateSet.size();
+    }
 }

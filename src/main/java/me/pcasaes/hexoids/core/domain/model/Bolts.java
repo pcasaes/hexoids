@@ -166,4 +166,13 @@ public class Bolts implements Iterable<Bolt> {
                         .build()
         );
     }
+
+    /**
+     * Return the total number of active bolts in the game.
+     * Is weakly consistent and thread safe.
+     * @return
+     */
+    public int getTotalNumberOfActiveBolts() {
+        return this.activeBolts.size();
+    }
 }

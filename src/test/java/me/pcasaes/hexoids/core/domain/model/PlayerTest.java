@@ -58,6 +58,9 @@ class PlayerTest {
         MockitoAnnotations.initMocks(this);
         this.bolts = Bolts.create();
         this.players = Players.create(bolts, clock, scoreBoard);
+        
+        assertEquals(0, this.players.getTotalNumberOfPlayers());
+        assertEquals(0, this.players.getNumberOfConnectedPlayers());
 
         doReturn(clock)
                 .when(game)
@@ -109,6 +112,8 @@ class PlayerTest {
 
         assertNotSame(player, this.players.get(two).orElse(null));
 
+        assertEquals(1, this.players.getTotalNumberOfPlayers());
+        assertEquals(0, this.players.getNumberOfConnectedPlayers());
     }
 
     @Test
@@ -121,11 +126,15 @@ class PlayerTest {
                 .newBuilder()
                 .setName("one")
                 .build());
+        this.players.connected(one);
         PlayerJoinedEventDto event = eventReference.get().getEvent().getPlayerJoined();
 
         assertNotNull(event);
         assertEquals(one.getGuid(), event.getPlayerId());
         assertEquals("one", event.getName());
+
+        assertEquals(1, this.players.getTotalNumberOfPlayers());
+        assertEquals(1, this.players.getNumberOfConnectedPlayers());
     }
 
     @Test
@@ -137,11 +146,15 @@ class PlayerTest {
         this.players.createOrGet(one).join(JoinCommandDto
                 .newBuilder()
                 .build());
+        this.players.connected(one);
         PlayerJoinedEventDto event = eventReference.get().getEvent().getPlayerJoined();
 
         assertNotNull(event);
         assertEquals(one.getGuid(), event.getPlayerId());
         assertEquals(one.toString().substring(0, Config.get().getPlayerNameLength()), event.getName());
+
+        assertEquals(1, this.players.getTotalNumberOfPlayers());
+        assertEquals(1, this.players.getNumberOfConnectedPlayers());
     }
 
     @Test
@@ -163,6 +176,8 @@ class PlayerTest {
         assertNotNull(event);
         assertEquals(one.getGuid(), event.getPlayerId());
         assertEquals(5, event.getShip());
+
+        assertEquals(1, this.players.getTotalNumberOfPlayers());
     }
 
     @Test
@@ -172,6 +187,7 @@ class PlayerTest {
 
         EntityId one = EntityId.newId();
         Player player = this.players.createOrGet(one);
+        this.players.connected(one);
         player.leave();
 
         List<Event> events = dtos
@@ -188,6 +204,8 @@ class PlayerTest {
         assertFalse(this.players.stream()
                 .anyMatch(p -> p == player));
 
+        assertEquals(0, this.players.getTotalNumberOfPlayers());
+        assertEquals(0, this.players.getNumberOfConnectedPlayers());
     }
 
     @Test

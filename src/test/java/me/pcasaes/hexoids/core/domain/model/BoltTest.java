@@ -45,6 +45,8 @@ class BoltTest {
 
         bolts = Bolts.create();
 
+        assertEquals(0, this.bolts.getTotalNumberOfActiveBolts());
+
         when(clock.getTime()).thenReturn(0L);
 
         Config.get().setBoltMaxDuration(10_000);
@@ -76,6 +78,9 @@ class BoltTest {
         assertNotNull(bolt);
 
         assertTrue(bolt.isOwnedBy(one));
+
+        assertEquals(1, this.bolts.getTotalNumberOfActiveBolts());
+
 
         assertEquals(1,
                 bolts
@@ -118,6 +123,9 @@ class BoltTest {
         assertEquals(0, bolts
                 .stream()
                 .count());
+
+        assertEquals(0, this.bolts.getTotalNumberOfActiveBolts());
+
     }
 
     @Test
