@@ -16,6 +16,7 @@ public class GameMetrics {
     private final GameMetric playerSpawned;
     private final GameMetric playerJoined;
     private final GameMetric playerLeft;
+    private final GameMetric playerStalled;
     private final GameMetric boltFired;
     private final GameMetric boltExhausted;
 
@@ -26,14 +27,16 @@ public class GameMetrics {
         this.playerSpawned = GameMetric.of("player-spawned-total");
         this.playerJoined = GameMetric.of("player-joined-total");
         this.playerLeft = GameMetric.of("player-left-total");
+        this.playerStalled = GameMetric.of("player-stalled-total");
         this.boltFired = GameMetric.of("bolt-fired-total");
         this.boltExhausted = GameMetric.of("bolt-exhausted-total");
 
-        List<GameMetric> list = new ArrayList<>(6);
+        List<GameMetric> list = new ArrayList<>(7);
         list.add(playerDestroyed);
         list.add(playerSpawned);
         list.add(playerJoined);
         list.add(playerLeft);
+        list.add(playerStalled);
         list.add(boltFired);
         list.add(boltExhausted);
 
@@ -68,5 +71,7 @@ public class GameMetrics {
         return playerLeft;
     }
 
-
+    public GameMetric getPlayerStalled() {
+        return playerStalled;
+    }
 }

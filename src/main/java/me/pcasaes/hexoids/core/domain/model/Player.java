@@ -576,6 +576,7 @@ public interface Player {
         public void expungeIfStalled() {
             if ((!spawned || !isJoined()) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
                 leave();
+                GameMetrics.get().getPlayerStalled().increment();
             }
         }
 
