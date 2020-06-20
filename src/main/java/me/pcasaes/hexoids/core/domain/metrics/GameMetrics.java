@@ -22,12 +22,12 @@ public class GameMetrics {
     private final List<GameMetric> metrics;
 
     private GameMetrics() {
-        this.playerDestroyed = GameMetric.of("player-destroyed");
-        this.playerSpawned = GameMetric.of("player-spawned");
-        this.playerJoined = GameMetric.of("player-joined");
-        this.playerLeft = GameMetric.of("player-left");
-        this.boltFired = GameMetric.of("bolt-fired");
-        this.boltExhausted = GameMetric.of("bolt-exhausted");
+        this.playerDestroyed = GameMetric.of("player-destroyed-total");
+        this.playerSpawned = GameMetric.of("player-spawned-total");
+        this.playerJoined = GameMetric.of("player-joined-total");
+        this.playerLeft = GameMetric.of("player-left-total");
+        this.boltFired = GameMetric.of("bolt-fired-total");
+        this.boltExhausted = GameMetric.of("bolt-exhausted-total");
 
         List<GameMetric> list = new ArrayList<>(6);
         list.add(playerDestroyed);
