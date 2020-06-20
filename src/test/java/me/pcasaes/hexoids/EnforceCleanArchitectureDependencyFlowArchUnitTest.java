@@ -69,14 +69,14 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
     @Test
     void testInfrastructureShouldOnlyDependOnApplicationAndDomain() {
         JavaClasses importedClasses = new ClassFileImporter()
-                .importPackages("me.pcasaes.hexoids.entrypoints..");
+                .importPackages("me.pcasaes.hexoids.infrastructure..");
 
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
                 .orShould()
-                .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..");
+                .resideInAnyPackage("me.pcasaes.hexoids.entrypoints..");
 
 
         rule.check(importedClasses);
