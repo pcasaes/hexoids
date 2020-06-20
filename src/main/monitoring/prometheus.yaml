@@ -10,3 +10,8 @@ scrape_configs:
     metrics_path: '/metrics'
     static_configs:
       - targets: ['hexoids:8080']
+
+  - job_name: 'kafka-server'
+    scrape_interval: 2s
+    static_configs:
+      - targets: ['hexoids-kafka:9080']
