@@ -49,6 +49,27 @@ services:
     networks:
       - service-network
 
+  hexoids-prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/main/monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - service-network
+
+  hexoids-grafana:
+    container_name: grafana
+    hostname: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - ./src/main/monitoring/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - service-network
 
 networks:
   service-network:

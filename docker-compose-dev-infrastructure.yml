@@ -34,20 +34,6 @@ services:
       - service-network
 
 
-  hexoids-kafka-manager:
-    container_name: kafka-manager
-    hostname: kafka-manager
-    image: solsson/kafka-manager:latest
-    restart: always
-    environment:
-      - ZK_HOSTS=hexoids-zookeeper:2181
-    ports:
-      - "9000:9000"
-    depends_on:
-      - hexoids-zookeeper
-      - hexoids-kafka
-    networks:
-      - service-network
 networks:
   service-network:
     name: hexoids-network
