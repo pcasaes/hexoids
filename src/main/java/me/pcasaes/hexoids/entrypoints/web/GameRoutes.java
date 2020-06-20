@@ -4,10 +4,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
-import me.pcasaes.hexoids.application.commands.ApplicationCommands;
-import me.pcasaes.hexoids.application.eventhandlers.ApplicationConsumers;
-import me.pcasaes.hexoids.domain.model.EntityId;
-import me.pcasaes.hexoids.domain.service.GameTimeService;
+import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
+import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
+import me.pcasaes.hexoids.core.domain.model.EntityId;
+import me.pcasaes.hexoids.core.domain.service.GameTimeService;
 import pcasaes.hexoids.proto.MoveCommandDto;
 import pcasaes.hexoids.proto.RequestCommand;
 
@@ -19,9 +19,9 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static me.pcasaes.hexoids.domain.utils.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.domain.utils.DtoUtils.DTO_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.domain.utils.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
 
 @ApplicationScoped
 public class GameRoutes {

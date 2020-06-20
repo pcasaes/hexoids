@@ -6,10 +6,9 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.quarkus.scheduler.Scheduled;
-import me.pcasaes.hexoids.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.domain.model.GameEvents;
-import me.pcasaes.hexoids.domain.service.GameLoopService;
-import me.pcasaes.hexoids.entrypoints.jobs.periodictasks.FlushClientBroadcasterPeriodicTask;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
+import me.pcasaes.hexoids.core.domain.model.GameEvents;
+import me.pcasaes.hexoids.core.domain.service.GameLoopService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
@@ -115,11 +114,6 @@ public class DisruptorIn {
     @Produces
     public GameQueue getGameQueueService() {
         return this::enqueueGame;
-    }
-
-    @Produces
-    public FlushClientBroadcasterPeriodicTask.ClientQueue getClientQueue() {
-        return this::enqueueClient;
     }
 
     private void translate(DisruptorInEvent event, long sequence, Runnable runnable) {

@@ -1,8 +1,8 @@
 package me.pcasaes.hexoids.infrastructure.producer;
 
 import io.smallrye.reactive.messaging.kafka.KafkaRecord;
-import me.pcasaes.hexoids.domain.model.DomainEvent;
-import me.pcasaes.hexoids.domain.model.GameTopic;
+import me.pcasaes.hexoids.core.domain.model.DomainEvent;
+import me.pcasaes.hexoids.core.domain.model.GameTopic;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import pcasaes.hexoids.proto.Event;

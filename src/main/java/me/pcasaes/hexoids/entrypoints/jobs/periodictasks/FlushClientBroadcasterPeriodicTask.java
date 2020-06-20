@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
 
 import io.quarkus.arc.properties.IfBuildProperty;
-import me.pcasaes.hexoids.domain.periodictasks.GamePeriodicTask;
+import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Flush;

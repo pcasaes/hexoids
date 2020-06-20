@@ -3,8 +3,8 @@ package me.pcasaes.hexoids.entrypoints.web;
 import io.quarkus.runtime.ShutdownEvent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
-import me.pcasaes.hexoids.application.commands.ApplicationCommands;
-import me.pcasaes.hexoids.domain.model.EntityId;
+import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
+import me.pcasaes.hexoids.core.domain.model.EntityId;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;

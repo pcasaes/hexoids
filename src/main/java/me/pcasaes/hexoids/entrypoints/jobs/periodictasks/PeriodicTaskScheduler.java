@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
 
 import io.quarkus.runtime.StartupEvent;
-import me.pcasaes.hexoids.domain.periodictasks.GamePeriodicTask;
+import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
