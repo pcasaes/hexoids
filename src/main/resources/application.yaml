@@ -162,6 +162,8 @@ mp:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
+        consumer-rebalance-listener:
+          name: DelayedStartConsumerRebalanceListener
         enable:
           auto:
             commit: false
@@ -187,7 +189,7 @@ mp:
             commit: false
         auto:
           offset:
-            reset: earliest
+            reset: latest
         group:
           id: hexoids-server-bolt-life-cycle
 
@@ -198,6 +200,8 @@ mp:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
+        consumer-rebalance-listener:
+          name: DelayedStartConsumerRebalanceListener
         enable:
           auto:
             commit: false
@@ -218,6 +222,8 @@ mp:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
+        consumer-rebalance-listener:
+          name: DelayedStartConsumerRebalanceListener
         enable:
           auto:
             commit: true
@@ -237,6 +243,8 @@ mp:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
+        consumer-rebalance-listener:
+          name: DelayedStartConsumerRebalanceListener
         enable:
           auto:
             commit: false
