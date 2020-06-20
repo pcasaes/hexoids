@@ -43,9 +43,7 @@ public class DisruptorIn {
         this.gameLoopService = gameLoopService;
         this.bufferSizeExponent = bufferSizeExponent;
         this.metrics = new ArrayList<>(1);
-        this.metrics.add(new QueueMetric());
-
-        this.metrics.get(0).setName(gameLoopService.getName());
+        this.metrics.add(QueueMetric.of(gameLoopService.getName()));
     }
 
     @PostConstruct

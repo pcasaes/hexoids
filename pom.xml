@@ -76,6 +76,10 @@
       <artifactId>quarkus-vertx-web</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-health</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-javalite</artifactId>
       <version>${protobuf.version}</version>

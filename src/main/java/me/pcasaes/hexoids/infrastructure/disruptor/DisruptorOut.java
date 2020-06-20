@@ -53,11 +53,8 @@ public class DisruptorOut {
         this.clientEventProducer = clientEventProducer;
         this.bufferSizeExponent = bufferSizeExponent;
         this.metrics = new ArrayList<>(2);
-        this.metrics.add(new QueueMetric());
-        this.metrics.add(new QueueMetric());
-
-        this.metrics.get(0).setName(domainEventProducer.getName());
-        this.metrics.get(1).setName(clientEventProducer.getName());
+        this.metrics.add(QueueMetric.of(domainEventProducer.getName()));
+        this.metrics.add(QueueMetric.of(clientEventProducer.getName()));
     }
 
     public void startup(@Observes StartupEvent event) {
