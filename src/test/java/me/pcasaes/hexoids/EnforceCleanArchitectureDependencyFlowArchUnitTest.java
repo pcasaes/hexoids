@@ -12,18 +12,20 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
     @Test
     void testDomainsShouldNotDependOnOtherLayers() {
         JavaClasses importedClasses = new ClassFileImporter()
-                .importPackages("me.pcasaes.hexoids.domain..");
+                .importPackages("me.pcasaes.hexoids.core.domain..");
 
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
+                .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
+                .orShould()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..")
                 .orShould()
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.entrypoints..")
                 .orShould()
                 .dependOnClassesThat()
-                .resideInAnyPackage("me.pcasaes.hexoids.application..");
+                .resideInAnyPackage("me.pcasaes.hexoids.core.application..");
 
 
         rule.check(importedClasses);
@@ -32,11 +34,13 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
     @Test
     void testApplicationShouldOnlyDependOnDomain() {
         JavaClasses importedClasses = new ClassFileImporter()
-                .importPackages("me.pcasaes.hexoids.application..");
+                .importPackages("me.pcasaes.hexoids.core.application..");
 
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
+                .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
+                .orShould()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..")
                 .orShould()
                 .dependOnClassesThat()
@@ -47,13 +51,31 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
     }
 
     @Test
-    void testClientInterfaceShouldOnlyDependOnApplicationAndDomain() {
+    void testEntrypointShouldOnlyDependOnApplicationAndDomain() {
         JavaClasses importedClasses = new ClassFileImporter()
                 .importPackages("me.pcasaes.hexoids.entrypoints..");
 
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
+                .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
+                .orShould()
+                .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..");
+
+
+        rule.check(importedClasses);
+    }
+
+    @Test
+    void testInfrastructureShouldOnlyDependOnApplicationAndDomain() {
+        JavaClasses importedClasses = new ClassFileImporter()
+                .importPackages("me.pcasaes.hexoids.entrypoints..");
+
+        ArchRule rule = noClasses()
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
+                .orShould()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..");
 
 

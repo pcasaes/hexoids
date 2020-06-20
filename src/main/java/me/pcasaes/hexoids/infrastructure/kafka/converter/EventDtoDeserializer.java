@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static me.pcasaes.hexoids.domain.utils.DtoUtils.EVENT_THREAD_SAFE_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.EVENT_THREAD_SAFE_BUILDER;
 
 public class EventDtoDeserializer implements Deserializer<Event> {
 

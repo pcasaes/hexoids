@@ -7,10 +7,10 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
+import me.pcasaes.hexoids.core.domain.model.DomainEvent;
+import me.pcasaes.hexoids.core.domain.model.GameEvents;
+import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer;
 import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
-import me.pcasaes.hexoids.domain.model.DomainEvent;
-import me.pcasaes.hexoids.domain.model.GameEvents;
-import me.pcasaes.hexoids.entrypoints.web.ClientBroadcaster;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
@@ -31,7 +31,7 @@ public class DisruptorOut {
     };
 
     private final DomainEventProducer domainEventProducer;
-    private final ClientBroadcaster clientBroadcaster;
+    private final ClientEventProducer clientEventProducer;
     private final int bufferSizeExponent;
     private final List<QueueMetric> metrics;
 
@@ -44,20 +44,20 @@ public class DisruptorOut {
     @Inject
     public DisruptorOut(
             DomainEventProducer domainEventProducer,
-            ClientBroadcaster clientBroadcaster,
+            ClientEventProducer clientEventProducer,
             @ConfigProperty(
                     name = "hexoids.config.service.disruptor.buffer-size-exponent",
                     defaultValue = "17"
             ) int bufferSizeExponent) {
         this.domainEventProducer = domainEventProducer;
-        this.clientBroadcaster = clientBroadcaster;
+        this.clientEventProducer = clientEventProducer;
         this.bufferSizeExponent = bufferSizeExponent;
         this.metrics = new ArrayList<>(2);
         this.metrics.add(new QueueMetric());
         this.metrics.add(new QueueMetric());
 
         this.metrics.get(0).setName(domainEventProducer.getName());
-        this.metrics.get(1).setName(clientBroadcaster.getName());
+        this.metrics.get(1).setName(clientEventProducer.getName());
     }
 
     public void startup(@Observes StartupEvent event) {
@@ -98,7 +98,7 @@ public class DisruptorOut {
      */
     private void wireDomainEventsInterfaces() {
         // Connect the handler
-        if (this.clientBroadcaster.isEnabled()) {
+        if (this.clientEventProducer.isEnabled()) {
             disruptor.handleEventsWith(this::handleDomainEventHandler, this::handleClientEventHandler);
             GameEvents.getDomainEvents().registerEventDispatcher(this::enqueueDomainEvent);
             GameEvents.getClientEvents().registerEventDispatcher(this::enqueueClient);
@@ -135,7 +135,7 @@ public class DisruptorOut {
         if (clientEvent != null) {
             this.metrics.get(1).startClock();
             try {
-                this.clientBroadcaster.accept(clientEvent);
+                this.clientEventProducer.accept(clientEvent);
             } finally {
                 event.setClientEvent(null);
                 this.metrics.get(1).stopClock();

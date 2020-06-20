@@ -145,8 +145,13 @@ CDI, Kafka, Vert.x (web sockets).
 
 
 ## Infrastructure Layer
-Here we set up the low latency event loop using the LMAX Disruptor. We also find domain event producers and 
-wiring configuration. This layer leverages CDI to perform the IOC wiring.
+Here we set up the low latency event loop using the LMAX Disruptor. We also find domain event producers
+and kafka serializers.
+
+## Configuration Layer
+
+This is where the application configuration and wiring happens. This layer leverages CDI to perform the IOC wiring.
+
 
 # Future Improvements
 

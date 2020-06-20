@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.entrypoints.web;
 
-import me.pcasaes.hexoids.domain.model.EntityId;
-import me.pcasaes.hexoids.domain.service.GameTimeService;
+import me.pcasaes.hexoids.core.domain.model.EntityId;
+import me.pcasaes.hexoids.core.domain.service.GameTimeService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
