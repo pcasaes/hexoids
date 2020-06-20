@@ -1,6 +1,7 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
 import me.pcasaes.hexoids.core.domain.utils.DtoUtils;
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
@@ -310,6 +311,7 @@ public interface Player {
         private void firedNew(BoltFiredEventDto event, Bolt bolt) {
             this.liveBolts++;
             bolt.fire(event);
+            GameMetrics.get().getBoltFired().increment();
         }
 
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {
@@ -394,6 +396,7 @@ public interface Player {
             GameEvents
                     .getClientEvents()
                     .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(event)));
+            GameMetrics.get().getPlayerJoined().increment();
         }
 
         @Override
@@ -478,6 +481,7 @@ public interface Player {
                             .clear()
                             .setPlayerId(id.getGuid())))
             );
+            GameMetrics.get().getPlayerLeft().increment();
         }
 
         @Override
@@ -515,11 +519,13 @@ public interface Player {
             GameEvents.getClientEvents().dispatch(
                     DtoUtils.newDtoEvent(ev -> ev.setPlayerDestroyed(event))
             );
+            GameMetrics.get().getPlayerDestroyed().increment();
         }
 
         @Override
         public void boltExhausted() {
             this.liveBolts = Math.max(0, liveBolts - 1);
+            GameMetrics.get().getBoltExhausted().increment();
         }
 
         @Override
@@ -562,6 +568,7 @@ public interface Player {
                         event.getLocation().getY(),
                         0L);
                 movedOrSpawned(event.getLocation(), event);
+                GameMetrics.get().getPlayerSpawned().increment();
             }
         }
 
