@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ApplicationScoped
 public class DisruptorIn {
 
+    public static final String METRIC_GAME_LOOP_IN = "game-loop-in";
+
     private final GameLoopService gameLoopService;
     private final int bufferSizeExponent;
     private final List<QueueMetric> metrics;
@@ -43,7 +45,7 @@ public class DisruptorIn {
         this.gameLoopService = gameLoopService;
         this.bufferSizeExponent = bufferSizeExponent;
         this.metrics = new ArrayList<>(1);
-        this.metrics.add(QueueMetric.of(gameLoopService.getName()));
+        this.metrics.add(QueueMetric.of(METRIC_GAME_LOOP_IN));
     }
 
     @PostConstruct

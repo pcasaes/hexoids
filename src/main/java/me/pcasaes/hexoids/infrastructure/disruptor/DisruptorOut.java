@@ -27,6 +27,11 @@ import java.util.function.Consumer;
 
 @ApplicationScoped
 public class DisruptorOut {
+
+    public static final String METRIC_DOMAIN_EVENT_OUT = "domain-event-out";
+    public static final String METRIC_CLIENT_EVENT_OUT = "client-event-out";
+
+
     private static final Consumer<Dto> CLIENT_EVENT_NOOP = v -> {
     };
 
@@ -53,8 +58,8 @@ public class DisruptorOut {
         this.clientEventProducer = clientEventProducer;
         this.bufferSizeExponent = bufferSizeExponent;
         this.metrics = new ArrayList<>(2);
-        this.metrics.add(QueueMetric.of(domainEventProducer.getName()));
-        this.metrics.add(QueueMetric.of(clientEventProducer.getName()));
+        this.metrics.add(QueueMetric.of(METRIC_DOMAIN_EVENT_OUT));
+        this.metrics.add(QueueMetric.of(METRIC_CLIENT_EVENT_OUT));
     }
 
     public void startup(@Observes StartupEvent event) {
