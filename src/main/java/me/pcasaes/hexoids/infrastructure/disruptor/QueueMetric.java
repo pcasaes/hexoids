@@ -8,21 +8,23 @@ public class QueueMetric {
 
     public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 1_000L;
     public static final long LOAD_FACTOR_CALC_WINDOW_MU = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1000L;
+    public static final long STALLED_TIME_MU = LOAD_FACTOR_CALC_WINDOW_MU * 5L;
 
     private static final List<QueueMetric> LIST = new CopyOnWriteArrayList<>();
 
     private long runningTime;
     private long lastReportTime;
     private long lastStartClock;
-    private long lastCheckTime;
 
     private long nextAccumulate;
 
     private long latencyTotal;
-    private long latencyCount;
-    private double latency = 0.;
+    private double eventCount;
+    private volatile double latency = 0.;
+    private volatile double avgProcessingTime = 0.;
+    private volatile double loadFactor = 0.;
+    private volatile long lastAccumlationTime = 0;
 
-    private double loadFactor = 0.;
     private final String name;
 
     private QueueMetric(String name) {
@@ -43,34 +45,29 @@ public class QueueMetric {
         this.lastStartClock = System.nanoTime();
     }
 
-    void stopClock() {
+    void stopClock(long eventCreatedTime) {
         long now = System.nanoTime();
         this.runningTime += now - this.lastStartClock;
-        this.lastCheckTime = System.currentTimeMillis();
-    }
+        this.latencyTotal += now - eventCreatedTime;
+        this.eventCount++;
 
-    void tallyLatency(long delayMu) {
-        this.latencyTotal += delayMu;
-        this.latencyCount++;
-    }
-
-    void accumulate() {
-        long now = System.nanoTime();
         if (now >= this.nextAccumulate) {
+            this.avgProcessingTime = runningTime / this.eventCount;
             this.loadFactor = runningTime / (double) (now - this.lastReportTime);
             this.lastReportTime = now;
             this.runningTime = 0L;
 
-            this.latency = this.latencyTotal / (double)  this.latencyCount;
+            this.latency = this.latencyTotal / this.eventCount;
             this.latencyTotal = 0L;
-            this.latencyCount = 0L;
+            this.eventCount = 0.;
 
             this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_MU;
+            this.lastAccumlationTime = now;
         }
     }
 
     public boolean isOverCapacity() {
-        long t = this.lastCheckTime;
+        long t = this.lastAccumlationTime;
         if (t == 0) {
             return false;
         }
@@ -80,11 +77,11 @@ public class QueueMetric {
     }
 
     public boolean isStalled() {
-        long t = this.lastCheckTime;
+        long t = this.lastAccumlationTime;
         if (t == 0) {
             return false;
         }
-        return t + 5_000L < System.currentTimeMillis();
+        return System.nanoTime() - t > STALLED_TIME_MU;
     }
 
     public double getLoadFactor() {
@@ -95,8 +92,12 @@ public class QueueMetric {
         return latency;
     }
 
+    public double getAvgProcessingTimeInMu() {
+        return avgProcessingTime;
+    }
+
     public long getLastCheckTimeAgo() {
-        return System.currentTimeMillis() - lastCheckTime;
+        return System.nanoTime() - this.lastAccumlationTime;
     }
 
     public String getName() {

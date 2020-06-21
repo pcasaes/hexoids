@@ -26,7 +26,7 @@ public class StalledHealthCheck implements HealthCheck {
                 .stream()
                 .sorted(QueueMetric::compare)
                 .filter(QueueMetric::isStalled)
-                .map(m -> "Stalled. Queue '" + m.getName() + "' was checked  " + m.getLastCheckTimeAgo() + "ms ago.")
+                .map(m -> "Stalled. Queue '" + m.getName() + "' was checked  " + m.getLastCheckTimeAgo() + "mu ago.")
                 .map(HealthCheckResponse::down)
                 .findFirst()
                 .orElse(HealthCheckResponse.up("Queue is up to date"));

@@ -92,9 +92,7 @@ public class DisruptorIn {
             try {
                 this.gameLoopService.accept(event.getGameRunnable());
             } finally {
-                queueMetric.stopClock();
-                queueMetric.tallyLatency(event.getAgeInMu());
-                queueMetric.accumulate();
+                queueMetric.stopClock(event.getCreateTime());
             }
             event.gameRunnable = null;
         }
@@ -145,8 +143,8 @@ public class DisruptorIn {
             return this;
         }
 
-        public long getAgeInMu() {
-            return System.nanoTime() - this.createTime;
+        public long getCreateTime() {
+            return createTime;
         }
     }
 

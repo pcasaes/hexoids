@@ -127,9 +127,7 @@ public class DisruptorOut {
                 this.domainEventProducer.accept(domainEvent);
             } finally {
                 event.setDomainEvent(null);
-                queueMetric.stopClock();
-                queueMetric.tallyLatency(event.getAgeInMu());
-                queueMetric.accumulate();
+                queueMetric.stopClock(event.getCreateTime());
             }
         }
     }
@@ -143,9 +141,7 @@ public class DisruptorOut {
                 this.clientEventProducer.accept(clientEvent);
             } finally {
                 event.setClientEvent(null);
-                queueMetric.stopClock();
-                queueMetric.tallyLatency(event.getAgeInMu());
-                queueMetric.accumulate();
+                queueMetric.stopClock(event.getCreateTime());
             }
         }
     }
@@ -188,8 +184,8 @@ public class DisruptorOut {
             return clientEvent;
         }
 
-        public long getAgeInMu() {
-            return System.nanoTime() - this.createTime;
+        public long getCreateTime() {
+            return createTime;
         }
 
         public DisruptorOutEvent setClientEvent(Dto clientEvent) {

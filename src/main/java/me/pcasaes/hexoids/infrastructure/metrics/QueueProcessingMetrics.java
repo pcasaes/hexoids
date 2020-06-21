@@ -1,10 +1,11 @@
 package me.pcasaes.hexoids.infrastructure.metrics;
 
 import io.quarkus.runtime.StartupEvent;
-import me.pcasaes.hexoids.infrastructure.disruptor.DisruptorIn;
-import me.pcasaes.hexoids.infrastructure.disruptor.DisruptorOut;
 import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
 import javax.annotation.Priority;
@@ -18,113 +19,62 @@ import java.util.List;
 public class QueueProcessingMetrics {
 
 
+    private final MetricRegistry metricRegistry;
     private final List<QueueMetric> queueMetricList;
 
     @Inject
-    public QueueProcessingMetrics(List<QueueMetric> queueMetricList) {
+    public QueueProcessingMetrics(MetricRegistry metricRegistry, List<QueueMetric> queueMetricList) {
+        this.metricRegistry = metricRegistry;
         this.queueMetricList = queueMetricList;
     }
 
     public void startup(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) StartupEvent event) {
-        // do nothing
+        this.queueMetricList
+                .forEach(this::setup);
     }
 
-    @Gauge(
-            name = DisruptorOut.METRIC_DOMAIN_EVENT_OUT + "-load-factor",
-            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
-            absolute = true,
-            tags = "layer=infrastructure"
-    )
-    public double getDomainEventOutLF() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorOut.METRIC_DOMAIN_EVENT_OUT.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLoadFactor)
-                .findFirst()
-                .orElse(0.);
-    }
+    private void setup(QueueMetric queueMetric) {
+        Tag tag = new Tag("layer", "infrastructure");
 
-    @Gauge(
-            name = DisruptorOut.METRIC_DOMAIN_EVENT_OUT + "-latency",
-            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
-            absolute = true,
-            tags = "layer=infrastructure"
-    )
-    public double getDomainEventOutLatency() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorOut.METRIC_DOMAIN_EVENT_OUT.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLatencyInMu)
-                .findFirst()
-                .orElse(0.);
-    }
+        org.eclipse.microprofile.metrics.Gauge<Double> lf = queueMetric::getLoadFactor;
+        metricRegistry.register(new MetadataBuilder()
+                        .withName(queueMetric.getName() + "-load-factor")
+                        .withDescription("Percentage of time spent processing events.")
+                        .withUnit(MetricUnits.PERCENT)
+                        .build(),
+                lf,
+                tag
+        );
 
-    @Gauge(
-            name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-load-factor",
-            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
-            absolute = true,
-            tags = "layer=infrastructure"
-    )
-    public double getClientEventOutLF() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorOut.METRIC_CLIENT_EVENT_OUT.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLoadFactor)
-                .findFirst()
-                .orElse(0.);
-    }
+        org.eclipse.microprofile.metrics.Gauge<Double> latency = queueMetric::getLatencyInMu;
+        metricRegistry.register(new MetadataBuilder()
+                        .withName(queueMetric.getName() + "-latency")
+                        .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
+                        .withUnit(MetricUnits.MICROSECONDS)
+                        .build(),
+                latency,
+                tag
+        );
 
-    @Gauge(
-            name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-latency",
-            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
-            absolute = true,
-            tags = "layer=infrastructure"
-    )
-    public double getClientEventOutLatency() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorOut.METRIC_CLIENT_EVENT_OUT.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLatencyInMu)
-                .findFirst()
-                .orElse(0.);
-    }
-
-    @Gauge(
-            name = DisruptorIn.METRIC_GAME_LOOP_IN + "-load-factor",
-            unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
-            absolute = true
-    )
-    public double getGameLoopLF() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorIn.METRIC_GAME_LOOP_IN.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLoadFactor)
-                .findFirst()
-                .orElse(0.);
-    }
-
-    @Gauge(
-            name = DisruptorIn.METRIC_GAME_LOOP_IN + "-latency",
-            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
-            absolute = true
-    )
-    public double getGameLoopLatency() {
-        return queueMetricList
-                .stream()
-                .filter(m -> DisruptorIn.METRIC_GAME_LOOP_IN.equalsIgnoreCase(m.getName()))
-                .map(QueueMetric::getLatencyInMu)
-                .findFirst()
-                .orElse(0.);
+        org.eclipse.microprofile.metrics.Gauge<Double> processingTime = queueMetric::getAvgProcessingTimeInMu;
+        metricRegistry.register(new MetadataBuilder()
+                        .withName(queueMetric.getName() + "-processing-time")
+                        .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
+                        .withUnit(MetricUnits.MICROSECONDS)
+                        .build(),
+                processingTime,
+                tag
+        );
     }
 
     @Gauge(
             name = "load-factor",
             unit = MetricUnits.PERCENT,
-            description = "Percentage of a fixed time processing events.",
+            description = "Percentage of time spent processing events.",
             absolute = true,
             tags = "layer=infrastructure"
     )
-    public double getLF() {
+    public double getGreaterLoadFactor() {
         return queueMetricList
                 .stream()
                 .sorted(QueueMetric::compare)
