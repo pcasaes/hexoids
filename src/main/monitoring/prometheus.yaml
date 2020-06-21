@@ -10,9 +10,11 @@ scrape_configs:
     metrics_path: '/metrics'
     static_configs:
       - targets: ['hexoids_hexoids_1:8080', 'hexoids_hexoids_2:8080', 'hexoids_hexoids_3:8080']
-        label: 'web-entrypoint'
+        labels:
+          service: 'web-entrypoint'
       - targets: ['hexoids_hexoids-subscriber_1:8080', 'hexoids_hexoids-subscriber_2:8080', 'hexoids_hexoids-subscriber_3:8080']
-        label: 'consumer-entrypoint'
+        labels:
+          service: 'consumer-entrypoint'
 
 
   - job_name: 'kafka-server'
