@@ -4,6 +4,7 @@ import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
@@ -41,6 +42,7 @@ public class QueueProcessingMetrics {
                         .withName(queueMetric.getName() + "-load-factor")
                         .withDescription("Percentage of time spent processing events.")
                         .withUnit(MetricUnits.PERCENT)
+                        .withType(MetricType.GAUGE)
                         .build(),
                 lf,
                 tag
@@ -51,6 +53,7 @@ public class QueueProcessingMetrics {
                         .withName(queueMetric.getName() + "-latency")
                         .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
                         .withUnit(MetricUnits.MICROSECONDS)
+                        .withType(MetricType.GAUGE)
                         .build(),
                 latency,
                 tag
@@ -61,6 +64,7 @@ public class QueueProcessingMetrics {
                         .withName(queueMetric.getName() + "-processing-time")
                         .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
                         .withUnit(MetricUnits.MICROSECONDS)
+                        .withType(MetricType.GAUGE)
                         .build(),
                 processingTime,
                 tag
