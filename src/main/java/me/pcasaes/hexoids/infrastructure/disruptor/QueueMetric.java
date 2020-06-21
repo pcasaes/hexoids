@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class QueueMetric {
 
+    public static final long NANO_PER_SECONDS = 1_000_000_000L;
     public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 1_000L;
     public static final long LOAD_FACTOR_CALC_WINDOW_NANO = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1_000_000L;
     public static final long STALLED_TIME_NANO = LOAD_FACTOR_CALC_WINDOW_NANO * 5L;
@@ -57,7 +58,7 @@ public class QueueMetric {
         if (now >= this.nextAccumulate) {
             double count = this.eventCount;
             double elapsedTime = (double) (now - this.lastReportTime);
-            this.throughput = count / elapsedTime;
+            this.throughput = count / (elapsedTime / NANO_PER_SECONDS);
             this.avgProcessingTime = runningTime / count;
             this.loadFactor = runningTime / elapsedTime;
             this.lastReportTime = now;
