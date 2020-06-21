@@ -69,6 +69,17 @@ public class QueueProcessingMetrics {
                 processingTime,
                 tag
         );
+
+        org.eclipse.microprofile.metrics.Gauge<Double> throughput = queueMetric::getThroughput;
+        metricRegistry.register(new MetadataBuilder()
+                        .withName(queueMetric.getName() + "-throughput")
+                        .withDescription("Throughput to process events.")
+                        .withUnit(MetricUnits.PER_SECOND)
+                        .withType(MetricType.GAUGE)
+                        .build(),
+                throughput,
+                tag
+        );
     }
 
     @Gauge(

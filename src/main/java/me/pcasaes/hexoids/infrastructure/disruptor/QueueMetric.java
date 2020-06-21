@@ -25,7 +25,8 @@ public class QueueMetric {
     private volatile double latency = 0.;
     private volatile double avgProcessingTime = 0.;
     private volatile double loadFactor = 0.;
-    private volatile long lastAccumlationTime = 0;
+    private volatile double throughput = 0.;
+    private volatile long lastAccumulationTime = 0;
 
     private final String name;
 
@@ -55,8 +56,10 @@ public class QueueMetric {
 
         if (now >= this.nextAccumulate) {
             double count = this.eventCount;
+            double elapsedTime = (double) (now - this.lastReportTime);
+            this.throughput = count / elapsedTime;
             this.avgProcessingTime = runningTime / count;
-            this.loadFactor = runningTime / (double) (now - this.lastReportTime);
+            this.loadFactor = runningTime / elapsedTime;
             this.lastReportTime = now;
             this.runningTime = 0L;
 
@@ -65,12 +68,12 @@ public class QueueMetric {
             this.eventCount = 0;
 
             this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_NANO;
-            this.lastAccumlationTime = now;
+            this.lastAccumulationTime = now;
         }
     }
 
     public boolean isOverCapacity() {
-        long t = this.lastAccumlationTime;
+        long t = this.lastAccumulationTime;
         if (t == 0) {
             return false;
         }
@@ -80,7 +83,7 @@ public class QueueMetric {
     }
 
     public boolean isStalled() {
-        long t = this.lastAccumlationTime;
+        long t = this.lastAccumulationTime;
         if (t == 0) {
             return false;
         }
@@ -99,8 +102,12 @@ public class QueueMetric {
         return avgProcessingTime;
     }
 
+    public double getThroughput() {
+        return throughput;
+    }
+
     public long getLastCheckTimeAgoNano() {
-        return HRClock.nanoTime() - this.lastAccumlationTime;
+        return HRClock.nanoTime() - this.lastAccumulationTime;
     }
 
     public String getName() {
