@@ -5,10 +5,10 @@ import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import io.quarkus.scheduler.Scheduled;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.model.GameEvents;
 import me.pcasaes.hexoids.core.domain.service.GameLoopService;
+import me.pcasaes.hexoids.infrastructure.clock.HRClock;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
@@ -88,11 +88,12 @@ public class DisruptorIn {
 
     private void handleGameLoopEventHandler(DisruptorInEvent event, long sequence, boolean endOfBatch) {
         if (event.getGameRunnable() != null) {
-            this.metrics.get(0).startClock();
+            QueueMetric queueMetric = this.metrics.get(0);
+            queueMetric.startClock();
             try {
                 this.gameLoopService.accept(event.getGameRunnable());
             } finally {
-                this.metrics.get(0).stopClock();
+                queueMetric.stopClock(event.getCreateTime());
             }
             event.gameRunnable = null;
         }
@@ -126,11 +127,14 @@ public class DisruptorIn {
 
         private Runnable gameRunnable;
 
+        private long createTime;
+
         public Runnable getGameRunnable() {
             return gameRunnable;
         }
 
         public DisruptorInEvent setGameRunnable(Runnable gameRunnable) {
+            this.createTime = HRClock.nanoTime();
             this.gameRunnable = gameRunnable;
             return this;
         }
@@ -139,11 +143,10 @@ public class DisruptorIn {
             this.gameRunnable = null;
             return this;
         }
-    }
 
-    @Scheduled(every = QueueMetric.LOAD_FACTOR_CALC_WINDOW_SECONDS + "s")
-    public void reportMetrics() {
-        this.metrics.forEach(QueueMetric::report);
+        public long getCreateTime() {
+            return createTime;
+        }
     }
 
 }

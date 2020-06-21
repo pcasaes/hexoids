@@ -9,12 +9,15 @@ services:
       - service-network
 
   hexoids-kafka:
-    image: 'wurstmeister/kafka:2.12-2.5.0'
+    build:
+      context: src/main/docker/kafka
+    image: me.pcasaes/kafka
     ports:
       - "9092:9092"
     environment:
       KAFKA_ADVERTISED_HOST_NAME: hexoids-kafka
       KAFKA_ZOOKEEPER_CONNECT: hexoids-zookeeper:2181
+      KAFKA_OPTS: -javaagent:/opt/kafka/bin/jmx_prometheus_javaagent.jar=9080:/opt/kafka/bin/prometheus-config.yml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
@@ -50,7 +53,7 @@ services:
     environment:
       - VIRTUAL_HOST=${HEXOIDS_HOST}
       - VIRTUAL_PORT=8080
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false -Dmp.messaging.incomming.bolt-life-cycle.topic=HEXOIDS_NONE -Dmp.messaging.incommingscore-board-control.topic=HEXOIDS_NONE
     depends_on:
       - hexoids-kafka
       - hexoids-kafka-topic-create
@@ -66,6 +69,28 @@ services:
       - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=true -Dhexoids.config.service.client-broadcast.enabled=false
     depends_on:
       - hexoids-kafka
+    networks:
+      - service-network
+
+  hexoids-prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/main/monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - service-network
+
+  hexoids-grafana:
+    container_name: grafana
+    hostname: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - ./src/main/monitoring/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
     networks:
       - service-network
 

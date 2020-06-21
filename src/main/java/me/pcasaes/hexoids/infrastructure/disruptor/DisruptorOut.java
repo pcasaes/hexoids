@@ -6,9 +6,9 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.quarkus.runtime.StartupEvent;
-import io.quarkus.scheduler.Scheduled;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import me.pcasaes.hexoids.core.domain.model.GameEvents;
+import me.pcasaes.hexoids.infrastructure.clock.HRClock;
 import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer;
 import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -122,12 +122,13 @@ public class DisruptorOut {
     private void handleDomainEventHandler(DisruptorOutEvent event, long sequence, boolean endOfBatch) {
         DomainEvent domainEvent = event.getDomainEvent();
         if (domainEvent != null) {
-            this.metrics.get(0).startClock();
+            QueueMetric queueMetric = this.metrics.get(0);
+            queueMetric.startClock();
             try {
                 this.domainEventProducer.accept(domainEvent);
             } finally {
+                queueMetric.stopClock(event.getCreateTime());
                 event.setDomainEvent(null);
-                this.metrics.get(0).stopClock();
             }
         }
     }
@@ -135,12 +136,13 @@ public class DisruptorOut {
     private void handleClientEventHandler(DisruptorOutEvent event, long sequence, boolean endOfBatch) {
         Dto clientEvent = event.getClientEvent();
         if (clientEvent != null) {
-            this.metrics.get(1).startClock();
+            QueueMetric queueMetric = this.metrics.get(1);
+            queueMetric.startClock();
             try {
                 this.clientEventProducer.accept(clientEvent);
             } finally {
+                queueMetric.stopClock(event.getCreateTime());
                 event.setClientEvent(null);
-                this.metrics.get(1).stopClock();
             }
         }
     }
@@ -167,12 +169,14 @@ public class DisruptorOut {
 
         private DomainEvent domainEvent;
         private Dto clientEvent;
+        private long createTime;
 
         public DomainEvent getDomainEvent() {
             return domainEvent;
         }
 
         public DisruptorOutEvent setDomainEvent(DomainEvent domainEvent) {
+            markCreateTime();
             this.domainEvent = domainEvent;
             return this;
         }
@@ -181,7 +185,12 @@ public class DisruptorOut {
             return clientEvent;
         }
 
+        public long getCreateTime() {
+            return createTime;
+        }
+
         public DisruptorOutEvent setClientEvent(Dto clientEvent) {
+            markCreateTime();
             this.clientEvent = clientEvent;
             return this;
         }
@@ -191,12 +200,10 @@ public class DisruptorOut {
             this.clientEvent = null;
             return this;
         }
-    }
 
-    @Scheduled(every = QueueMetric.LOAD_FACTOR_CALC_WINDOW_SECONDS + "s")
-    public void reportMetrics() {
-        this.metrics.forEach(QueueMetric::report);
+        private void markCreateTime() {
+            this.createTime = HRClock.nanoTime();
+        }
     }
-
 
 }

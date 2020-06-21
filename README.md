@@ -9,10 +9,13 @@ A simple distributed arcade game.
 - [Development](#development)
     - [Infrastructure](#infrastructure)
     - [Start Quarkus](#start-quarkus)
-- [Production](#production)
-    - [Setup Env](#setup-env)
+- [Setup Env](#setup-env)
+- [Cluster Mode](#cluster-mode)
     - [Cluster Commands](#cluster-commands)
+- [Singleton Mode](#singleton-mode)
+    - [Singleton Commands](#singleton-commands)
 - [Bots](#bots)
+- [Monitoring](#monitoring)
 - [Architecture](#architecture)
 - [Future Improvements](#future-improvements)
     - [Technical](#technical)
@@ -48,11 +51,11 @@ Hexoids uses [Apache Kafka](https://kafka.apache.org/) as its backend
 
 To start infrastructure services run:
 
-    docker-compose -f docker-compose-dev-infrastructure.yml up -d
+    ./start-dev.sh
     
 If you'd like to reset the backend run:
 
-    docker-compose -f docker-compose-dev-infrastructure.yml rm -svf
+    ./clean-dev.sh
 
 You will have to append the following to your `/etc/hosts` file:
 
@@ -66,7 +69,7 @@ To start the service run:
 
     ./mvnw compile quarkus:dev
     
-and open in a WebGL capable browser:
+Open in a WebGL capable browser:
 
     http://localhost:8080
     
@@ -74,33 +77,57 @@ If you wish to use a different port run:
 
     ./mvnw compile quarkus:dev -Dquarkus.http.port=8180
     
-# Production
-
-The file `docker-compose.yml` is a guide on how we could setup Hexoids for production.
-This particular setup runs everything in a single Host which is not something you'd
-do for real. Regardless this allows us to test the service in a distributed fashion.
-
-> **IMPORTANT**: If running on multiple host their clocks must be synchronized.
-
-# Bots
-
-Bots can be simulated in the folder [bots](/bots).
-
-## Setup ENV
+# Setup ENV
 
 Copy `.env.sample` to `.env` and replace the value
 `HEXOIDS_HOST` with your accessible host hostname or ip. The server will be
 accessible on the hostname/ip on port 80: `http://HEXOIDS_HOST`.
+    
+    
+# Cluster Mode
+
+The file `docker-compose.yml` is a guide on how we could setup Hexoids for production.
+This particular setup runs everything in a single Host which is not something you'd
+do for real. Regardless this allows us to test the service in a distributed fashion.
+    
+> **IMPORTANT**: If running on multiple hosts their clocks must be reasonably synchronized.
 
 ## Cluster commands
 
 | Action | Command |
 | --- | --- |
-| Start | `docker-compose up -d` |
-| Stop | `docker-compose stop` |
+| Start | `./start-cluster.sh` |
+| Stop | `./stop-cluster.sh` |
 | Log | `docker-compose logs -f hexoids` |
 | Scale | `docker-compose scale hexoids=2` |
-| Delete | `docker-compose rm -svf` |
+| Delete | `./clean-cluster.sh` |
+
+# Singleton Mode
+
+The file `docker-compose-singleton.yml` sets up an environment with a single hexoids node running.
+
+## Singleton commands
+
+| Action | Command |
+| --- | --- |
+| Start | `./start-singleton.sh` |
+| Stop | `./stop-singleton.sh` |
+| Log | `docker-compose logs -f hexoids` |
+| Delete | `./clean-cluster.sh` |
+
+# Bots
+
+Bots can be simulated in the folder [bots](/bots).
+
+
+# Monitoring
+
+Monitoring is provided through Grafana and Prometheus. It is available in both cluster and singleton mode.
+To access open:
+
+    http://localhost:3000
+    
+Use the default login `admin` with password `admin`.    
 
 # Architecture
 
@@ -108,13 +135,13 @@ Hexoids is server authoritative and is built around an event driven model.
 It uses Apache Kafka to coordinate between servers nodes, WebGL via Phaser 3 on the client side and
 WebSockets for client server communication.
 
-Kafka isn't always the best choice for low latency but it has some interesting properties that
+Kafka isn't always the best choice for low latency, but it has some interesting properties that
 were exploited here. Primarily, a node can be started and quickly get caught up to speed by replaying
 logs. In other words the state can be retrieved by replaying all events.
 
 A client request will reach its node which will enqueue some action onto the game model. The game model
 will act upon it and fire a domain event onto Kafka which will the spread that to all nodes. The nodes
-will interpret those domain event and broadcast the corresponding dto to the clients. All domain events and dtos
+will interpret those domain events and broadcast the corresponding dto to the clients. All domain events and dtos
 are represented in Protobuf.
 
 Bolt logic is handled by a special kind node that doesn't need to be directly available to clients. These nodes
@@ -145,6 +172,7 @@ CDI, Kafka, Vert.x (web sockets).
 
 
 ## Infrastructure Layer
+
 Here we set up the low latency event loop using the LMAX Disruptor. We also find domain event producers
 and kafka serializers.
 
