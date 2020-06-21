@@ -59,7 +59,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./src/main/monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./src/main/monitoring/prometheus-singleton.yaml:/etc/prometheus/prometheus.yml
     networks:
       - service-network
 
