@@ -93,7 +93,7 @@ services:
       - "3000:3000"
     networks:
       - service-network
-      -
+
 networks:
   service-network:
     name: hexoids-network
