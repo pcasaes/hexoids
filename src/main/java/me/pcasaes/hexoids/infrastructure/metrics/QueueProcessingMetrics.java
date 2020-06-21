@@ -48,22 +48,22 @@ public class QueueProcessingMetrics {
                 tag
         );
 
-        org.eclipse.microprofile.metrics.Gauge<Double> latency = queueMetric::getLatencyInMu;
+        org.eclipse.microprofile.metrics.Gauge<Double> latency = queueMetric::getLatencyInNano;
         metricRegistry.register(new MetadataBuilder()
                         .withName(queueMetric.getName() + "-latency")
                         .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
-                        .withUnit(MetricUnits.MICROSECONDS)
+                        .withUnit(MetricUnits.NANOSECONDS)
                         .withType(MetricType.GAUGE)
                         .build(),
                 latency,
                 tag
         );
 
-        org.eclipse.microprofile.metrics.Gauge<Double> processingTime = queueMetric::getAvgProcessingTimeInMu;
+        org.eclipse.microprofile.metrics.Gauge<Double> processingTime = queueMetric::getAvgProcessingTimeInNano;
         metricRegistry.register(new MetadataBuilder()
                         .withName(queueMetric.getName() + "-processing-time")
                         .withDescription("Avg Latency to process events. Time since enqueued plus processing time.")
-                        .withUnit(MetricUnits.MICROSECONDS)
+                        .withUnit(MetricUnits.NANOSECONDS)
                         .withType(MetricType.GAUGE)
                         .build(),
                 processingTime,

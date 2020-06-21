@@ -7,8 +7,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class QueueMetric {
 
     public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 1_000L;
-    public static final long LOAD_FACTOR_CALC_WINDOW_MU = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1000L;
-    public static final long STALLED_TIME_MU = LOAD_FACTOR_CALC_WINDOW_MU * 5L;
+    public static final long LOAD_FACTOR_CALC_WINDOW_NANO = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1_000_000L;
+    public static final long STALLED_TIME_NANO = LOAD_FACTOR_CALC_WINDOW_NANO * 5L;
 
     private static final List<QueueMetric> LIST = new CopyOnWriteArrayList<>();
 
@@ -61,7 +61,7 @@ public class QueueMetric {
             this.latencyTotal = 0L;
             this.eventCount = 0.;
 
-            this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_MU;
+            this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_NANO;
             this.lastAccumlationTime = now;
         }
     }
@@ -81,22 +81,22 @@ public class QueueMetric {
         if (t == 0) {
             return false;
         }
-        return System.nanoTime() - t > STALLED_TIME_MU;
+        return System.nanoTime() - t > STALLED_TIME_NANO;
     }
 
     public double getLoadFactor() {
         return loadFactor;
     }
 
-    public double getLatencyInMu() {
+    public double getLatencyInNano() {
         return latency;
     }
 
-    public double getAvgProcessingTimeInMu() {
+    public double getAvgProcessingTimeInNano() {
         return avgProcessingTime;
     }
 
-    public long getLastCheckTimeAgo() {
+    public long getLastCheckTimeAgoNano() {
         return System.nanoTime() - this.lastAccumlationTime;
     }
 
