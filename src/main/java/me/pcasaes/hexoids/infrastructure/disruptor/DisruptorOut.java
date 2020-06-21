@@ -81,7 +81,7 @@ public class DisruptorOut {
                     thread.setName("disruptor-out-thread-" + threadCount.incrementAndGet());
                     return thread;
                 }),
-                ProducerType.SINGLE,
+                ProducerType.MULTI,
                 new BlockingWaitStrategy());
 
 

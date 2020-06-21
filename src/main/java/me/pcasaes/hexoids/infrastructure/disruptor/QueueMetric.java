@@ -19,7 +19,7 @@ public class QueueMetric {
     private long nextAccumulate;
 
     private long latencyTotal;
-    private double eventCount;
+    private long eventCount;
     private volatile double latency = 0.;
     private volatile double avgProcessingTime = 0.;
     private volatile double loadFactor = 0.;
@@ -52,14 +52,15 @@ public class QueueMetric {
         this.eventCount++;
 
         if (now >= this.nextAccumulate) {
-            this.avgProcessingTime = runningTime / this.eventCount;
+            double count = this.eventCount;
+            this.avgProcessingTime = runningTime / count;
             this.loadFactor = runningTime / (double) (now - this.lastReportTime);
             this.lastReportTime = now;
             this.runningTime = 0L;
 
-            this.latency = this.latencyTotal / this.eventCount;
+            this.latency = this.latencyTotal / count;
             this.latencyTotal = 0L;
-            this.eventCount = 0.;
+            this.eventCount = 0;
 
             this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_NANO;
             this.lastAccumlationTime = now;
