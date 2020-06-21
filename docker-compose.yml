@@ -53,7 +53,7 @@ services:
     environment:
       - VIRTUAL_HOST=${HEXOIDS_HOST}
       - VIRTUAL_PORT=8080
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false -Dmp.messaging.incomming.bolt-life-cycle.topic=HEXOIDS_NONE -Dmp.messaging.incommingscore-board-control.topic=HEXOIDS_NONE
     depends_on:
       - hexoids-kafka
       - hexoids-kafka-topic-create
