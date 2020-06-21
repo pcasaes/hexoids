@@ -3,21 +3,24 @@ package me.pcasaes.hexoids.infrastructure.disruptor;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 
 public class QueueMetric {
 
-    public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 3_000L;
-    public static final long LOAD_FACTOR_CALC_WINDOW_SECONDS = LOAD_FACTOR_CALC_WINDOW_MILLIS / 1000L;
+    public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 1_000L;
+    public static final long LOAD_FACTOR_CALC_WINDOW_MU = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1000L;
 
-    private static final Logger LOGGER = Logger.getLogger(QueueMetric.class.getName());
     private static final List<QueueMetric> LIST = new CopyOnWriteArrayList<>();
 
     private long runningTime;
     private long lastReportTime;
     private long lastStartClock;
-    private long firstStartRunningTime;
     private long lastCheckTime;
+
+    private long nextAccumulate;
+
+    private long latencyTotal;
+    private long latencyCount;
+    private double latency = 0.;
 
     private double loadFactor = 0.;
     private final String name;
@@ -42,24 +45,27 @@ public class QueueMetric {
 
     void stopClock() {
         long now = System.nanoTime();
-        if (firstStartRunningTime < lastReportTime) {
-            this.runningTime = 0L;
-            firstStartRunningTime = now;
-        }
         this.runningTime += now - this.lastStartClock;
         this.lastCheckTime = System.currentTimeMillis();
     }
 
-    void report() {
+    void tallyLatency(long delayMu) {
+        this.latencyTotal += delayMu;
+        this.latencyCount++;
+    }
+
+    void accumulate() {
         long now = System.nanoTime();
-        this.loadFactor = runningTime / (double) (now - this.lastReportTime);
-        this.lastReportTime = now;
-        if (this.loadFactor < 0.5) {
-            LOGGER.info(this::getMetricMessage);
-        } else if (this.loadFactor < 0.8) {
-            LOGGER.warning(this::getMetricMessage);
-        } else {
-            LOGGER.severe(this::getMetricMessage);
+        if (now >= this.nextAccumulate) {
+            this.loadFactor = runningTime / (double) (now - this.lastReportTime);
+            this.lastReportTime = now;
+            this.runningTime = 0L;
+
+            this.latency = this.latencyTotal / (double)  this.latencyCount;
+            this.latencyTotal = 0L;
+            this.latencyCount = 0L;
+
+            this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_MU;
         }
     }
 
@@ -85,16 +91,16 @@ public class QueueMetric {
         return loadFactor;
     }
 
+    public double getLatencyInMu() {
+        return latency;
+    }
+
     public long getLastCheckTimeAgo() {
         return System.currentTimeMillis() - lastCheckTime;
     }
 
     public String getName() {
         return name;
-    }
-
-    private String getMetricMessage() {
-        return "LOAD FACTOR " + this.name + ": " + this.loadFactor;
     }
 
     public static int compare(QueueMetric a, QueueMetric b) {

@@ -15,13 +15,13 @@ import javax.interceptor.Interceptor;
 import java.util.List;
 
 @ApplicationScoped
-public class LoadFactorMetric {
+public class QueueProcessingMetrics {
 
 
     private final List<QueueMetric> queueMetricList;
 
     @Inject
-    public LoadFactorMetric(List<QueueMetric> queueMetricList) {
+    public QueueProcessingMetrics(List<QueueMetric> queueMetricList) {
         this.queueMetricList = queueMetricList;
     }
 
@@ -45,6 +45,21 @@ public class LoadFactorMetric {
     }
 
     @Gauge(
+            name = DisruptorOut.METRIC_DOMAIN_EVENT_OUT + "-latency",
+            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
+            absolute = true,
+            tags = "layer=infrastructure"
+    )
+    public double getDomainEventOutLatency() {
+        return queueMetricList
+                .stream()
+                .filter(m -> DisruptorOut.METRIC_DOMAIN_EVENT_OUT.equalsIgnoreCase(m.getName()))
+                .map(QueueMetric::getLatencyInMu)
+                .findFirst()
+                .orElse(0.);
+    }
+
+    @Gauge(
             name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-load-factor",
             unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
             absolute = true,
@@ -60,6 +75,21 @@ public class LoadFactorMetric {
     }
 
     @Gauge(
+            name = DisruptorOut.METRIC_CLIENT_EVENT_OUT + "-latency",
+            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
+            absolute = true,
+            tags = "layer=infrastructure"
+    )
+    public double getClientEventOutLatency() {
+        return queueMetricList
+                .stream()
+                .filter(m -> DisruptorOut.METRIC_CLIENT_EVENT_OUT.equalsIgnoreCase(m.getName()))
+                .map(QueueMetric::getLatencyInMu)
+                .findFirst()
+                .orElse(0.);
+    }
+
+    @Gauge(
             name = DisruptorIn.METRIC_GAME_LOOP_IN + "-load-factor",
             unit = MetricUnits.PERCENT, description = "Percentage of a fixed time processing events.",
             absolute = true
@@ -69,6 +99,20 @@ public class LoadFactorMetric {
                 .stream()
                 .filter(m -> DisruptorIn.METRIC_GAME_LOOP_IN.equalsIgnoreCase(m.getName()))
                 .map(QueueMetric::getLoadFactor)
+                .findFirst()
+                .orElse(0.);
+    }
+
+    @Gauge(
+            name = DisruptorIn.METRIC_GAME_LOOP_IN + "-latency",
+            unit = MetricUnits.MICROSECONDS, description = "Avg Latency to process events.",
+            absolute = true
+    )
+    public double getGameLoopLatency() {
+        return queueMetricList
+                .stream()
+                .filter(m -> DisruptorIn.METRIC_GAME_LOOP_IN.equalsIgnoreCase(m.getName()))
+                .map(QueueMetric::getLatencyInMu)
                 .findFirst()
                 .orElse(0.);
     }
