@@ -127,8 +127,8 @@ public class DisruptorOut {
             try {
                 this.domainEventProducer.accept(domainEvent);
             } finally {
-                event.setDomainEvent(null);
                 queueMetric.stopClock(event.getCreateTime());
+                event.setDomainEvent(null);
             }
         }
     }
@@ -141,8 +141,8 @@ public class DisruptorOut {
             try {
                 this.clientEventProducer.accept(clientEvent);
             } finally {
-                event.setClientEvent(null);
                 queueMetric.stopClock(event.getCreateTime());
+                event.setClientEvent(null);
             }
         }
     }
