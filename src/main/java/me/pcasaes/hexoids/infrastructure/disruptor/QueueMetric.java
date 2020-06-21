@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.infrastructure.disruptor;
 
+import me.pcasaes.hexoids.infrastructure.clock.HRClock;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,11 +44,11 @@ public class QueueMetric {
     }
 
     void startClock() {
-        this.lastStartClock = System.nanoTime();
+        this.lastStartClock = HRClock.nanoTime();
     }
 
     void stopClock(long eventCreatedTime) {
-        long now = System.nanoTime();
+        long now = HRClock.nanoTime();
         this.runningTime += now - this.lastStartClock;
         this.latencyTotal += now - eventCreatedTime;
         this.eventCount++;
@@ -82,7 +84,7 @@ public class QueueMetric {
         if (t == 0) {
             return false;
         }
-        return System.nanoTime() - t > STALLED_TIME_NANO;
+        return HRClock.nanoTime() - t > STALLED_TIME_NANO;
     }
 
     public double getLoadFactor() {
@@ -98,7 +100,7 @@ public class QueueMetric {
     }
 
     public long getLastCheckTimeAgoNano() {
-        return System.nanoTime() - this.lastAccumlationTime;
+        return HRClock.nanoTime() - this.lastAccumlationTime;
     }
 
     public String getName() {

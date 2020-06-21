@@ -8,6 +8,7 @@ import com.lmax.disruptor.dsl.ProducerType;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.model.GameEvents;
 import me.pcasaes.hexoids.core.domain.service.GameLoopService;
+import me.pcasaes.hexoids.infrastructure.clock.HRClock;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
@@ -133,7 +134,7 @@ public class DisruptorIn {
         }
 
         public DisruptorInEvent setGameRunnable(Runnable gameRunnable) {
-            this.createTime = System.nanoTime();
+            this.createTime = HRClock.nanoTime();
             this.gameRunnable = gameRunnable;
             return this;
         }

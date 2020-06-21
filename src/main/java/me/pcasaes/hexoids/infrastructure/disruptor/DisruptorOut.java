@@ -8,6 +8,7 @@ import com.lmax.disruptor.dsl.ProducerType;
 import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import me.pcasaes.hexoids.core.domain.model.GameEvents;
+import me.pcasaes.hexoids.infrastructure.clock.HRClock;
 import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer;
 import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -81,7 +82,7 @@ public class DisruptorOut {
                     thread.setName("disruptor-out-thread-" + threadCount.incrementAndGet());
                     return thread;
                 }),
-                ProducerType.MULTI,
+                ProducerType.SINGLE,
                 new BlockingWaitStrategy());
 
 
@@ -201,7 +202,7 @@ public class DisruptorOut {
         }
 
         private void markCreateTime() {
-            this.createTime = System.nanoTime();
+            this.createTime = HRClock.nanoTime();
         }
     }
 
