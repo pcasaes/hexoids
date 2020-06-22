@@ -107,10 +107,10 @@ public class TrigUtil {
     }
 
     public static float calculateXComponentFromAngleAndMagnitude(float angle, float speed) {
-        return speed * (float) Math.cos(angle);
+        return speed * SinCalculator.cos(angle);
     }
 
     public static float calculateYComponentFromAngleAndMagnitude(float angle, float speed) {
-        return speed * (float) Math.sin(angle);
+        return speed * SinCalculator.sin(angle);
     }
 }

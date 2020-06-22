@@ -1,6 +1,7 @@
 package me.pcasaes.hexoids.core.domain.vector;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.utils.SinCalculator;
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 
 import java.util.OptionalDouble;
@@ -237,7 +238,7 @@ public class PositionVector {
             return getX();
         }
         float r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000f;
-        float x = getX() + (float) Math.cos(velocity.getAngle()) * r;
+        float x = getX() + SinCalculator.cos(velocity.getAngle()) * r;
         return configuration.atBounds().bound(x);
     }
 
@@ -246,7 +247,7 @@ public class PositionVector {
             return getY();
         }
         float r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000f;
-        float y = this.getY() + (float) Math.sin(velocity.getAngle()) * r;
+        float y = this.getY() + SinCalculator.sin(velocity.getAngle()) * r;
         return configuration.atBounds().bound(y);
     }
 
