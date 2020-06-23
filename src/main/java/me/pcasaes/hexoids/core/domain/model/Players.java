@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.core.domain.model;
 
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
@@ -27,8 +29,8 @@ import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_BUILDER;
  */
 public class Players implements Iterable<Player> {
 
-    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
-        return new Players(bolts, clock, scoreBoard);
+    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, PlayerSpatialIndexFactory spatialIndexFactory) {
+        return new Players(bolts, clock, scoreBoard, spatialIndexFactory);
     }
 
     /**
@@ -47,10 +49,13 @@ public class Players implements Iterable<Player> {
 
     private final ScoreBoard scoreBoard;
 
-    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+    private final PlayerSpatialIndexFactory spatialIndexFactory;
+
+    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, PlayerSpatialIndexFactory spatialIndexFactory) {
         this.bolts = bolts;
         this.clock = clock;
         this.scoreBoard = scoreBoard;
+        this.spatialIndexFactory = spatialIndexFactory;
     }
 
     /**
@@ -237,5 +242,9 @@ public class Players implements Iterable<Player> {
      */
     public int getNumberOfConnectedPlayers() {
         return this.playerServerUpdateSet.size();
+    }
+
+    PlayerSpatialIndex getSpatialIndex() {
+        return spatialIndexFactory.get();
     }
 }

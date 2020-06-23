@@ -190,7 +190,12 @@ public class Bolt {
      */
     void checkHits() {
         if (!this.exhausted) {
-            this.players.forEach(this::hit);
+            this.players
+                    .getSpatialIndex()
+                    .search(this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
+                            this.positionVector.getX(), this.positionVector.getY(),
+                            Config.get().getBoltCollisionIndexSearchDistance())
+                    .forEach(this::hit);
         }
     }
 

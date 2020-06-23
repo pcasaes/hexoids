@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.core.domain.model;
 
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
+
 /**
  * The Game object is a singleton access through {@link Game#get()} that is
  * the root object of the game composition.
@@ -60,7 +62,7 @@ public interface Game {
             Clock clock = Clock.create();
             Bolts bolts = Bolts.create();
             ScoreBoard scoreBoard = ScoreBoard.create(clock);
-            Players players = Players.create(bolts, clock, scoreBoard);
+            Players players = Players.create(bolts, clock, scoreBoard, PlayerSpatialIndexFactory.factory());
 
             INSTANCE = new Implementation(players, clock, bolts, scoreBoard);
         }

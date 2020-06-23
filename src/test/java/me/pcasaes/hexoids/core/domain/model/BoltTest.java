@@ -1,6 +1,7 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -57,6 +58,14 @@ class BoltTest {
         doAnswer(c -> Collections.emptyIterator()).when(players).iterator();
         doAnswer(c -> Collections.emptyList().spliterator()).when(players).spliterator();
         doAnswer(c -> Stream.empty()).when(players).stream();
+
+        PlayerSpatialIndexFactory
+                .factory()
+                .setPlayerSpatialIndex((float x1, float y1, float x2, float y2, float distance) -> players);
+
+        doAnswer(ctx -> PlayerSpatialIndexFactory.factory().get())
+                .when(players)
+                .getSpatialIndex();
     }
 
     @Test

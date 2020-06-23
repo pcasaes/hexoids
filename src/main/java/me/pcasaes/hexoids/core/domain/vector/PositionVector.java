@@ -258,6 +258,14 @@ public class PositionVector {
         return this.currentPosition.getY();
     }
 
+    public float getPreviousX() {
+        return this.previousPosition.getX();
+    }
+
+    public float getPreviousY() {
+        return this.previousPosition.getY();
+    }
+
     public long getTimestamp() {
         return currentTimestamp;
     }
@@ -392,6 +400,7 @@ public class PositionVector {
     public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
         return intersectedWithSegment(b, intersectionThreshold);
     }
+
 
     public interface Configuration {
 

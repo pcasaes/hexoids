@@ -25,6 +25,8 @@ public class Config {
     private float boltInertiaNegativeProjectionScale;
     private long expungeSinceLastSpawnTimeout;
 
+    private float boltCollisionIndexSearchDistance;
+
 
     private static class ConfigHolder {
         static final Config INSTANCE = new Config();
@@ -129,6 +131,7 @@ public class Config {
     }
 
     public void setBoltCollisionRadius(float boltCollisionRadius) {
+        this.boltCollisionIndexSearchDistance = 100f * boltCollisionRadius;
         this.boltCollisionRadius = boltCollisionRadius;
     }
 
@@ -170,5 +173,9 @@ public class Config {
 
     public void setExpungeSinceLastSpawnTimeout(long expungeSinceLastSpawnTimeout) {
         this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
+    }
+
+    public float getBoltCollisionIndexSearchDistance() {
+        return boltCollisionIndexSearchDistance;
     }
 }

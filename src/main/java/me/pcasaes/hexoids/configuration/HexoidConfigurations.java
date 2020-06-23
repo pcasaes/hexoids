@@ -3,6 +3,8 @@ package me.pcasaes.hexoids.configuration;
 
 import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
@@ -99,6 +101,11 @@ public class HexoidConfigurations {
 
     public float getInertiaDampenCoefficient() {
         return inertiaDampenCoefficient;
+    }
+
+    @Inject
+    public void setPlayerSpatialIndex(PlayerSpatialIndex playerSpatialIndex) {
+        PlayerSpatialIndexFactory.factory().setPlayerSpatialIndex(playerSpatialIndex);
     }
 
     @Inject

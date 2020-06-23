@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.core.domain.model;
 
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -57,7 +58,7 @@ class PlayerTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.bolts = Bolts.create();
-        this.players = Players.create(bolts, clock, scoreBoard);
+        this.players = Players.create(bolts, clock, scoreBoard, PlayerSpatialIndexFactory.factory());
         
         assertEquals(0, this.players.getTotalNumberOfPlayers());
         assertEquals(0, this.players.getNumberOfConnectedPlayers());
