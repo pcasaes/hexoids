@@ -95,7 +95,6 @@ public class Config {
     }
 
     public void setPlayerMaxMove(float playerMaxMove) {
-        this.boltCollisionIndexSearchDistance = playerMaxMove / boltCollisionRadius;
         this.playerMaxMove = playerMaxMove;
     }
 
@@ -132,7 +131,7 @@ public class Config {
     }
 
     public void setBoltCollisionRadius(float boltCollisionRadius) {
-        this.boltCollisionIndexSearchDistance = playerMaxMove / boltCollisionRadius;
+        this.boltCollisionIndexSearchDistance = 100f * boltCollisionRadius;
         this.boltCollisionRadius = boltCollisionRadius;
     }
 
