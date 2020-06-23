@@ -47,7 +47,7 @@ public class RTree2Player2SpatialIndex implements PlayerSpatialIndex {
 
 
     @Scheduled(every = "1s")
-    @Timed(name = "player-spatial-index-update", absolute = false, description = "Time to update the player spatial index.")
+    @Timed(name = "player-spatial-index-update", absolute = true, description = "Time to update the player spatial index.")
     public void task() {
         if (!taskRunning.compareAndSet(false, true)) {
             return;
