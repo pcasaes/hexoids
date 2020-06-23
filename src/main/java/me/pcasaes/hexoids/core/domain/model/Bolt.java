@@ -194,7 +194,7 @@ public class Bolt {
                     .getSpatialIndex()
                     .search(this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
                             this.positionVector.getX(), this.positionVector.getY(),
-                            Config.get().getBoltCollisionRadius())
+                            Config.get().getBoltCollisionIndexSearchDistance())
                     .forEach(this::hit);
         }
     }
