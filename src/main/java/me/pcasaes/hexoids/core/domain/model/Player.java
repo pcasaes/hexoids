@@ -167,6 +167,10 @@ public interface Player {
      */
     void expungeIfStalled();
 
+    float getX();
+
+    float getY();
+
     /**
      * Updates the player's vector position up tot he supplied timestamp.
      *
@@ -592,6 +596,16 @@ public interface Player {
 
         private boolean isJoined() {
             return this.name != null;
+        }
+
+        @Override
+        public float getX() {
+            return this.position.getX();
+        }
+
+        @Override
+        public float getY() {
+            return this.position.getY();
         }
 
         @Override
