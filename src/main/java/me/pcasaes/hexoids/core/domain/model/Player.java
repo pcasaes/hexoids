@@ -486,6 +486,7 @@ public interface Player {
                             .setPlayerId(id.getGuid())))
             );
             GameMetrics.get().getPlayerLeft().increment();
+            this.spawned = false;
         }
 
         @Override
