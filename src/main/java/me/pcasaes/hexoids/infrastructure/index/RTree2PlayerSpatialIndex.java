@@ -4,16 +4,22 @@ import com.github.davidmoten.rtree2.RTree;
 import com.github.davidmoten.rtree2.geometry.Geometries;
 import com.github.davidmoten.rtree2.geometry.Point;
 import io.quarkus.arc.properties.IfBuildProperty;
-import io.quarkus.scheduler.Scheduled;
+import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.model.Player;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @IfBuildProperty(name = "hexoids.config.infrastructure.players-spatial-index", stringValue = "rtree2")
@@ -26,7 +32,9 @@ public class RTree2PlayerSpatialIndex implements PlayerSpatialIndex {
 
     private final List<Player> results = new ArrayList<>();
 
-    private final AtomicBoolean taskRunning = new AtomicBoolean(false);
+    private volatile ScheduledExecutorService scheduledExecutorService;
+
+    private volatile ScheduledFuture<?> scheduledFuture;
 
     private final RTree2PlayerSpatialIndexUpdater updater;
 
@@ -36,16 +44,24 @@ public class RTree2PlayerSpatialIndex implements PlayerSpatialIndex {
         LOGGER.info("Using RTree2 Spatial Index");
     }
 
+    public void startup(@Observes StartupEvent event) {
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        this.scheduledFuture = scheduledExecutorService
+                .scheduleWithFixedDelay(this::task, 2_000L, 100L, TimeUnit.MILLISECONDS);
+    }
 
-    @Scheduled(every = "1s")
-    public void task() {
-        if (!taskRunning.compareAndSet(false, true)) {
-            return;
-        }
+    @PreDestroy
+    public void stop() {
+        this.scheduledFuture.cancel(true);
+        scheduledExecutorService.shutdown();
+    }
+
+
+    private void task() {
         try {
             this.updater.update(r -> this.index = r);
-        } finally {
-            this.taskRunning.set(false);
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
