@@ -10,6 +10,7 @@ import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.model.Game;
 import me.pcasaes.hexoids.core.domain.model.Player;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -46,6 +47,7 @@ public class RTree2Player2SpatialIndex implements PlayerSpatialIndex {
 
 
     @Scheduled(every = "1s")
+    @Timed(name = "player-spatial-index-update", absolute = false, description = "Time to update the player spatial index.")
     public void task() {
         if (!taskRunning.compareAndSet(false, true)) {
             return;
