@@ -210,11 +210,6 @@ This is where the application configuration and wiring happens. This layer lever
 * Look into migrating the Kafka client to reactive streams
 
     This promises to reduce the code base.
-    
-* Use a spatial index on the server.
-
-    Right now all events are broadcasted to all players. That might not always be necessary. Also,
-    Bolt collision is tested against all players when it should look up players in a spatial index first.
 
 ## Game Play
 
