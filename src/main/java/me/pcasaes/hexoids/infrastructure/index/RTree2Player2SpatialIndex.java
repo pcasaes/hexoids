@@ -92,7 +92,12 @@ public class RTree2Player2SpatialIndex implements PlayerSpatialIndex {
             return Collections.emptyList();
         }
         this.results.clear();
-        this.index.search(Geometries.rectangle(x1, y1, x2, y2), distance)
+        this.index
+                .search(Geometries
+                        .rectangle(
+                                Math.min(x1, x2), Math.min(y1, y2),
+                                Math.max(x1, x2), Math.max(y1, y2)
+                        ), distance)
                 .forEach(entry -> this.results.add(entry.value()));
 
         return this.results;
