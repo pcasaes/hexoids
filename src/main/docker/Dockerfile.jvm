@@ -46,7 +46,7 @@ RUN microdnf install curl ca-certificates ${JAVA_PACKAGE} \
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 COPY src/main/docker/docker-entrypoint.sh /deployments/docker-entrypoint.sh
-COPY target/hexoids/ /deployments/
+COPY target/quarkus-app/ /deployments/
 RUN mv /deployments/quarkus-run.jar /deployments/app.jar
 
 EXPOSE 8080
