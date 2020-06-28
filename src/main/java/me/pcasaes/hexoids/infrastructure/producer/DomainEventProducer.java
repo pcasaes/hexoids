@@ -1,15 +1,20 @@
 package me.pcasaes.hexoids.infrastructure.producer;
 
-import io.smallrye.reactive.messaging.kafka.KafkaRecord;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
-import me.pcasaes.hexoids.core.domain.model.GameTopic;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.eclipse.microprofile.reactive.messaging.OnOverflow;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Event;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Duration;
+import java.util.Properties;
+import java.util.UUID;
 
 /**
  * Used to generate domain events. Domain events are used to keep server nodes in sync
@@ -19,36 +24,51 @@ public class DomainEventProducer {
 
     private static final String NAME = "domain-event-producer";
 
-    private final Emitter<Event>[] emitters;
+
+    private final String kafkaBroker;
+
+    private Producer<UUID, Event> producer;
 
     @Inject
-    public DomainEventProducer(
-            @Channel("join-game-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> joinGameEmitter,
-            @Channel("player-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> playerActionEmitter,
-            @Channel("bolt-life-cycle-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltLifeCycleEmitter,
-            @Channel("bolt-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltActionEmitter,
-            @Channel("score-board-control-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardControlEmitter,
-            @Channel("score-board-update-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardUpdateEmitter
-    ) {
-        Emitter<Event>[] em = new Emitter[GameTopic.values().length];
-        em[GameTopic.JOIN_GAME_TOPIC.ordinal()] = joinGameEmitter;
-        em[GameTopic.PLAYER_ACTION_TOPIC.ordinal()] = playerActionEmitter;
-        em[GameTopic.BOLT_LIFECYCLE_TOPIC.ordinal()] = boltLifeCycleEmitter;
-        em[GameTopic.BOLT_ACTION_TOPIC.ordinal()] = boltActionEmitter;
-        em[GameTopic.SCORE_BOARD_CONTROL_TOPIC.ordinal()] = scoreBoardControlEmitter;
-        em[GameTopic.SCORE_BOARD_UPDATE_TOPIC.ordinal()] = scoreBoardUpdateEmitter;
 
-        this.emitters = em;
+    public DomainEventProducer(
+            @ConfigProperty(name = "kafka.bootstrap.servers") String kafkaBroker
+    ) {
+        this.kafkaBroker = kafkaBroker;
+    }
+
+    @PostConstruct
+    public void start() {
+        this.producer = createProducer();
+    }
+
+    @PreDestroy
+    public void stop() {
+        this.producer.close(Duration.ofSeconds(5));
     }
 
     public void accept(DomainEvent event) {
         if (event != null) {
-            this.emitters[GameTopic.valueOf(event.getTopic()).ordinal()]
-                    .send(KafkaRecord.of(event.getKey(), event.getEvent()));
+            this.producer.send(new ProducerRecord<>(event.getTopic(), event.getKey(), event.getEvent()));
         }
     }
 
     public String getName() {
         return NAME;
+    }
+
+    public Producer<UUID, Event> createProducer() {
+
+        Properties props = new Properties();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaBroker);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, UUID.randomUUID());
+
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer");
+        props.put(ProducerConfig.ACKS_CONFIG, "0");
+
+        return new KafkaProducer<>(props);
+
     }
 }
