@@ -23,12 +23,12 @@ public class DomainEventProducer {
 
     @Inject
     public DomainEventProducer(
-            @Channel("join-game-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> joinGameEmitter,
-            @Channel("player-action-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> playerActionEmitter,
-            @Channel("bolt-life-cycle-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> boltLifeCycleEmitter,
-            @Channel("bolt-action-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> boltActionEmitter,
-            @Channel("score-board-control-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> scoreBoardControlEmitter,
-            @Channel("score-board-update-out") @OnOverflow(OnOverflow.Strategy.NONE) Emitter<Event> scoreBoardUpdateEmitter
+            @Channel("join-game-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> joinGameEmitter,
+            @Channel("player-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> playerActionEmitter,
+            @Channel("bolt-life-cycle-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltLifeCycleEmitter,
+            @Channel("bolt-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltActionEmitter,
+            @Channel("score-board-control-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardControlEmitter,
+            @Channel("score-board-update-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardUpdateEmitter
     ) {
         Emitter<Event>[] em = new Emitter[GameTopic.values().length];
         em[GameTopic.JOIN_GAME_TOPIC.ordinal()] = joinGameEmitter;
