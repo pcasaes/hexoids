@@ -62,7 +62,7 @@ public class DomainEventProducer {
         Properties props = new Properties();
 
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaBroker);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, UUID.randomUUID());
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, UUID.randomUUID().toString());
 
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer");
