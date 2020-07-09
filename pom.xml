@@ -105,11 +105,6 @@
       <classifier>osx-x86_64</classifier>
     </dependency>
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-redis-client</artifactId>
-      <version>3.9.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit</artifactId>
       <version>${archunit.version}</version>
