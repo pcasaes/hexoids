@@ -19,6 +19,7 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
                 .orShould()
+                .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..")
                 .orShould()
                 .dependOnClassesThat()
@@ -41,6 +42,7 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
                 .orShould()
+                .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..")
                 .orShould()
                 .dependOnClassesThat()
@@ -60,6 +62,7 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
                 .orShould()
+                .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.infrastructure..");
 
 
@@ -76,6 +79,7 @@ public class EnforceCleanArchitectureDependencyFlowArchUnitTest {
                 .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.configuration..")
                 .orShould()
+                .dependOnClassesThat()
                 .resideInAnyPackage("me.pcasaes.hexoids.entrypoints..");
 
 
