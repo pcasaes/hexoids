@@ -18,6 +18,7 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: hexoids-kafka
       KAFKA_ZOOKEEPER_CONNECT: hexoids-zookeeper:2181
       KAFKA_OPTS: -javaagent:/opt/kafka/bin/jmx_prometheus_javaagent.jar=9080:/opt/kafka/bin/prometheus-config.yml
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
