@@ -8,6 +8,7 @@ import pcasaes.hexoids.proto.Flush;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.function.Consumer;
 
 @ApplicationScoped
@@ -15,6 +16,7 @@ import java.util.function.Consumer;
         name = "hexoids.config.service.client-broadcast.enabled",
         stringValue = "true",
         enableIfMissing = true)
+@Named("FlushClientBroadcasterPeriodicTask")
 public class FlushClientBroadcasterPeriodicTask implements GamePeriodicTask {
 
     private static final Dto FLUSH = Dto
