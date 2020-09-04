@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.core.domain.utils;
 
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
 import pcasaes.hexoids.proto.ClockSync;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
@@ -75,6 +76,8 @@ public class DtoUtils {
     public static final DirectedCommand.Builder DIRECTED_COMMAND_BUILDER = DirectedCommand.newBuilder();
 
     public static final PlayersListCommandDto.Builder PLAYERS_LIST_BUILDER = PlayersListCommandDto.newBuilder();
+
+    public static final BoltsAvailableCommandDto.Builder BOLTS_AVAILABLE_BUILDER = BoltsAvailableCommandDto.newBuilder();
 
     public static final PlayerDto.Builder PLAYER_BUILDER = PlayerDto.newBuilder();
 
