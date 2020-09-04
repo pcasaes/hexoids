@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model;
 
+import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.BOLTS_AVAILABLE_BUILDER;
 import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
 import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_BUILDER;
 import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYERS_LIST_BUILDER;
@@ -108,7 +110,8 @@ public class Players implements Iterable<Player> {
      */
     public void requestListOfPlayers(EntityId requesterId) {
         PlayersListCommandDto.Builder playerListBuilder = PLAYERS_LIST_BUILDER
-                .clear();
+                .clear()
+                .setBoltsAvailable(BOLTS_AVAILABLE_BUILDER.clear().setAvailable(Config.get().getMaxBolts()));
 
         playerMap
                 .values()
@@ -246,5 +249,9 @@ public class Players implements Iterable<Player> {
 
     PlayerSpatialIndex getSpatialIndex() {
         return spatialIndexFactory.get();
+    }
+
+    boolean isConnected(EntityId id) {
+        return playerServerUpdateSet.contains(id);
     }
 }

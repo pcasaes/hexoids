@@ -147,6 +147,7 @@ message RequestCommand {
 
 message PlayersListCommandDto {
     repeated PlayerDto players = 1;
+    BoltsAvailableCommandDto boltsAvailable = 2;
 }
 
 message PlayerScoreUpdateCommandDto {
@@ -157,12 +158,17 @@ message LiveBoltListCommandDto {
     repeated BoltFiredEventDto bolts = 1;
 }
 
+message BoltsAvailableCommandDto {
+    int32 available = 1;
+}
+
 message DirectedCommand {
     GUID playerId = 1;
     oneof command {
         PlayersListCommandDto playersList = 2;
         PlayerScoreUpdateCommandDto playerScoreUpdate = 3;
         LiveBoltListCommandDto liveBoltsList = 4;
+        BoltsAvailableCommandDto boltsAvailable = 5;
     }
 }
 

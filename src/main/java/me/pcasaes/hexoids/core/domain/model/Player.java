@@ -7,6 +7,8 @@ import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
+import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.JoinCommandDto;
 import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
 import pcasaes.hexoids.proto.PlayerDto;
@@ -18,6 +20,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Random;
+
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.BOLTS_AVAILABLE_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
+import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_BUILDER;
 
 /**
  * A model representation of the player. This model conflates player and ship information.
@@ -315,6 +321,7 @@ public interface Player {
         private void firedNew(BoltFiredEventDto event, Bolt bolt) {
             this.liveBolts++;
             bolt.fire(event);
+            liveBoltsChanged();
             GameMetrics.get().getBoltFired().increment();
         }
 
@@ -530,7 +537,28 @@ public interface Player {
         @Override
         public void boltExhausted() {
             this.liveBolts = Math.max(0, liveBolts - 1);
+            liveBoltsChanged();
             GameMetrics.get().getBoltExhausted().increment();
+        }
+
+        private void liveBoltsChanged() {
+            if (players.isConnected(id)) {
+                BoltsAvailableCommandDto.Builder dto = BOLTS_AVAILABLE_BUILDER
+                        .clear()
+                        .setAvailable(Math.max(0, Config.get().getMaxBolts() - this.liveBolts));
+
+                DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
+                        .clear()
+                        .setPlayerId(id.getGuid())
+                        .setBoltsAvailable(dto);
+
+                GameEvents.getClientEvents().dispatch(
+                        DTO_BUILDER
+                                .clear()
+                                .setDirectedCommand(builder)
+                                .build()
+                );
+            }
         }
 
         @Override
