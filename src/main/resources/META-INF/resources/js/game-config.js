@@ -33,7 +33,7 @@ const GameConfig = (function () {
             'effectsDepth': DEPTH_BG_EFFECTS,
         },
         'hud': {
-            'nameLength': 7,
+            'nameLength': 8,
             'font': {
                 'size': {
                     'center':

@@ -38,7 +38,7 @@ hexoids:
     inertia:
       dampen-coefficient: -0.001
     player:
-      name-length: 7
+      name-length: 8
       expunge-since-last-spawn-timeout: 60000
       max:
         move: 0.2
