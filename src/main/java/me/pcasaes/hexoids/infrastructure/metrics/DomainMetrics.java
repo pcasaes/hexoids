@@ -48,7 +48,8 @@ public class DomainMetrics {
                                 .withUnit(MetricUnits.NONE)
                                 .build(),
                         gauge,
-                        new Tag("layer", "domain")
+                        new Tag("layer", "domain"),
+                        new Tag("client_platform", "ALL")
                 );
 
         Arrays.stream(ClientPlatforms.values())
@@ -61,13 +62,14 @@ public class DomainMetrics {
         metricRegistry
                 .register(
                         new MetadataBuilder()
-                                .withName(gameMetric.getName() + "." + clientPlatform.name())
-                                .withDisplayName(gameMetric.getName() + "." + clientPlatform.name())
+                                .withName(gameMetric.getName())
+                                .withDisplayName(gameMetric.getName())
                                 .withType(MetricType.GAUGE)
                                 .withUnit(MetricUnits.NONE)
                                 .build(),
                         gauge,
-                        new Tag("layer", "domain")
+                        new Tag("layer", "domain"),
+                        new Tag("client_platform", clientPlatform.name())
                 );
     }
 
