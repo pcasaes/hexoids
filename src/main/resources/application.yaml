@@ -32,6 +32,8 @@ hexoids:
   config:
     infrastructure:
       players-spatial-index: rtree2
+    client:
+      assets: WEBASM
     update-frequency-in-millis: 50
     min:
       move: 0.0001
