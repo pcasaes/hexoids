@@ -10,12 +10,14 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
+import pcasaes.hexoids.proto.ClientPlatforms;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
+import java.util.Arrays;
 
 @ApplicationScoped
 public class DomainMetrics {
@@ -46,9 +48,29 @@ public class DomainMetrics {
                                 .withUnit(MetricUnits.NONE)
                                 .build(),
                         gauge,
-                        new Tag("layer", "domain")
+                        new Tag("layer", "domain"),
+                        new Tag("client_platform", "ALL")
                 );
 
+        Arrays.stream(ClientPlatforms.values())
+                .forEach(clientPlatform -> registry(gameMetric, clientPlatform));
+    }
+
+    private void registry(GameMetric gameMetric, ClientPlatforms clientPlatform) {
+        org.eclipse.microprofile.metrics.Gauge<Long> gauge = () -> gameMetric.getTotalByClientPlatform(clientPlatform);
+
+        metricRegistry
+                .register(
+                        new MetadataBuilder()
+                                .withName(gameMetric.getName())
+                                .withDisplayName(gameMetric.getName())
+                                .withType(MetricType.GAUGE)
+                                .withUnit(MetricUnits.NONE)
+                                .build(),
+                        gauge,
+                        new Tag("layer", "domain"),
+                        new Tag("client_platform", clientPlatform.name())
+                );
     }
 
     @Gauge(

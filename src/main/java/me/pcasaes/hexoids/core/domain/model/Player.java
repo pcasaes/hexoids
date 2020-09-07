@@ -8,6 +8,7 @@ import me.pcasaes.hexoids.core.domain.vector.PositionVector;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
+import pcasaes.hexoids.proto.ClientPlatforms;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.JoinCommandDto;
 import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
@@ -193,6 +194,8 @@ public interface Player {
 
         private String name;
 
+        private ClientPlatforms clientPlatform;
+
         private int ship;
 
         private boolean spawned;
@@ -322,7 +325,7 @@ public interface Player {
             this.liveBolts++;
             bolt.fire(event);
             liveBoltsChanged();
-            GameMetrics.get().getBoltFired().increment();
+            GameMetrics.get().getBoltFired().increment(this.clientPlatform);
         }
 
         private Optional<Bolt> toBolt(BoltFiredEventDto event) {
@@ -380,9 +383,14 @@ public interface Player {
             this.name = n;
         }
 
+        public void setClientPlatform(ClientPlatforms clientPlatform) {
+            this.clientPlatform = clientPlatform;
+        }
+
         @Override
         public void join(JoinCommandDto command) {
             setName(command.getName());
+            setClientPlatform(command.getClientPlatform());
 
             GameEvents.getDomainEvents().dispatch(
                     DomainEvent
@@ -394,7 +402,9 @@ public interface Player {
                                                     .clear()
                                                     .setPlayerId(id.getGuid())
                                                     .setShip(ship)
-                                                    .setName(name))
+                                                    .setName(name)
+                                                    .setClientPlatform(clientPlatform)
+                                            )
                                             .build()
                             )
             );
@@ -403,11 +413,15 @@ public interface Player {
         @Override
         public void joined(PlayerJoinedEventDto event) {
             this.name = event.getName();
+            this.clientPlatform = event.getClientPlatform();
             this.ship = event.getShip();
             GameEvents
                     .getClientEvents()
-                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(event)));
-            GameMetrics.get().getPlayerJoined().increment();
+                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(DtoUtils.PLAYER_JOINED_BUILDER
+                            .clear()
+                            .mergeFrom(event)
+                            .clearClientPlatform()))); //let's not publish to all clients user data
+            GameMetrics.get().getPlayerJoined().increment(this.clientPlatform);
         }
 
         @Override
@@ -492,7 +506,7 @@ public interface Player {
                             .clear()
                             .setPlayerId(id.getGuid())))
             );
-            GameMetrics.get().getPlayerLeft().increment();
+            GameMetrics.get().getPlayerLeft().increment(this.clientPlatform);
             this.spawned = false;
         }
 
@@ -531,14 +545,14 @@ public interface Player {
             GameEvents.getClientEvents().dispatch(
                     DtoUtils.newDtoEvent(ev -> ev.setPlayerDestroyed(event))
             );
-            GameMetrics.get().getPlayerDestroyed().increment();
+            GameMetrics.get().getPlayerDestroyed().increment(this.clientPlatform);
         }
 
         @Override
         public void boltExhausted() {
             this.liveBolts = Math.max(0, liveBolts - 1);
             liveBoltsChanged();
-            GameMetrics.get().getBoltExhausted().increment();
+            GameMetrics.get().getBoltExhausted().increment(this.clientPlatform);
         }
 
         private void liveBoltsChanged() {
@@ -601,7 +615,7 @@ public interface Player {
                         event.getLocation().getY(),
                         0L);
                 movedOrSpawned(event.getLocation(), event);
-                GameMetrics.get().getPlayerSpawned().increment();
+                GameMetrics.get().getPlayerSpawned().increment(this.clientPlatform);
             }
         }
 
@@ -609,7 +623,7 @@ public interface Player {
         public void expungeIfStalled() {
             if ((!spawned || !isJoined()) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
                 leave();
-                GameMetrics.get().getPlayerStalled().increment();
+                GameMetrics.get().getPlayerStalled().increment(this.clientPlatform);
             }
         }
 
