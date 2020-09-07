@@ -417,7 +417,10 @@ public interface Player {
             this.ship = event.getShip();
             GameEvents
                     .getClientEvents()
-                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(event)));
+                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(DtoUtils.PLAYER_JOINED_BUILDER
+                            .clear()
+                            .mergeFrom(event)
+                            .clearClientPlatform()))); //let's not publish to all clients user data
             GameMetrics.get().getPlayerJoined().increment(this.clientPlatform);
         }
 
