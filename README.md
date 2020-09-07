@@ -23,7 +23,7 @@ A simple distributed arcade game.
     
 # Playing the Game
 
-The game is best played with a trackpad. 
+The game is not currently designed for mobil. It is best played with a trackpad. 
 
 * Press `C` to fire
 * Keep `Z` pressed to lock aim direction
@@ -33,6 +33,8 @@ The game is best played with a trackpad.
 * Press `S` to aim 180&deg; from forward direction.
 * Press `A` to aim 90&deg; anticlockwise from forward direction.
 
+The [game client source](https://github.com/pcasaes/hexoids-game-client) is built with Godot. It can be run on a WebGL/WebAssembly 
+capable browser or with a [native binary](https://github.com/pcasaes/hexoids-game-client/releases).
 
 
 # Requirements
@@ -189,17 +191,11 @@ This is where the application configuration and wiring happens. This layer lever
 
     Right now there is no lag compensation on the client.
     Users behind high latency connections would have a poor experience.
-    
-* Move to more robust client side framework like [Godot](https://godotengine.org/).
 
-    [Phaser](https://phaser.io/) is a great way to get started and prototyping
-    quickly. But from a scalability stand point there's only so far you can go
-    running the client on a single threaded browser engine.
-
-* Replace WebSockets with a combination of TCP an UDP sockets.
+* Replace WebSockets with a combination of TCP and UDP sockets.
 
    TCP connections are expensive, WebSockets even more so. High frequency events 
-   like player and bolt movements would be better served over a UDP socket. 
+   like player movements would be better served over a UDP socket. 
 
 * Add persistence
 
