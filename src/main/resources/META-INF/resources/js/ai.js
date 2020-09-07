@@ -153,6 +153,7 @@ const AiBot = (function() {
         stop() {
             this.intervals.forEach(v => clearTimeout(v));
             this.intervals = [];
+            this.server.destroy();
         }
     }
 

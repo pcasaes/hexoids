@@ -581,6 +581,10 @@ const Players = (function () {
             return this;
         }
 
+        count() {
+            return Object.keys(this.players).length;
+        }
+
         get(id) {
             return this.players[id];
         }
