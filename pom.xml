@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.pcasaes</groupId>
   <artifactId>hexoids</artifactId>
-  <version>0.1.0</version>
+  <version>999-SNAPSHOT</version>
   <properties>
     <!-- WEB ASM CLIENT INFO -->
     <client.webasm.version>0.1.0</client.webasm.version>

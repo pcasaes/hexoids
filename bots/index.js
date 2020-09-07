@@ -200,8 +200,24 @@ if (isMainThread) {
         return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor, getClock());
     }
 
+    const BOTS = [];
 
-    for (let i = 0; i < settings.botsPerWorker; i++) {
+    /**
+     *
+     * @returns {number} 0 - do nothing, 1 - add bot, -1 - remove bot
+     */
+    function takeAction() {
+        const shouldBe = settings.botsPerWorker * settings.workers;
+        const current = getPlayers().count();
+        if (current < shouldBe && BOTS.length < settings.botsPerWorker) {
+            return 1;
+        } else if (current > shouldBe && BOTS.length > 0) {
+            return -1;
+        }
+        return 0;
+    }
+
+    function startUpOne() {
         const USER = getUsers().get(genUuid());
         console.log("user id " + USER.get());
 
@@ -217,6 +233,39 @@ if (isMainThread) {
             GameConfig.get());
 
         bot.start();
+        BOTS.push(bot);
     }
+
+    function startUpAll() {
+        for (let i = 0; i < settings.botsPerWorker; i++) {
+            startUpOne();
+        }
+    }
+
+    startUpAll();
+
+    function startUpCountChecker() {
+        setInterval(() => {
+            let action = takeAction();
+            if (action < 0) {
+                console.log(`Reducing bots from ${BOTS.length}`);
+                let bot = BOTS.pop();
+                bot.stop();
+            } else if (action > 0) {
+                console.log(`Increasing bots from ${BOTS.length}`)
+                startUpOne()
+            }
+
+            if (BOTS.length > 0 && Math.random() <= 0.05) {
+                console.log(`Randomly removing one bot`);
+                let bot = BOTS.pop();
+                bot.stop();
+            }
+
+        }, 10000);
+    }
+
+    setTimeout(() => startUpCountChecker(), Math.random() * 10);
+
 
 }

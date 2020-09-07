@@ -96,6 +96,11 @@ const Server = (function () {
                 this.socket.send(b);
             }
         }
+
+        destroy() {
+            this.socket.close();
+            delete instances[this.userId.get()]
+        }
     }
 
     const instances = {};
