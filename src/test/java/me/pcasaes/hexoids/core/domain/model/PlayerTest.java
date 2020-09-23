@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_JOINED_BUILDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,7 +58,7 @@ class PlayerTest {
         MockitoAnnotations.initMocks(this);
         this.bolts = Bolts.create();
         this.players = Players.create(bolts, clock, scoreBoard, PlayerSpatialIndexFactory.factory());
-        
+
         assertEquals(0, this.players.getTotalNumberOfPlayers());
         assertEquals(0, this.players.getNumberOfConnectedPlayers());
 
@@ -81,7 +80,8 @@ class PlayerTest {
 
         GameTopic.setGame(game);
 
-        GameEvents.getClientEvents().registerEventDispatcher(event -> {});
+        GameEvents.getClientEvents().registerEventDispatcher(event -> {
+        });
         GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
                 GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
         );
@@ -166,8 +166,7 @@ class PlayerTest {
         EntityId one = EntityId.newId();
 
         this.players.joined(
-                PLAYER_JOINED_BUILDER
-                        .clear()
+                PlayerJoinedEventDto.newBuilder()
                         .setPlayerId(one.getGuid())
                         .setShip(5)
                         .build()

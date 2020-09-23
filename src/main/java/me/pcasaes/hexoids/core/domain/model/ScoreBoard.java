@@ -1,7 +1,11 @@
 package me.pcasaes.hexoids.core.domain.model;
 
-import me.pcasaes.hexoids.core.domain.utils.DtoUtils;
+import pcasaes.hexoids.proto.DirectedCommand;
+import pcasaes.hexoids.proto.Dto;
+import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.proto.PlayerScoreIncreasedEventDto;
+import pcasaes.hexoids.proto.PlayerScoreUpdateCommandDto;
+import pcasaes.hexoids.proto.PlayerScoreUpdatedEventDto;
 import pcasaes.hexoids.proto.ScoreBoardUpdatedEventDto;
 import pcasaes.hexoids.proto.ScoreEntry;
 
@@ -12,12 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_SCORE_INCREASED_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_SCORE_UPDATED_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_SCORE_UPDATE_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.SCORE_BOARD_ENTRY_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.SCORE_BOARD_UPDATE_BUILDER;
 
 public interface ScoreBoard {
 
@@ -61,11 +59,9 @@ public interface ScoreBoard {
                     DomainEvent.create(
                             GameTopic.SCORE_BOARD_CONTROL_TOPIC.name(),
                             playerId.getId(),
-                            DtoUtils
-                                    .newEvent()
+                            Event.newBuilder()
                                     .setPlayerScoreIncreased(
-                                            PLAYER_SCORE_INCREASED_BUILDER
-                                                    .clear()
+                                            PlayerScoreIncreasedEventDto.newBuilder()
                                                     .setPlayerId(playerId.getGuid())
                                                     .setGained(deltaScore)
                                                     .setTimestamp(clock.getTime())
@@ -87,11 +83,9 @@ public interface ScoreBoard {
                         DomainEvent.create(
                                 GameTopic.SCORE_BOARD_UPDATE_TOPIC.name(),
                                 playerId.getId(),
-                                DtoUtils
-                                        .newEvent()
+                                Event.newBuilder()
                                         .setPlayerScoreUpdated(
-                                                PLAYER_SCORE_UPDATED_BUILDER
-                                                        .clear()
+                                                PlayerScoreUpdatedEventDto.newBuilder()
                                                         .setPlayerId(playerId.getGuid())
                                                         .setScore(score)
                                         )
@@ -126,13 +120,13 @@ public interface ScoreBoard {
             GameEvents
                     .getClientEvents()
                     .dispatch(
-                            DtoUtils.newDtoDirectedCommand(playerId.getGuid(), cmd ->
-                                    cmd.setPlayerScoreUpdate(
-                                            PLAYER_SCORE_UPDATE_COMMAND_BUILDER
-                                                    .clear()
-                                                    .setScore(score)
+                            Dto.newBuilder()
+                                    .setDirectedCommand(
+                                            DirectedCommand.newBuilder()
+                                                    .setPlayerId(playerId.getGuid())
+                                                    .setPlayerScoreUpdate(PlayerScoreUpdateCommandDto.newBuilder().setScore(score))
                                     )
-                            )
+                                    .build()
                     );
         }
 
@@ -179,22 +173,25 @@ public interface ScoreBoard {
                 updatedScores.clear();
                 if (!rankedScoreBoard.isEmpty()) {
                     rankedScoreBoard.sort(Entry::compare);
+
+                    ScoreBoardUpdatedEventDto.Builder scoreBuilderEvent = ScoreBoardUpdatedEventDto.newBuilder();
+
+                    while (rankedScoreBoard.size() > SCORE_BOARD_SIZE) {
+                        rankedScoreBoard.remove(rankedScoreBoard.size() - 1);
+                    }
+
+                    rankedScoreBoard
+                            .stream()
+                            .map(Entry::toDto)
+                            .forEach(scoreBuilderEvent::addScores);
+
                     GameEvents.getClientEvents().dispatch(
-                            DtoUtils
-                                    .newDtoEvent(evt -> {
-                                        ScoreBoardUpdatedEventDto.Builder scoreBuilder = SCORE_BOARD_UPDATE_BUILDER
-                                                .clear();
-
-                                        while (rankedScoreBoard.size() > SCORE_BOARD_SIZE) {
-                                            rankedScoreBoard.remove(rankedScoreBoard.size() - 1);
-                                        }
-
-                                        rankedScoreBoard
-                                                .stream()
-                                                .map(Entry::toDto)
-                                                .forEach(scoreBuilder::addScores);
-                                        evt.setScoreBoardUpdated(scoreBuilder);
-                                    })
+                            Dto
+                                    .newBuilder()
+                                    .setEvent(Event.newBuilder()
+                                            .setScoreBoardUpdated(scoreBuilderEvent)
+                                    )
+                                    .build()
                     );
                 }
             }
@@ -235,8 +232,7 @@ public interface ScoreBoard {
             }
 
             ScoreEntry toDto() {
-                return SCORE_BOARD_ENTRY_BUILDER
-                        .clear()
+                return ScoreEntry.newBuilder()
                         .setPlayerId(playerId.getGuid())
                         .setScore(score)
                         .build();

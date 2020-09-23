@@ -7,6 +7,8 @@ import io.vertx.ext.web.Router;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 import me.pcasaes.hexoids.core.domain.service.GameTimeService;
+import pcasaes.hexoids.proto.ClockSync;
+import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.RequestCommand;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -16,10 +18,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.CLOCK_SYNC_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_THREAD_SAFE_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.REQUEST_COMMAND_THREAD_SAFE_BUILDER;
 
 @ApplicationScoped
 public class GameRoutes {
@@ -111,8 +109,7 @@ public class GameRoutes {
 
     private Optional<RequestCommand> getCommand(byte[] value) {
         try {
-            RequestCommand.Builder builder = REQUEST_COMMAND_THREAD_SAFE_BUILDER.get();
-            builder.clear();
+            RequestCommand.Builder builder = RequestCommand.newBuilder();
             builder.mergeFrom(value);
             return Optional.of(builder.build());
         } catch (IOException | RuntimeException ex) {
@@ -122,10 +119,8 @@ public class GameRoutes {
     }
 
     private void syncClock(ServerWebSocket ctx) {
-        Buffer buffer = Buffer.buffer(DTO_THREAD_SAFE_BUILDER
-                .get()
-                .setClock(CLOCK_SYNC_THREAD_SAFE_BUILDER
-                        .get()
+        Buffer buffer = Buffer.buffer(Dto.newBuilder()
+                .setClock(ClockSync.newBuilder()
                         .setTime(this.gameTime.getTime())
                 ).build()
                 .toByteArray());

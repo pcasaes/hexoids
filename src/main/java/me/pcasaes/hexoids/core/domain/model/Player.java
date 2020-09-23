@@ -2,7 +2,6 @@ package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
-import me.pcasaes.hexoids.core.domain.utils.DtoUtils;
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
@@ -10,10 +9,13 @@ import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
 import pcasaes.hexoids.proto.ClientPlatforms;
 import pcasaes.hexoids.proto.DirectedCommand;
+import pcasaes.hexoids.proto.Dto;
+import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.proto.JoinCommandDto;
 import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
 import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
+import pcasaes.hexoids.proto.PlayerLeftEventDto;
 import pcasaes.hexoids.proto.PlayerMovedEventDto;
 import pcasaes.hexoids.proto.PlayerSpawnedEventDto;
 
@@ -21,10 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Random;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.BOLTS_AVAILABLE_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_BUILDER;
 
 /**
  * A model representation of the player. This model conflates player and ship information.
@@ -86,7 +84,7 @@ public interface Player {
      * @param builder
      * @return
      */
-    Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder);
+    Optional<PlayerDto> toDtoIfJoined();
 
     /**
      * The player will join the game
@@ -293,10 +291,8 @@ public interface Player {
                     .dispatch(DomainEvent.create(
                             GameTopic.BOLT_LIFECYCLE_TOPIC.name(),
                             boltId.getId(),
-                            DtoUtils
-                                    .newEvent()
-                                    .setPlayerFired(DtoUtils.BOLT_FIRED_BUILDER
-                                            .clear()
+                            Event.newBuilder()
+                                    .setPlayerFired(BoltFiredEventDto.newBuilder()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
                                             .setX(position.getXat(now))
@@ -352,12 +348,11 @@ public interface Player {
         }
 
         @Override
-        public Optional<PlayerDto> toDtoIfJoined(PlayerDto.Builder builder) {
+        public Optional<PlayerDto> toDtoIfJoined() {
             if (!isJoined()) {
                 return Optional.empty();
             }
-            return Optional.of(builder
-                    .clear()
+            return Optional.of(PlayerDto.newBuilder()
                     .setPlayerId(id.getGuid())
                     .setShip(ship)
                     .setX(position.getX())
@@ -396,10 +391,8 @@ public interface Player {
                     DomainEvent
                             .create(GameTopic.JOIN_GAME_TOPIC.name(),
                                     this.id.getId(),
-                                    DtoUtils
-                                            .newEvent()
-                                            .setPlayerJoined(DtoUtils.PLAYER_JOINED_BUILDER
-                                                    .clear()
+                                    Event.newBuilder()
+                                            .setPlayerJoined(PlayerJoinedEventDto.newBuilder()
                                                     .setPlayerId(id.getGuid())
                                                     .setShip(ship)
                                                     .setName(name)
@@ -417,10 +410,13 @@ public interface Player {
             this.ship = event.getShip();
             GameEvents
                     .getClientEvents()
-                    .dispatch(DtoUtils.newDtoEvent(ev -> ev.setPlayerJoined(DtoUtils.PLAYER_JOINED_BUILDER
-                            .clear()
-                            .mergeFrom(event)
-                            .clearClientPlatform()))); //let's not publish to all clients user data
+                    .dispatch(Dto.newBuilder()
+                            .setEvent(Event.newBuilder()
+                                    .setPlayerJoined(PlayerJoinedEventDto.newBuilder()
+                                            .mergeFrom(event)
+                                            .clearClientPlatform()  //let's not publish to all clients user data
+                                    )
+                            ).build());
             GameMetrics.get().getPlayerJoined().increment(this.clientPlatform);
         }
 
@@ -460,15 +456,20 @@ public interface Player {
                     movedEvent.getVelocity(),
                     movedEvent.getTimestamp());
             this.angle = movedEvent.getAngle();
+
+            Event.Builder eventBuilder = Event.newBuilder();
+            if (spawnedEvent != null) {
+                eventBuilder.setPlayerSpawned(spawnedEvent);
+            } else {
+                eventBuilder.setPlayerMoved(movedEvent);
+            }
             GameEvents
                     .getClientEvents()
-                    .dispatch(DtoUtils.newDtoEvent(ev -> {
-                        if (spawnedEvent != null) {
-                            ev.setPlayerSpawned(spawnedEvent);
-                        } else {
-                            ev.setPlayerMoved(movedEvent);
-                        }
-                    }));
+                    .dispatch(
+                            Dto.newBuilder()
+                                    .setEvent(eventBuilder)
+                                    .build()
+                    );
 
         }
 
@@ -476,20 +477,18 @@ public interface Player {
             GameEvents.getDomainEvents().dispatch(
                     DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
-                            DtoUtils
-                                    .newEvent()
-                                    .setPlayerMoved(DtoUtils.PLAYER_MOVED_BUILDER
-                                            .clear()
-                                            .setPlayerId(id.getGuid())
-                                            .setX(position.getX())
-                                            .setY(position.getY())
-                                            .setAngle(angle)
-                                            .setThrustAngle(position.getVelocity().getAngle())
-                                            .setVelocity(position.getVelocity().getMagnitude())
-                                            .setTimestamp(eventTime)
-                                    )
-                                    .build())
-            );
+                            Event.newBuilder()
+                                    .setPlayerMoved(
+                                            PlayerMovedEventDto.newBuilder()
+                                                    .setPlayerId(id.getGuid())
+                                                    .setX(position.getX())
+                                                    .setY(position.getY())
+                                                    .setAngle(angle)
+                                                    .setThrustAngle(position.getVelocity().getAngle())
+                                                    .setVelocity(position.getVelocity().getMagnitude())
+                                                    .setTimestamp(eventTime)
+
+                                    ).build()));
         }
 
         @Override
@@ -502,10 +501,11 @@ public interface Player {
         public void left() {
             scoreBoard.resetScore(this.id);
             GameEvents.getClientEvents().dispatch(
-                    DtoUtils.newDtoEvent(ev -> ev.setPlayerLeft(DtoUtils.PLAYER_LEFT_BUILDER
-                            .clear()
-                            .setPlayerId(id.getGuid())))
-            );
+                    Dto.newBuilder()
+                            .setEvent(Event.newBuilder()
+                                    .setPlayerLeft(PlayerLeftEventDto.newBuilder().setPlayerId(id.getGuid()))
+                            )
+                            .build());
             GameMetrics.get().getPlayerLeft().increment(this.clientPlatform);
             this.spawned = false;
         }
@@ -524,14 +524,11 @@ public interface Player {
                     DomainEvent.create(
                             GameTopic.PLAYER_ACTION_TOPIC.name(),
                             this.id.getId(),
-                            DtoUtils
-                                    .newEvent()
-                                    .setPlayerDestroyed(DtoUtils.PLAYER_DESTROYED_BUILDER
-                                            .clear()
+                            Event.newBuilder()
+                                    .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
                                             .setPlayerId(this.id.getGuid())
                                             .setDestroyedByPlayerId(byPlayerId.getGuid())
-                                            .setDestroyedTimestamp(this.clock.getTime())
-                                    )
+                                            .setDestroyedTimestamp(this.clock.getTime()))
                                     .build()
                     )
             );
@@ -543,7 +540,9 @@ public interface Player {
             setSpawned(false);
             this.scoreBoard.resetScore(this.id);
             GameEvents.getClientEvents().dispatch(
-                    DtoUtils.newDtoEvent(ev -> ev.setPlayerDestroyed(event))
+                    Dto.newBuilder()
+                            .setEvent(Event.newBuilder().setPlayerDestroyed(event))
+                            .build()
             );
             GameMetrics.get().getPlayerDestroyed().increment(this.clientPlatform);
         }
@@ -557,18 +556,15 @@ public interface Player {
 
         private void liveBoltsChanged() {
             if (players.isConnected(id)) {
-                BoltsAvailableCommandDto.Builder dto = BOLTS_AVAILABLE_BUILDER
-                        .clear()
+                BoltsAvailableCommandDto.Builder dto = BoltsAvailableCommandDto.newBuilder()
                         .setAvailable(Math.max(0, Config.get().getMaxBolts() - this.liveBolts));
 
-                DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
-                        .clear()
+                DirectedCommand.Builder builder = DirectedCommand.newBuilder()
                         .setPlayerId(id.getGuid())
                         .setBoltsAvailable(dto);
 
                 GameEvents.getClientEvents().dispatch(
-                        DTO_BUILDER
-                                .clear()
+                        Dto.newBuilder()
                                 .setDirectedCommand(builder)
                                 .build()
                 );
@@ -584,21 +580,17 @@ public interface Player {
                 GameEvents.getDomainEvents().dispatch(
                         DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
                                 this.id.getId(),
-                                DtoUtils
-                                        .newEvent()
-                                        .setPlayerSpawned(
-                                                DtoUtils.PLAYER_SPAWNED_BUILDER
-                                                        .clear()
-                                                        .setLocation(
-                                                                DtoUtils.PLAYER_MOVED_BUILDER
-                                                                        .clear()
-                                                                        .setPlayerId(id.getGuid())
-                                                                        .setX(position.getX())
-                                                                        .setY(position.getY())
-                                                                        .setAngle(angle)
-                                                                        .setThrustAngle(position.getVelocity().getAngle())
-                                                                        .setTimestamp(now)
-                                                        )
+                                Event.newBuilder()
+                                        .setPlayerSpawned(PlayerSpawnedEventDto.newBuilder()
+                                                .setLocation(
+                                                        PlayerMovedEventDto.newBuilder()
+                                                                .setPlayerId(id.getGuid())
+                                                                .setX(position.getX())
+                                                                .setY(position.getY())
+                                                                .setAngle(angle)
+                                                                .setThrustAngle(position.getVelocity().getAngle())
+                                                                .setTimestamp(now)
+                                                )
                                         )
                                         .build()
                         )

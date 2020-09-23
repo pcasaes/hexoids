@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.core.domain.model;
 
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
+import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.GUID;
 import pcasaes.hexoids.proto.LiveBoltListCommandDto;
 
@@ -13,10 +14,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.LIVE_BOLTS_LIST_BUILDER;
 
 /**
  * The collection of bolts. This collections only tracks bolts maintained
@@ -118,8 +115,7 @@ public class Bolts implements Iterable<Bolt> {
                 (domainEvent.getEvent().hasBoltExhausted() || domainEvent.getEvent().hasBoltFired())) {
 
             GameEvents.getClientEvents()
-                    .dispatch(DTO_BUILDER
-                            .clear()
+                    .dispatch(Dto.newBuilder()
                             .setEvent(domainEvent.getEvent())
                             .build());
 
@@ -149,19 +145,16 @@ public class Bolts implements Iterable<Bolt> {
     }
 
     public void requestListOfLiveBolts(EntityId requesterId) {
-        LiveBoltListCommandDto.Builder liveBoltsList = LIVE_BOLTS_LIST_BUILDER
-                .clear()
+        LiveBoltListCommandDto.Builder liveBoltsList = LiveBoltListCommandDto.newBuilder()
                 .addAllBolts(publishableBoltDtos.values());
 
 
-        DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
-                .clear()
+        DirectedCommand.Builder builder = DirectedCommand.newBuilder()
                 .setPlayerId(requesterId.getGuid())
                 .setLiveBoltsList(liveBoltsList);
 
         GameEvents.getClientEvents().dispatch(
-                DTO_BUILDER
-                        .clear()
+                Dto.newBuilder()
                         .setDirectedCommand(builder)
                         .build()
         );
@@ -170,6 +163,7 @@ public class Bolts implements Iterable<Bolt> {
     /**
      * Return the total number of active bolts in the game.
      * Is weakly consistent and thread safe.
+     *
      * @return
      */
     public int getTotalNumberOfActiveBolts() {

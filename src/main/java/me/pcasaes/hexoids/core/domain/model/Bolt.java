@@ -1,15 +1,14 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.utils.DtoUtils;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
+import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.Event;
 
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.BOLT_EXHAUSTED_BUILDER;
 
 /**
  * A model representation of a bolt.
@@ -118,8 +117,7 @@ public class Bolt {
                         DomainEvent
                                 .create(GameTopic.BOLT_ACTION_TOPIC.name(),
                                         this.id.getId(),
-                                        DtoUtils
-                                                .newEvent()
+                                        Event.newBuilder()
                                                 .setBoltFired(event)
                                                 .build()
                                 )
@@ -220,11 +218,9 @@ public class Bolt {
                 .create(
                         GameTopic.BOLT_ACTION_TOPIC.name(),
                         this.id.getId(),
-                        DtoUtils
-                                .newEvent()
+                        Event.newBuilder()
                                 .setBoltExhausted(
-                                        BOLT_EXHAUSTED_BUILDER
-                                                .clear()
+                                        BoltExhaustedEventDto.newBuilder()
                                                 .setBoltId(id.getGuid())
                                                 .setOwnerPlayerId(ownerPlayerId.getGuid())
                                 )
