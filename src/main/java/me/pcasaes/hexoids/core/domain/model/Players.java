@@ -5,7 +5,9 @@ import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
+import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
 import pcasaes.hexoids.proto.DirectedCommand;
+import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 import pcasaes.hexoids.proto.PlayersListCommandDto;
 
@@ -19,12 +21,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.BOLTS_AVAILABLE_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DIRECTED_COMMAND_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.DTO_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYERS_LIST_BUILDER;
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.PLAYER_BUILDER;
 
 /**
  * The collection of Players.
@@ -109,26 +105,23 @@ public class Players implements Iterable<Player> {
      * @param requesterId player to have the current list sent to.
      */
     public void requestListOfPlayers(EntityId requesterId) {
-        PlayersListCommandDto.Builder playerListBuilder = PLAYERS_LIST_BUILDER
-                .clear()
-                .setBoltsAvailable(BOLTS_AVAILABLE_BUILDER.clear().setAvailable(Config.get().getMaxBolts()));
+        PlayersListCommandDto.Builder playerListBuilder = PlayersListCommandDto.newBuilder()
+                .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.get().getMaxBolts()));
 
         playerMap
                 .values()
                 .stream()
-                .map(p -> p.toDtoIfJoined(PLAYER_BUILDER))
+                .map(Player::toDtoIfJoined)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(playerListBuilder::addPlayers);
 
-        DirectedCommand.Builder builder = DIRECTED_COMMAND_BUILDER
-                .clear()
+        DirectedCommand.Builder builder = DirectedCommand.newBuilder()
                 .setPlayerId(requesterId.getGuid())
                 .setPlayersList(playerListBuilder);
 
         GameEvents.getClientEvents().dispatch(
-                DTO_BUILDER
-                        .clear()
+                Dto.newBuilder()
                         .setDirectedCommand(builder)
                         .build()
         );
@@ -232,6 +225,7 @@ public class Players implements Iterable<Player> {
     /**
      * Return the total number of players in the game.
      * Is weakly consistent and thread safe.
+     *
      * @return
      */
     public int getTotalNumberOfPlayers() {
@@ -241,6 +235,7 @@ public class Players implements Iterable<Player> {
     /**
      * Return the number of players connected this node.
      * Is weakly consistent and thread safe.
+     *
      * @return
      */
     public int getNumberOfConnectedPlayers() {

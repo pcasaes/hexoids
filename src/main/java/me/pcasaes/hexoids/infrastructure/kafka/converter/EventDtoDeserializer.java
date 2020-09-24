@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static me.pcasaes.hexoids.core.domain.utils.DtoUtils.EVENT_THREAD_SAFE_BUILDER;
-
 public class EventDtoDeserializer implements Deserializer<Event> {
 
     private static final Logger LOGGER = Logger.getLogger(EventDtoDeserializer.class.getName());
@@ -28,9 +26,7 @@ public class EventDtoDeserializer implements Deserializer<Event> {
             return null;
         }
         try {
-            return EVENT_THREAD_SAFE_BUILDER
-                    .get()
-                    .clear()
+            return Event.newBuilder()
                     .mergeFrom(data)
                     .build();
         } catch (InvalidProtocolBufferException ex) {
