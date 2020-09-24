@@ -20,7 +20,7 @@ public class JoinGame {
                     .createPlayer(userId)
                     .ifPresentOrElse(
                             player -> player.join(joinCommandDto),
-                            () -> Game.get().getPlayers().requestListOfPlayers(userId)
+                            () -> Game.get().getPlayers().requestCurrentView(userId)
                     );
 
             Game.get().getBolts().requestListOfLiveBolts(userId);

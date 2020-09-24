@@ -88,6 +88,33 @@ public class PositionVector {
         this.currentTimestamp = this.previousTimestamp = timestamp;
     }
 
+    public void rollbackPosition() {
+        this.currentPosition.set(this.previousPosition);
+    }
+
+    public void reflect(Vector2 at, Vector2 normal, float bodySize, float dampen) {
+        Vector2 bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize);
+        Vector2 atWithBody = at.minus(bodyVector);
+
+        this.velocity.set(velocity.reflect(normal).scale(dampen));
+
+
+        float reflectMag = currentPosition.minus(atWithBody).getMagnitude();
+
+        Vector2 reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.getAngle(), reflectMag).absMax(bodySize);
+
+        this.currentPosition.set(atWithBody.add(reflectMagWithVelAngle));
+    }
+
+    public boolean noMovement() {
+        return this.previousPosition.equals(this.currentPosition);
+    }
+
+    public float getMagnitudeChange() {
+        Vector2 diff = currentPosition.minus(previousPosition);
+        return (float) Math.sqrt(Math.pow(diff.getX(), 2.0F) + Math.pow(diff.getY(), 2.0));
+    }
+
     /**
      * Set position to x, y and velocity to angle and magnitude
      *
@@ -399,6 +426,39 @@ public class PositionVector {
 
     public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
         return intersectedWithSegment(b, intersectionThreshold);
+    }
+
+    /**
+     * https://stackoverflow.com/a/1968345
+     *
+     * @param fixedFrom
+     * @param fixedTo
+     * @return
+     */
+    public Vector2 insersectedWith(Vector2 fixedFrom, Vector2 fixedTo, float intersectionThreshold) {
+
+        Vector2 extendCurrentPosition = currentPosition.add(
+                Vector2.fromAngleMagnitude(TrigUtil
+                                .calculateAngleBetweenTwoPoints(previousPosition.getX(), previousPosition.getY(),
+                                        currentPosition.getX(), currentPosition.getY()),
+                        intersectionThreshold)
+        );
+
+        float s1_x, s1_y, s2_x, s2_y;
+        s1_x = extendCurrentPosition.getX() - previousPosition.getX();
+        s1_y = extendCurrentPosition.getY() - previousPosition.getY();
+        s2_x = fixedTo.getX() - fixedFrom.getX();
+        s2_y = fixedTo.getY() - fixedFrom.getY();
+
+        float s, t;
+        s = (-s1_y * (previousPosition.getX() - fixedFrom.getX()) + s1_x * (previousPosition.getY() - fixedFrom.getY())) / (-s2_x * s1_y + s1_x * s2_y);
+        t = (s2_x * (previousPosition.getY() - fixedFrom.getY()) - s2_y * (previousPosition.getX() - fixedFrom.getX())) / (-s2_x * s1_y + s1_x * s2_y);
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            return Vector2.fromXY(previousPosition.getX() + (t * s1_x), previousPosition.getY() + (t * s1_y));
+        }
+
+        return null;
     }
 
 

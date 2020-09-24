@@ -43,12 +43,13 @@ public interface Player {
      * @param id         the player's id
      * @param players    the collection of all players
      * @param bolts      the collection of all bolts
+     * @param barriers   the collection of all barriers
      * @param clock      the game clock.
      * @param scoreBoard scoreboard
      * @return an new instance of player
      */
-    static Player create(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
-        return new Implementation(id, players, bolts, clock, scoreBoard);
+    static Player create(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
+        return new Implementation(id, players, bolts, barriers, clock, scoreBoard);
     }
 
     /**
@@ -185,6 +186,11 @@ public interface Player {
 
     class Implementation implements Player {
 
+        private static final float SHIP_LENGTH = 0.003F;
+
+        private static final float SHIP_HALF_LENGTH = SHIP_LENGTH / 2F;
+
+        private static final float SHIP_LENGTH_TIMES_10 = SHIP_LENGTH * 10F;
 
         private static final Random RNG = new Random();
 
@@ -212,6 +218,8 @@ public interface Player {
 
         private final Bolts bolts;
 
+        private final Barriers barriers;
+
         private final Clock clock;
 
         private final ScoreBoard scoreBoard;
@@ -220,10 +228,11 @@ public interface Player {
 
         private final PositionVector position;
 
-        private Implementation(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
             this.clock = clock;
+            this.barriers = barriers;
             this.scoreBoard = scoreBoard;
             this.id = id;
 
@@ -278,12 +287,38 @@ public interface Player {
             float boltSpeed = Config.get().getBoltSpeed();
             float boltAngle;
 
+            Vector2 boltVector;
             if (!Config.get().isBoltInertiaEnabled()) {
                 boltAngle = angle;
+                boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed);
             } else {
-                Vector2 boltVector = getFiredBoltVector(boltSpeed, now);
+                boltVector = getFiredBoltVector(boltSpeed, now);
                 boltSpeed = boltVector.getMagnitude();
                 boltAngle = boltVector.getAngle();
+            }
+
+            int maxTtl = Config.get().getBoltMaxDuration();
+
+            Vector2 positionAtNow = Vector2.fromXY(
+                    position.getXat(now),
+                    position.getYat(now)
+            );
+
+            //float x = 0;
+            //float y = (boltVector.getY() / boltVector.getX()) * (x - positionAtNow.getX()) + positionAtNow.getY();
+
+
+            Vector2 vectorOutOfBounds = positionAtNow.add(Vector2.fromAngleMagnitude(boltAngle, 10F));
+            if (vectorOutOfBounds.getX() <= 0F) {
+
+            } else if (vectorOutOfBounds.getX() >= 1F) {
+
+            } else {
+                if (vectorOutOfBounds.getY() <= 0F) {
+
+                } else {
+
+                }
             }
 
             final EntityId boltId = EntityId.newId();
@@ -295,8 +330,8 @@ public interface Player {
                                     .setPlayerFired(BoltFiredEventDto.newBuilder()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
-                                            .setX(position.getXat(now))
-                                            .setY(position.getYat(now))
+                                            .setX(positionAtNow.getX())
+                                            .setY(positionAtNow.getY())
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
@@ -436,6 +471,7 @@ public interface Player {
 
 
             if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
+                tackleBarrierHit();
                 fireMoveDomainEvent(now);
             }
         }
@@ -625,7 +661,22 @@ public interface Player {
             float y = position.getY();
             this.position.update(timestamp);
             if (x != position.getX() || y != position.getY()) {
+                tackleBarrierHit();
                 fireMoveDomainEvent(timestamp);
+            }
+        }
+
+        private void tackleBarrierHit() {
+            if (!position.noMovement()) {
+                for (Barrier barrier : barriers
+                        .search(position.getPreviousX(), position.getPreviousY(), position.getX(), position.getY(), SHIP_LENGTH_TIMES_10)) {
+                    Vector2 intersection = position.insersectedWith(barrier.getBottomRight(), barrier.getTopLeft(), SHIP_HALF_LENGTH);
+                    if (intersection != null) {
+                        //position.allStop();
+                        // position.overrideWith(intersection, SHIP_LENGTH);
+                        position.reflect(intersection, barrier.getNormal(), SHIP_HALF_LENGTH, 0.5F);
+                    }
+                }
             }
         }
 

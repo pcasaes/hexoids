@@ -3,6 +3,8 @@ package me.pcasaes.hexoids.configuration;
 
 import io.quarkus.runtime.StartupEvent;
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -55,6 +57,7 @@ public class HexoidConfigurations {
 
     /**
      * This singleton will eager load before all others
+     *
      * @param event
      */
     public void startup(@Observes @Priority(Interceptor.Priority.APPLICATION) StartupEvent event) {
@@ -106,6 +109,11 @@ public class HexoidConfigurations {
     @Inject
     public void setPlayerSpatialIndex(PlayerSpatialIndex playerSpatialIndex) {
         PlayerSpatialIndexFactory.factory().setPlayerSpatialIndex(playerSpatialIndex);
+    }
+
+    @Inject
+    public void setBarrierSpatialIndex(BarrierSpatialIndex barrierSpatialIndex) {
+        BarrierSpatialIndexFactory.factory().setBarrierSpatialIndex(barrierSpatialIndex);
     }
 
     @Inject

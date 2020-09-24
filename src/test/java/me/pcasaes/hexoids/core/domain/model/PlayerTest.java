@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import pcasaes.hexoids.proto.CurrentViewCommandDto;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
@@ -17,9 +18,9 @@ import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 import pcasaes.hexoids.proto.PlayerMovedEventDto;
 import pcasaes.hexoids.proto.PlayerSpawnedEventDto;
-import pcasaes.hexoids.proto.PlayersListCommandDto;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -49,6 +52,9 @@ class PlayerTest {
     @Mock
     private Game game;
 
+    @Mock
+    private Barriers barriers;
+
     private Bolts bolts;
 
     private Players players;
@@ -57,8 +63,7 @@ class PlayerTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.bolts = Bolts.create();
-        this.players = Players.create(bolts, clock, scoreBoard, PlayerSpatialIndexFactory.factory());
-
+        this.players = Players.create(bolts, clock, scoreBoard, barriers, PlayerSpatialIndexFactory.factory());
         assertEquals(0, this.players.getTotalNumberOfPlayers());
         assertEquals(0, this.players.getNumberOfConnectedPlayers());
 
@@ -77,6 +82,19 @@ class PlayerTest {
         doReturn(bolts)
                 .when(game)
                 .getBolts();
+
+        doReturn(Collections.emptyIterator())
+                .when(barriers)
+                .iterator();
+
+        doReturn(Collections.emptyList().spliterator())
+                .when(barriers)
+                .spliterator();
+
+        doReturn(Collections.emptyList())
+                .when(barriers)
+                .search(anyFloat(), anyFloat(), anyFloat(), anyFloat(), anyFloat());
+
 
         GameTopic.setGame(game);
 
@@ -209,7 +227,7 @@ class PlayerTest {
     }
 
     @Test
-    void testRequestListOfPlayers() {
+    void testRequestCurrentView() {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
@@ -224,14 +242,14 @@ class PlayerTest {
                 .setName("two")
                 .build());
 
-        this.players.requestListOfPlayers(one);
+        this.players.requestCurrentView(one);
 
         DirectedCommand directedCommandDto = eventReference.get().getDirectedCommand();
         assertNotNull(directedCommandDto);
 
-        assertTrue(directedCommandDto.hasPlayersList());
+        assertTrue(directedCommandDto.hasCurrentView());
 
-        PlayersListCommandDto command = directedCommandDto.getPlayersList();
+        CurrentViewCommandDto command = directedCommandDto.getCurrentView();
 
         assertNotNull(command);
         assertEquals(2, command.getPlayersCount());

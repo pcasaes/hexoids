@@ -2,6 +2,8 @@ package me.pcasaes.hexoids.core.domain.vector;
 
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 
+import java.util.Objects;
+
 public class Vector2 {
 
     public static final Vector2 ZERO = Vector2.fromXY(0, 0);
@@ -152,6 +154,11 @@ public class Vector2 {
         return b.getX() * getX() + b.getY() * getY();
     }
 
+    public float magnitudeFrom(Vector2 b) {
+        Vector2 diff = this.minus(b);
+        return (float) Math.sqrt(Math.pow(diff.getX(), 2.0) + Math.pow(diff.getY(), 2.0));
+    }
+
     public Vector2 projection(Vector2 b) {
         return b.scale((b.dot(this)) / (b.dot(b)));
     }
@@ -184,6 +191,24 @@ public class Vector2 {
         return fromXY(getX(), -getY());
     }
 
+    public Vector2 reflect(Vector2 normal) {
+        return normal.scale(-2 * this.dot(normal)).add(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vector2 vector2 = (Vector2) o;
+        return Float.compare(vector2.getX(), getX()) == 0 &&
+                Float.compare(vector2.getY(), getY()) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getX(), getY());
+    }
+
     /**
      * Return true if both vectors have the same equivalent angle.
      * This does take magnitude sign into account.
@@ -195,5 +220,17 @@ public class Vector2 {
         boolean sameAngle = b.getAngle() == getAngle();
         boolean sameSign = Math.signum(b.getMagnitude()) == Math.signum(getMagnitude());
         return sameAngle == sameSign;
+    }
+
+    @Override
+    public String toString() {
+        return "Vector2{" +
+                "angle=" + angle +
+                ", magnitude=" + magnitude +
+                ", initializedAM=" + initializedAM +
+                ", x=" + x +
+                ", y=" + y +
+                ", initializedXY=" + initializedXY +
+                '}';
     }
 }
