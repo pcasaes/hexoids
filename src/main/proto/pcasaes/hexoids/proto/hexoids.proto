@@ -25,6 +25,12 @@ message PlayerDto {
     string name = 7;
 }
 
+message BarrierDto {
+    float x = 1;
+    float y = 2;
+    float angle = 3;
+}
+
 enum ClientPlatforms {
     UNKNOWN = 0;
     HTML5 = 1;
@@ -38,6 +44,7 @@ enum ClientPlatforms {
 message BoltExhaustedEventDto {
     GUID boltId = 1;
     GUID ownerPlayerId = 2;
+    int64 timestamp = 3;
 }
 
 message BoltFiredEventDto {
@@ -155,9 +162,10 @@ message RequestCommand {
 
 // server to client commands
 
-message PlayersListCommandDto {
+message CurrentViewCommandDto {
     repeated PlayerDto players = 1;
     BoltsAvailableCommandDto boltsAvailable = 2;
+    repeated BarrierDto barriers = 3;
 }
 
 message PlayerScoreUpdateCommandDto {
@@ -175,7 +183,7 @@ message BoltsAvailableCommandDto {
 message DirectedCommand {
     GUID playerId = 1;
     oneof command {
-        PlayersListCommandDto playersList = 2;
+        CurrentViewCommandDto currentView = 2;
         PlayerScoreUpdateCommandDto playerScoreUpdate = 3;
         LiveBoltListCommandDto liveBoltsList = 4;
         BoltsAvailableCommandDto boltsAvailable = 5;

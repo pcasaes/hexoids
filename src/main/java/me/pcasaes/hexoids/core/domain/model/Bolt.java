@@ -24,6 +24,7 @@ public class Bolt {
     private long timestamp;
     private long startTimestamp;
     private boolean exhausted;
+    private int ttl;
 
     private final Optional<Bolt> optionalThis; // NOSONAR: optional memo
 
@@ -33,13 +34,15 @@ public class Bolt {
                  EntityId boltId,
                  EntityId ownerPlayerId,
                  PositionVector positionVector,
-                 long startTimestamp) {
+                 long startTimestamp,
+                 int ttl) {
         this.players = players;
         this.id = boltId;
         this.ownerPlayerId = ownerPlayerId;
         this.positionVector = positionVector;
         this.timestamp = startTimestamp;
         this.startTimestamp = this.timestamp;
+        this.ttl = ttl;
         this.exhausted = false;
 
         this.optionalThis = Optional.of(this);
@@ -56,6 +59,7 @@ public class Bolt {
      * @param angle
      * @param speed
      * @param startTimestamp
+     * @param ttl
      * @return
      */
     static Bolt create(Players players,
@@ -65,7 +69,8 @@ public class Bolt {
                        float y,
                        float angle,
                        float speed,
-                       long startTimestamp) {
+                       long startTimestamp,
+                       int ttl) {
         Bolt bolt = POOL.poll();
         if (bolt == null) {
             return new Bolt(
@@ -78,11 +83,13 @@ public class Bolt {
                             angle,
                             speed,
                             startTimestamp),
-                    startTimestamp);
+                    startTimestamp,
+                    ttl);
         } else {
             bolt.id = boltId;
             bolt.ownerPlayerId = ownerPlayerId;
             bolt.startTimestamp = startTimestamp;
+            bolt.ttl = ttl;
             bolt.timestamp = startTimestamp;
             bolt.exhausted = false;
             bolt.positionVector.initialized(x, y, angle, speed, startTimestamp);
@@ -143,12 +150,13 @@ public class Bolt {
     /**
      * If bolt is out of bounds or expired will be marked as exhausted
      *
+     * @param timestamp
      * @return
      */
-    Bolt tackleBoltExhaustion() {
+    Bolt tackleBoltExhaustion(long timestamp) {
         if (positionVector.isOutOfBounds() || isExpired()) {
             this.exhausted = true;
-            GameEvents.getDomainEvents().dispatch(generateExhaustedEvent());
+            GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp));
         }
         return this;
     }
@@ -167,11 +175,11 @@ public class Bolt {
     }
 
     private boolean isExpired() {
-        return isExpired(this.timestamp, this.startTimestamp);
+        return isExpired(this.timestamp, this.startTimestamp, this.ttl);
     }
 
-    static boolean isExpired(long now, long startTimestamp) {
-        return now - startTimestamp > Config.get().getBoltMaxDuration();
+    static boolean isExpired(long now, long startTimestamp, int ttl) {
+        return now - startTimestamp > ttl;
     }
 
     /**
@@ -186,18 +194,18 @@ public class Bolt {
     /**
      * Checks if this bolt hit a player
      */
-    void checkHits() {
+    void checkHits(long timestamp) {
         if (!this.exhausted) {
             this.players
                     .getSpatialIndex()
                     .search(this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
                             this.positionVector.getX(), this.positionVector.getY(),
                             Config.get().getBoltCollisionIndexSearchDistance())
-                    .forEach(this::hit);
+                    .forEach(p -> hit(p, timestamp));
         }
     }
 
-    private void hit(Player player) {
+    private void hit(Player player, long timestamp) {
         boolean isHit = !player.is(ownerPlayerId) &&
                 player.collision(positionVector, Config.get().getBoltCollisionRadius());
 
@@ -207,13 +215,13 @@ public class Bolt {
                 this.exhausted = true;
 
                 GameEvents.getDomainEvents().dispatch(
-                        generateExhaustedEvent()
+                        generateExhaustedEvent(timestamp)
                 );
             }
         }
     }
 
-    private DomainEvent generateExhaustedEvent() {
+    private DomainEvent generateExhaustedEvent(long timestamp) {
         return DomainEvent
                 .create(
                         GameTopic.BOLT_ACTION_TOPIC.name(),
@@ -223,6 +231,7 @@ public class Bolt {
                                         BoltExhaustedEventDto.newBuilder()
                                                 .setBoltId(id.getGuid())
                                                 .setOwnerPlayerId(ownerPlayerId.getGuid())
+                                                .setTimestamp(timestamp)
                                 )
                                 .build()
                 );

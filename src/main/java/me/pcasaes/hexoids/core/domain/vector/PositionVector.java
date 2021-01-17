@@ -6,6 +6,8 @@ import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 import java.util.OptionalDouble;
 import java.util.function.DoubleUnaryOperator;
 
+import static me.pcasaes.hexoids.core.domain.vector.Vector2.calculateMoveDelta;
+
 public class PositionVector {
 
     private final Configuration configuration;
@@ -86,6 +88,24 @@ public class PositionVector {
         this.previousPosition.setXY(x, y);
         this.currentPosition.setXY(x, y);
         this.currentTimestamp = this.previousTimestamp = timestamp;
+    }
+
+    public void reflect(Vector2 at, Vector2 normal, float bodySize, float dampen) {
+        Vector2 bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize);
+        Vector2 atWithBody = at.minus(bodyVector);
+
+        this.velocity.set(velocity.reflect(normal).scale(dampen));
+
+
+        float reflectMag = currentPosition.minus(atWithBody).getMagnitude();
+
+        Vector2 reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.getAngle(), reflectMag).absMax(bodySize);
+
+        this.currentPosition.set(atWithBody.add(reflectMagWithVelAngle));
+    }
+
+    public boolean noMovement() {
+        return this.previousPosition.equals(this.currentPosition);
     }
 
     /**
@@ -172,25 +192,6 @@ public class PositionVector {
             return Vector2.fromAngleMagnitude(velocity.getAngle(), mag);
         }
         return velocity;
-    }
-
-    private static Vector2 calculateMoveDelta(Vector2 velocity, float minMove, long elapsed) {
-        float velocityDelta = velocity.getMagnitude() * elapsed / 1000f;
-
-        float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
-        float my = TrigUtil.calculateYComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
-
-        boolean mxAboveMinMove = Math.abs(mx) > minMove;
-        boolean myAboveMinMove = Math.abs(my) > minMove;
-
-        if (mxAboveMinMove && myAboveMinMove) {
-            return Vector2.fromXY(mx, my);
-        } else if (mxAboveMinMove) {
-            return Vector2.fromXY(mx, 0f);
-        } else if (myAboveMinMove) {
-            return Vector2.fromXY(0, my);
-        }
-        return Vector2.ZERO;
     }
 
     private PositionVector update(long timestamp, float dampMagCoef) {
@@ -399,6 +400,18 @@ public class PositionVector {
 
     public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
         return intersectedWithSegment(b, intersectionThreshold);
+    }
+
+    public Vector2 intersectedWith(Vector2 fixedFrom, Vector2 fixedTo, float intersectionThreshold) {
+
+        Vector2 extendCurrentPosition = currentPosition.add(
+                Vector2.fromAngleMagnitude(TrigUtil
+                                .calculateAngleBetweenTwoPoints(previousPosition.getX(), previousPosition.getY(),
+                                        currentPosition.getX(), currentPosition.getY()),
+                        intersectionThreshold)
+        );
+
+        return Vector2.intersectedWith(previousPosition, extendCurrentPosition, fixedFrom, fixedTo);
     }
 
 

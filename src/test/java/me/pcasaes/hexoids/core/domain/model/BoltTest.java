@@ -1,6 +1,7 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,10 @@ class BoltTest {
                 .factory()
                 .setPlayerSpatialIndex((float x1, float y1, float x2, float y2, float distance) -> players);
 
+        BarrierSpatialIndexFactory
+                .factory()
+                .setBarrierSpatialIndex((float x1, float y1, float x2, float y2, float distance) -> Collections.emptyList());
+
         doAnswer(ctx -> PlayerSpatialIndexFactory.factory().get())
                 .when(players)
                 .getSpatialIndex();
@@ -82,7 +87,8 @@ class BoltTest {
                 0f,
                 0f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         EntityId boltId = bolt.getId();
         assertNotNull(bolt);
 
@@ -151,7 +157,8 @@ class BoltTest {
                 0f,
                 0f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -178,7 +185,8 @@ class BoltTest {
                 0f,
                 (float) Math.PI / 4f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -204,7 +212,8 @@ class BoltTest {
                 0f,
                 (float) Math.PI / 2f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -230,7 +239,8 @@ class BoltTest {
                 0f,
                 (float) (3 * Math.PI / 4f),
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -256,7 +266,8 @@ class BoltTest {
                 0f,
                 (float) Math.PI,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -282,7 +293,8 @@ class BoltTest {
                 1f,
                 (float) (5 * Math.PI / 4f),
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 
@@ -308,7 +320,8 @@ class BoltTest {
                 1f,
                 (float) (3 * Math.PI / 2f),
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
         when(clock.getTime()).thenReturn(1_000L);
@@ -343,7 +356,8 @@ class BoltTest {
                 0.5f,
                 0f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
         EntityId boltId = bolt.getId();
 
@@ -395,7 +409,8 @@ class BoltTest {
                 0.5f,
                 0f,
                 Config.get().getBoltSpeed(),
-                clock.getTime()).orElse(null);
+                clock.getTime(),
+                Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
 
 

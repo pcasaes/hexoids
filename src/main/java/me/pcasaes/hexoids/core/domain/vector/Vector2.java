@@ -2,6 +2,8 @@ package me.pcasaes.hexoids.core.domain.vector;
 
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
 
+import java.util.Objects;
+
 public class Vector2 {
 
     public static final Vector2 ZERO = Vector2.fromXY(0, 0);
@@ -152,6 +154,11 @@ public class Vector2 {
         return b.getX() * getX() + b.getY() * getY();
     }
 
+    public float magnitudeFrom(Vector2 b) {
+        Vector2 diff = this.minus(b);
+        return (float) Math.sqrt(Math.pow(diff.getX(), 2.0) + Math.pow(diff.getY(), 2.0));
+    }
+
     public Vector2 projection(Vector2 b) {
         return b.scale((b.dot(this)) / (b.dot(b)));
     }
@@ -184,6 +191,24 @@ public class Vector2 {
         return fromXY(getX(), -getY());
     }
 
+    public Vector2 reflect(Vector2 normal) {
+        return normal.scale(-2 * this.dot(normal)).add(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vector2 vector2 = (Vector2) o;
+        return Float.compare(vector2.getX(), getX()) == 0 &&
+                Float.compare(vector2.getY(), getY()) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getX(), getY());
+    }
+
     /**
      * Return true if both vectors have the same equivalent angle.
      * This does take magnitude sign into account.
@@ -195,5 +220,63 @@ public class Vector2 {
         boolean sameAngle = b.getAngle() == getAngle();
         boolean sameSign = Math.signum(b.getMagnitude()) == Math.signum(getMagnitude());
         return sameAngle == sameSign;
+    }
+
+    /**
+     * https://stackoverflow.com/a/1968345
+     * @param a1
+     * @param a2
+     * @param b1
+     * @param b2
+     * @return
+     */
+    public static Vector2 intersectedWith(
+            Vector2 a1, Vector2 a2,
+            Vector2 b1, Vector2 b2) {
+
+        float s1_x = a2.getX() - a1.getX();
+        float s1_y = a2.getY() - a1.getY();
+        float s2_x = b2.getX() - b1.getX();
+        float s2_y = b2.getY() - b1.getY();
+
+        float s = (-s1_y * (a1.getX() - b1.getX()) + s1_x * (a1.getY() - b1.getY())) / (-s2_x * s1_y + s1_x * s2_y);
+        float t = (s2_x * (a1.getY() - b1.getY()) - s2_y * (a1.getX() - b1.getX())) / (-s2_x * s1_y + s1_x * s2_y);
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            return Vector2.fromXY(a1.getX() + (t * s1_x), a1.getY() + (t * s1_y));
+        }
+
+        return null;
+    }
+
+    public static Vector2 calculateMoveDelta(Vector2 velocity, float minMove, long elapsed) {
+        float velocityDelta = velocity.getMagnitude() * elapsed / 1000f;
+
+        float mx = TrigUtil.calculateXComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
+        float my = TrigUtil.calculateYComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta);
+
+        boolean mxAboveMinMove = Math.abs(mx) > minMove;
+        boolean myAboveMinMove = Math.abs(my) > minMove;
+
+        if (mxAboveMinMove && myAboveMinMove) {
+            return fromXY(mx, my);
+        } else if (mxAboveMinMove) {
+            return fromXY(mx, 0f);
+        } else if (myAboveMinMove) {
+            return fromXY(0, my);
+        }
+        return Vector2.ZERO;
+    }
+
+    @Override
+    public String toString() {
+        return "Vector2{" +
+                "angle=" + angle +
+                ", magnitude=" + magnitude +
+                ", initializedAM=" + initializedAM +
+                ", x=" + x +
+                ", y=" + y +
+                ", initializedXY=" + initializedXY +
+                '}';
     }
 }

@@ -6,6 +6,8 @@ public class TrigUtil {
 
     public static final float HALF_CIRCLE_IN_RADIANS = (float) Math.PI;
 
+    public static final float QUARTER_CIRCLE_IN_RADIANS = (float) Math.PI / 2f;
+
     public static final float FULL_CIRCLE_IN_RADIANS = 2f * (float) Math.PI;
 
 

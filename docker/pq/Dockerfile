@@ -8,13 +8,14 @@ FROM rust:1.40.0-buster
 RUN apt-get update -y
 RUN apt-get install jq -y
 
+ADD hexoids.proto /hexoids.proto
+
 ## install protoc
 ADD https://github.com/protocolbuffers/protobuf/releases/download/v3.11.2/protoc-3.11.2-linux-x86_64.zip protoc-3.11.2-linux-x86_64.zip
 RUN unzip protoc-3.11.2-linux-x86_64.zip -d /usr
 RUN chmod a+x /usr/bin/protoc
 
 ## compile hexoids's protocol
-ADD hexoids.proto /hexoids.proto
 RUN /usr/bin/protoc -o hexoids.fdset hexoids.proto
 RUN mkdir -p ~/.pq
 RUN cp *.fdset ~/.pq/

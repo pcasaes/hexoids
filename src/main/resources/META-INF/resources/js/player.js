@@ -510,7 +510,7 @@ const Players = (function () {
         setupQueues(queues) {
 
             queues.command
-                .add('playersList', resp => {
+                .add('currentView', resp => {
                     resp.players.forEach(r => this.create(r));
                 });
 

@@ -45,9 +45,17 @@ public interface Game {
      */
     ScoreBoard getScoreBoard();
 
+    /**
+     * Returns the barriers singleton.
+     *
+     * @return Barriers
+     */
+    Barriers getBarriers();
+
 
     /**
      * Returns the game's singleton.
+     *
      * @return
      */
     static Game get() {
@@ -62,9 +70,10 @@ public interface Game {
             Clock clock = Clock.create();
             Bolts bolts = Bolts.create();
             ScoreBoard scoreBoard = ScoreBoard.create(clock);
-            Players players = Players.create(bolts, clock, scoreBoard, PlayerSpatialIndexFactory.factory());
+            Barriers barriers = Barriers.create();
+            Players players = Players.create(bolts, clock, scoreBoard, barriers, PlayerSpatialIndexFactory.factory());
 
-            INSTANCE = new Implementation(players, clock, bolts, scoreBoard);
+            INSTANCE = new Implementation(players, clock, bolts, scoreBoard, barriers);
         }
 
 
@@ -76,12 +85,15 @@ public interface Game {
 
         private final ScoreBoard scoreBoard;
 
+        private final Barriers barriers;
 
-        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard) {
+
+        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers) {
             this.players = players;
             this.clock = clock;
             this.bolts = bolts;
             this.scoreBoard = scoreBoard;
+            this.barriers = barriers;
 
             GameTopic.setGame(this);
         }
@@ -89,6 +101,7 @@ public interface Game {
 
         @Override
         public void fixedUpdate(long timestamp) {
+            barriers.fixedUpdate(timestamp);
             players.fixedUpdate(timestamp);
             bolts.fixedUpdate(timestamp);
             scoreBoard.fixedUpdate(timestamp);
@@ -112,6 +125,11 @@ public interface Game {
         @Override
         public ScoreBoard getScoreBoard() {
             return scoreBoard;
+        }
+
+        @Override
+        public Barriers getBarriers() {
+            return barriers;
         }
     }
 }
