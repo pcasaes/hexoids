@@ -68,9 +68,13 @@ public class KafkaConsumers {
     }
 
     @Incoming("score-board-control")
-    @Acknowledgment(Acknowledgment.Strategy.NONE)
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public CompletionStage<Void> onScoreBoardControl(IncomingKafkaRecord<UUID, Event> record) {
-        applicationConsumers.onScoreBoardControl(toDomainEvent(record));
+        try {
+            applicationConsumers.onScoreBoardControl(toDomainEvent(record));
+        } finally {
+            record.ack();
+        }
         return CompletableFuture.completedFuture(null);
     }
 

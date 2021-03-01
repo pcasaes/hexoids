@@ -1,18 +1,15 @@
 package me.pcasaes.hexoids.infrastructure.kafka;
 
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener;
-import io.vertx.kafka.client.common.TopicPartition;
-import io.vertx.mutiny.kafka.client.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Named("hexoids-server-bolt-life-cycle")
@@ -35,42 +32,26 @@ public class KafkaBoltLifeCycleConsumerRebalanceListener implements KafkaConsume
     }
 
     @Override
-    public Uni<Void> onPartitionsAssigned(KafkaConsumer<?, ?> consumer, Set<TopicPartition> set) {
+    public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<org.apache.kafka.common.TopicPartition> partitions) {
         long now = System.currentTimeMillis();
         long shouldStartAt = now - (this.boltMaxDuration + 10_000L);
 
-        List<Uni<Void>> unis = new ArrayList<>();
-        set
+        consumer.offsetsForTimes(partitions
                 .stream()
-                .map(topicPartition -> {
-                    LOGGER.info("Assigned " + topicPartition);
-                    return consumer.offsetsForTimes(topicPartition, shouldStartAt)
-                            .onItem()
-                            .invoke(o -> LOGGER.info("Seeking to " + o))
-                            .onItem()
-                            .ifNotNull()
-                            .produceUni(o -> consumer
-                                    .seek(topicPartition, o.getOffset())
-                                    .onItem()
-                                    .invoke(v -> LOGGER.info("Seeked to " + o))
-                            );
-                })
-                .forEach(unis::add);
+                .collect(Collectors.toMap(k -> k, v -> shouldStartAt))
+        )
+                .forEach((k, v) -> {
+                            LOGGER.info("Seeking to " + v);
+                            consumer.seek(k, v.offset());
+                            LOGGER.info("Seeked to " + v);
+                        }
+                );
 
-        unis.add(handler.onPartitionsAssigned());
-
-        return Uni
-                .combine()
-                .all()
-                .unis(unis)
-                .combinedWith(a -> null);
+        handler
+                .onPartitionsAssigned()
+                .await()
+                .indefinitely();
     }
 
-    @Override
-    public Uni<Void> onPartitionsRevoked(KafkaConsumer<?, ?> kafkaConsumer, Set<TopicPartition> set) {
-        return Uni
-                .createFrom()
-                .nullItem();
-    }
 
 }
