@@ -6,10 +6,10 @@ import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
+import pcasaes.hexoids.proto.CurrentViewCommandDto;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
-import pcasaes.hexoids.proto.PlayersListCommandDto;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -27,8 +28,8 @@ import java.util.stream.StreamSupport;
  */
 public class Players implements Iterable<Player> {
 
-    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, PlayerSpatialIndexFactory spatialIndexFactory) {
-        return new Players(bolts, clock, scoreBoard, spatialIndexFactory);
+    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PlayerSpatialIndexFactory spatialIndexFactory) {
+        return new Players(bolts, clock, scoreBoard, barriers, spatialIndexFactory);
     }
 
     /**
@@ -47,12 +48,15 @@ public class Players implements Iterable<Player> {
 
     private final ScoreBoard scoreBoard;
 
+    private final Barriers barriers;
+
     private final PlayerSpatialIndexFactory spatialIndexFactory;
 
-    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, PlayerSpatialIndexFactory spatialIndexFactory) {
+    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PlayerSpatialIndexFactory spatialIndexFactory) {
         this.bolts = bolts;
         this.clock = clock;
         this.scoreBoard = scoreBoard;
+        this.barriers = barriers;
         this.spatialIndexFactory = spatialIndexFactory;
     }
 
@@ -95,17 +99,21 @@ public class Players implements Iterable<Player> {
     }
 
     private Player create(EntityId id) {
-        requestListOfPlayers(id);
-        return Player.create(id, this, this.bolts, this.clock, this.scoreBoard);
+        requestCurrentView(id);
+        return Player.create(id, this, this.bolts, this.barriers, this.clock, this.scoreBoard);
     }
 
     /**
-     * Requests the list of current players to be sent to a specific player
+     * Requests the game's current view to be sent to a specific player
      *
-     * @param requesterId player to have the current list sent to.
+     * @param requesterId player to have the current view sent to.
      */
-    public void requestListOfPlayers(EntityId requesterId) {
-        PlayersListCommandDto.Builder playerListBuilder = PlayersListCommandDto.newBuilder()
+    public void requestCurrentView(EntityId requesterId) {
+        CurrentViewCommandDto.Builder currentViewBuilder = CurrentViewCommandDto.newBuilder()
+                .addAllBarriers(StreamSupport.stream(barriers.spliterator(), false)
+                        .map(Barrier::toDto)
+                        .collect(Collectors.toList())
+                )
                 .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.get().getMaxBolts()));
 
         playerMap
@@ -114,11 +122,11 @@ public class Players implements Iterable<Player> {
                 .map(Player::toDtoIfJoined)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(playerListBuilder::addPlayers);
+                .forEach(currentViewBuilder::addPlayers);
 
         DirectedCommand.Builder builder = DirectedCommand.newBuilder()
                 .setPlayerId(requesterId.getGuid())
-                .setPlayersList(playerListBuilder);
+                .setCurrentView(currentViewBuilder);
 
         GameEvents.getClientEvents().dispatch(
                 Dto.newBuilder()

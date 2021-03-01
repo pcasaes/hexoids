@@ -43,12 +43,13 @@ public interface Player {
      * @param id         the player's id
      * @param players    the collection of all players
      * @param bolts      the collection of all bolts
+     * @param barriers   the collection of all barriers
      * @param clock      the game clock.
      * @param scoreBoard scoreboard
      * @return an new instance of player
      */
-    static Player create(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
-        return new Implementation(id, players, bolts, clock, scoreBoard);
+    static Player create(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
+        return new Implementation(id, players, bolts, barriers, clock, scoreBoard);
     }
 
     /**
@@ -81,7 +82,6 @@ public interface Player {
     /**
      * Generates a {@link PlayerDto} from the player's current states
      *
-     * @param builder
      * @return
      */
     Optional<PlayerDto> toDtoIfJoined();
@@ -185,6 +185,11 @@ public interface Player {
 
     class Implementation implements Player {
 
+        private static final float SHIP_LENGTH = 0.003F;
+
+        private static final float SHIP_HALF_LENGTH = SHIP_LENGTH / 2F;
+
+        private static final float SHIP_LENGTH_TIMES_10 = SHIP_LENGTH * 10F;
 
         private static final Random RNG = new Random();
 
@@ -212,6 +217,8 @@ public interface Player {
 
         private final Bolts bolts;
 
+        private final Barriers barriers;
+
         private final Clock clock;
 
         private final ScoreBoard scoreBoard;
@@ -220,10 +227,11 @@ public interface Player {
 
         private final PositionVector position;
 
-        private Implementation(EntityId id, Players players, Bolts bolts, Clock clock, ScoreBoard scoreBoard) {
+        private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
             this.clock = clock;
+            this.barriers = barriers;
             this.scoreBoard = scoreBoard;
             this.id = id;
 
@@ -278,13 +286,24 @@ public interface Player {
             float boltSpeed = Config.get().getBoltSpeed();
             float boltAngle;
 
+            Vector2 boltVector;
             if (!Config.get().isBoltInertiaEnabled()) {
                 boltAngle = angle;
+                boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed);
             } else {
-                Vector2 boltVector = getFiredBoltVector(boltSpeed, now);
+                boltVector = getFiredBoltVector(boltSpeed, now);
                 boltSpeed = boltVector.getMagnitude();
                 boltAngle = boltVector.getAngle();
             }
+
+
+            Vector2 positionAtNow = Vector2.fromXY(
+                    position.getXat(now),
+                    position.getYat(now)
+            );
+
+            int ttl = calculateBoltTll(positionAtNow, boltVector, boltSpeed);
+
 
             final EntityId boltId = EntityId.newId();
             GameEvents.getDomainEvents()
@@ -295,23 +314,53 @@ public interface Player {
                                     .setPlayerFired(BoltFiredEventDto.newBuilder()
                                             .setBoltId(boltId.getGuid())
                                             .setOwnerPlayerId(id.getGuid())
-                                            .setX(position.getXat(now))
-                                            .setY(position.getYat(now))
+                                            .setX(positionAtNow.getX())
+                                            .setY(positionAtNow.getY())
                                             .setAngle(boltAngle)
                                             .setSpeed(boltSpeed)
                                             .setStartTimestamp(now)
-                                            .setTtl(Config.get().getBoltMaxDuration())
+                                            .setTtl(ttl)
                                     )
                                     .build()
                     ));
         }
 
+        private int calculateBoltTll(Vector2 positionAtNow, Vector2 boltVector, float boltSpeed) {
+            int maxTtl = Config.get().getBoltMaxDuration();
+
+            Vector2 moveDelta = Vector2.calculateMoveDelta(boltVector, Float.MIN_VALUE, maxTtl);
+
+            Vector2 positionAtEnd = positionAtNow.add(moveDelta);
+
+            float magnitudeForTtl = -1;
+
+            for (Barrier barrier : barriers
+                    .search(positionAtNow.getX(), positionAtNow.getY(), positionAtEnd.getX(), positionAtEnd.getY(), SHIP_LENGTH_TIMES_10)) {
+                Vector2 intersection = Vector2.intersectedWith(positionAtNow, positionAtEnd, barrier.getTo(), barrier.getFrom());
+                if (intersection != null) {
+                    if (magnitudeForTtl == -1) {
+                        magnitudeForTtl = intersection.minus(positionAtNow).getMagnitude();
+                    } else {
+                        float m = intersection.minus(positionAtNow).getMagnitude();
+                        if (m < magnitudeForTtl) {
+                            magnitudeForTtl = m;
+                        }
+                    }
+                }
+            }
+
+            if (magnitudeForTtl != -1) {
+                return Math.min(maxTtl, (int) (1000F * magnitudeForTtl / boltSpeed));
+            }
+            return maxTtl;
+        }
+
         public void fired(BoltFiredEventDto event) {
             long now = clock.getTime();
-            if (Bolt.isExpired(now, event.getStartTimestamp())) {
+            if (Bolt.isExpired(now, event.getStartTimestamp(), event.getTtl())) {
                 toBolt(event)
                         .flatMap(b -> b.updateTimestamp(now))
-                        .ifPresent(Bolt::tackleBoltExhaustion);
+                        .ifPresent(b -> b.tackleBoltExhaustion(now));
             } else if (this.liveBolts < Config.get().getMaxBolts()) {
                 toBolt(event).ifPresent(b -> this.firedNew(event, b));
             }
@@ -333,7 +382,8 @@ public interface Player {
                     event.getY(),
                     event.getAngle(),
                     event.getSpeed(),
-                    event.getStartTimestamp());
+                    event.getStartTimestamp(),
+                    event.getTtl());
         }
 
 
@@ -436,6 +486,7 @@ public interface Player {
 
 
             if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
+                tackleBarrierHit();
                 fireMoveDomainEvent(now);
             }
         }
@@ -625,7 +676,20 @@ public interface Player {
             float y = position.getY();
             this.position.update(timestamp);
             if (x != position.getX() || y != position.getY()) {
+                tackleBarrierHit();
                 fireMoveDomainEvent(timestamp);
+            }
+        }
+
+        private void tackleBarrierHit() {
+            if (!position.noMovement()) {
+                for (Barrier barrier : barriers
+                        .search(position.getPreviousX(), position.getPreviousY(), position.getX(), position.getY(), SHIP_LENGTH_TIMES_10)) {
+                    Vector2 intersection = position.intersectedWith(barrier.getTo(), barrier.getFrom(), SHIP_HALF_LENGTH);
+                    if (intersection != null) {
+                        position.reflect(intersection, barrier.getNormal(), SHIP_HALF_LENGTH, 0.5F);
+                    }
+                }
             }
         }
 

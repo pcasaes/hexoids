@@ -408,7 +408,7 @@ const Hud = (function () {
             };
 
             queues.command
-                .add('playersList', (resp, dto) => {
+                .add('currentView', (resp, dto) => {
                     this.setMyPlayerId(dto.directedCommand.playerId.guid);
                     resp.players.forEach(r => addPlayer(r));
                 })

@@ -55,11 +55,12 @@ public class Bolts implements Iterable<Bolt> {
             float y,
             float angle,
             float speed,
-            long startTimestamp) {
+            long startTimestamp,
+            int ttl) {
         if (activeBolts.containsKey(boltId)) {
             return Optional.empty();
         }
-        Bolt bolt = Bolt.create(players, boltId, ownerPlayerId, x, y, angle, speed, startTimestamp);
+        Bolt bolt = Bolt.create(players, boltId, ownerPlayerId, x, y, angle, speed, startTimestamp, ttl);
         activeBolts.put(bolt.getId(), bolt);
         return Optional.of(bolt);
     }
@@ -77,9 +78,9 @@ public class Bolts implements Iterable<Bolt> {
                 .map(b -> b.updateTimestamp(timestamp))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(Bolt::tackleBoltExhaustion)
+                .map(b -> b.tackleBoltExhaustion(timestamp))
                 .filter(Bolt::isActive)
-                .forEach(Bolt::checkHits);
+                .forEach(b -> b.checkHits(timestamp));
 
         cleanup();
     }
