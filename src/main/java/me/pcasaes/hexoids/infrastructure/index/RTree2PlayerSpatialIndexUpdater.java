@@ -4,10 +4,10 @@ import com.github.davidmoten.rtree2.Entries;
 import com.github.davidmoten.rtree2.RTree;
 import com.github.davidmoten.rtree2.geometry.Geometries;
 import com.github.davidmoten.rtree2.geometry.Point;
+import io.micrometer.core.annotation.Timed;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.model.Game;
 import me.pcasaes.hexoids.core.domain.model.Player;
-import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -29,7 +29,10 @@ class RTree2PlayerSpatialIndexUpdater {
         this.gameQueue = gameQueue;
     }
 
-    @Timed(name = "player-spatial-index-update", absolute = true, description = "Time to update the player spatial index.")
+    @Timed(value = "player-spatial-index-update",
+            description = "Time to update the player spatial index.",
+            percentiles = {0.5, 0.75, 0.90, 0.95}
+    )
     void update(Consumer<RTree<Player, Point>> consumer) {
         final CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Player>> players = new AtomicReference<>();
