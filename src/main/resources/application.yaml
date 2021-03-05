@@ -153,6 +153,7 @@ mp:
         enable:
           auto:
             commit: false
+        commit-strategy: ignore
         auto:
           offset:
             reset: earliest
@@ -175,6 +176,7 @@ mp:
         enable:
           auto:
             commit: false
+        commit-strategy: ignore
         auto:
           offset:
             reset: earliest
@@ -195,6 +197,7 @@ mp:
         enable:
           auto:
             commit: false
+        commit-strategy: ignore
         auto:
           offset:
             reset: latest
@@ -213,6 +216,7 @@ mp:
         enable:
           auto:
             commit: false
+        commit-strategy: ignore
         auto:
           offset:
             reset: earliest
@@ -234,7 +238,8 @@ mp:
           name: DelayedStartConsumerRebalanceListener
         enable:
           auto:
-            commit: true
+            commit: false
+        commit-strategy: throttled
         auto:
           commit:
             interval:
@@ -256,6 +261,7 @@ mp:
         enable:
           auto:
             commit: false
+        commit-strategy: ignore
         auto:
           offset:
             reset: earliest

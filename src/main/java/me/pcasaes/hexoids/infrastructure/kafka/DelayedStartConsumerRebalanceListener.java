@@ -1,14 +1,12 @@
 package me.pcasaes.hexoids.infrastructure.kafka;
 
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener;
-import io.vertx.kafka.client.common.TopicPartition;
-import io.vertx.mutiny.kafka.client.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.Set;
+import java.util.Collection;
 
 @ApplicationScoped
 @Named("DelayedStartConsumerRebalanceListener")
@@ -22,14 +20,11 @@ public class DelayedStartConsumerRebalanceListener implements KafkaConsumerRebal
     }
 
     @Override
-    public Uni<Void> onPartitionsAssigned(KafkaConsumer<?, ?> consumer, Set<TopicPartition> topicPartitions) {
-        return this.handler.onPartitionsAssigned();
+    public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<org.apache.kafka.common.TopicPartition> partitions) {
+        this.handler
+                .onPartitionsAssigned()
+                .await()
+                .indefinitely();
     }
 
-    @Override
-    public Uni<Void> onPartitionsRevoked(KafkaConsumer<?, ?> kafkaConsumer, Set<TopicPartition> set) {
-        return Uni
-                .createFrom()
-                .nullItem();
-    }
 }
