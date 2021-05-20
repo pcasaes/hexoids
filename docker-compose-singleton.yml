@@ -2,7 +2,10 @@ version: '3.5'
 services:
 
   hexoids-zookeeper:
-    image: wurstmeister/zookeeper
+    image: confluentinc/cp-zookeeper:5.4.4-1-ubi8
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
@@ -15,9 +18,13 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: hexoids-kafka
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: hexoids-zookeeper:2181
-      KAFKA_OPTS: -javaagent:/opt/kafka/bin/jmx_prometheus_javaagent.jar=9080:/opt/kafka/bin/prometheus-config.yml
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://hexoids-kafka:29092,PLAINTEXT_HOST://hexoids-kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OPTS: -javaagent:/var/lib/kafka/jmx_prometheus_javaagent.jar=9080:/var/lib/kafka/prometheus-config.yml
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
