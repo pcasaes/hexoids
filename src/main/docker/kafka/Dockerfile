@@ -1,9 +1,6 @@
-FROM wurstmeister/kafka:2.13-2.7.0
+FROM confluentinc/cp-kafka:6.1.1-2-ubi8
 
 # prometheus
-ADD prometheus-config.yml /opt/kafka/bin/prometheus-config.yml
-RUN curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.13.0/jmx_prometheus_javaagent-0.13.0.jar --output /opt/kafka/bin/jmx_prometheus_javaagent.jar
-RUN chmod +r /opt/kafka/bin/jmx_prometheus_javaagent.jar
+ADD --chown=appuser:appuser prometheus-config.yml /var/lib/kafka/prometheus-config.yml
+ADD --chown=appuser:appuser https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.13.0/jmx_prometheus_javaagent-0.13.0.jar /var/lib/kafka/jmx_prometheus_javaagent.jar
 
-# unset KAFKA_OPTS and KAFKA_JMX_OPTS in create-topics.sh scripts to eliminate "address already in use" error because of the javaagent
-RUN sed -i 's#while netstat#export KAFKA_OPTS=\nexport KAFKA_JMX_OPTS=\nwhile netstat#g' /usr/bin/create-topics.sh

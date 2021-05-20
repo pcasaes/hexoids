@@ -159,7 +159,7 @@ mp:
             reset: earliest
         group:
           instance:
-            id: static
+            id: static-join-game
         session:
           timeout:
             ms: 60000
@@ -182,7 +182,7 @@ mp:
             reset: earliest
         group:
           instance:
-            id: static
+            id: static-player-action
         session:
           timeout:
             ms: 60000
@@ -222,7 +222,7 @@ mp:
             reset: earliest
         group:
           instance:
-            id: static
+            id: static-bolt-action
         session:
           timeout:
             ms: 60000
@@ -267,7 +267,7 @@ mp:
             reset: earliest
         group:
           instance:
-            id: static
+            id: static-score-board-update
         session:
           timeout:
             ms: 60000
