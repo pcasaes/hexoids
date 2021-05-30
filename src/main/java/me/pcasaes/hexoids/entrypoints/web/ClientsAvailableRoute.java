@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -32,7 +31,7 @@ public class ClientsAvailableRoute {
         }
     }
 
-    @Route(path = "available", methods = HttpMethod.GET)
+    @Route(path = "available", methods = Route.HttpMethod.GET)
     public void available(RoutingContext rc) {
         rc.response()
                 .putHeader("Cache-Control", "no-cache, no-store, must-revalidate")
