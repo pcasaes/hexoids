@@ -146,6 +146,7 @@ mp:
       join-game:
         connector: smallrye-kafka
         topic: JOIN_GAME_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
@@ -167,6 +168,7 @@ mp:
       player-action:
         connector: smallrye-kafka
         topic: PLAYER_ACTION_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
@@ -190,6 +192,7 @@ mp:
       bolt-life-cycle:
         connector: smallrye-kafka
         topic: BOLT_LIFECYCLE_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
@@ -207,6 +210,7 @@ mp:
       bolt-action:
         connector: smallrye-kafka
         topic: BOLT_ACTION_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
@@ -230,6 +234,7 @@ mp:
       score-board-control:
         connector: smallrye-kafka
         topic: SCORE_BOARD_CONTROL_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
@@ -252,6 +257,7 @@ mp:
       score-board-update:
         connector: smallrye-kafka
         topic: SCORE_BOARD_UPDATE_TOPIC
+        pause-if-no-requests: false
         value:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
