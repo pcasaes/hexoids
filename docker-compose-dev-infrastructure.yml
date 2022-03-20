@@ -1,7 +1,9 @@
 version: '3.5'
 services:
   hexoids-kafka:
-    image: 'confluentinc/cp-kafka:7.0.1-3-ubi8'
+    build:
+      context: src/main/docker/kafka
+    image: me.pcasaes/kafka
     ports:
       - "9092:9092"
     environment:
