@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-public class LimitLibsArchUnitTest {
+class LimitLibsArchUnitTest {
 
     /**
      * The domain package should not use CDI.
@@ -24,7 +24,9 @@ public class LimitLibsArchUnitTest {
                 .resideInAnyPackage("javax.enterprise..")
                 .orShould()
                 .dependOnClassesThat()
-                .resideInAnyPackage("javax.inject..");
+                .resideInAnyPackage("javax.inject..")
+                .allowEmptyShould(true);
+
 
 
         rule.check(importedClasses);
@@ -42,7 +44,8 @@ public class LimitLibsArchUnitTest {
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
-                .resideInAnyPackage("io.quarkus..");
+                .resideInAnyPackage("io.quarkus..")
+                .allowEmptyShould(true);
 
 
         rule.check(importedClasses);
@@ -63,7 +66,8 @@ public class LimitLibsArchUnitTest {
                 .resideInAnyPackage("javax.enterprise..")
                 .orShould()
                 .dependOnClassesThat()
-                .resideInAnyPackage("javax.inject..");
+                .resideInAnyPackage("javax.inject..")
+                .allowEmptyShould(true);
 
 
         rule.check(importedClasses);
@@ -81,7 +85,8 @@ public class LimitLibsArchUnitTest {
         ArchRule rule = noClasses()
                 .should()
                 .dependOnClassesThat()
-                .resideInAnyPackage("io.quarkus..");
+                .resideInAnyPackage("io.quarkus..")
+                .allowEmptyShould(true);
 
 
         rule.check(importedClasses);

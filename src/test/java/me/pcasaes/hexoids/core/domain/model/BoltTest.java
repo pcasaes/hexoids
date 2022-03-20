@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -343,7 +343,7 @@ class BoltTest {
         doAnswer(c -> playersList.spliterator()).when(this.players).spliterator();
         doAnswer(c -> playersList.stream()).when(this.players).stream();
         doAnswer(c -> {
-            Consumer<Player> consumer = c.getArgumentAt(0, Consumer.class);
+            Consumer<Player> consumer = c.getArgument(0, Consumer.class);
             this.players.stream().forEach(consumer);
             return null;
         }).when(this.players).forEach(any(Consumer.class));
