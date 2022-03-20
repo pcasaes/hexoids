@@ -1,4 +1,8 @@
-FROM confluentinc/cp-kafka:6.1.1-2-ubi8
+FROM confluentinc/cp-kafka:7.0.1-3-ubi8
+
+# kraft
+ADD --chown=appuser:appuser update_run.sh /tmp/update_run.sh
+RUN chmod a+x /tmp/update_run.sh
 
 # prometheus
 ADD --chown=appuser:appuser prometheus-config.yml /var/lib/kafka/prometheus-config.yml

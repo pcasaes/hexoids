@@ -39,7 +39,7 @@ capable browser or with a [native binary](https://github.com/pcasaes/hexoids-gam
 
 # Requirements
 
-* [Java 8](https://openjdk.java.net/install/)
+* [Java 17](https://openjdk.java.net/install/)
     * [Maven](https://maven.apache.org/)
 * [Docker](https://www.docker.com/)
     * [docker-compose](https://docs.docker.com/compose/)
