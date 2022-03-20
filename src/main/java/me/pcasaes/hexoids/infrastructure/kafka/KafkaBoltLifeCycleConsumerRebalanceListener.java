@@ -41,9 +41,11 @@ public class KafkaBoltLifeCycleConsumerRebalanceListener implements KafkaConsume
                 .collect(Collectors.toMap(k -> k, v -> shouldStartAt))
         )
                 .forEach((k, v) -> {
-                            LOGGER.info("Seeking to " + v);
-                            consumer.seek(k, v.offset());
-                            LOGGER.info("Seeked to " + v);
+                            if (v != null) {
+                                LOGGER.info("Seeking to " + v);
+                                consumer.seek(k, v.offset());
+                                LOGGER.info("Seeked to " + v);
+                            }
                         }
                 );
 

@@ -45,18 +45,24 @@ public class GameRoutes {
 
     public void startup(@Observes Router router) {
         router.route("/game/:id").handler(rc -> {
-            EntityId userId = EntityId.of(rc.pathParam("id"));
+            var userId = EntityId.of(rc.pathParam("id"));
             HttpServerRequest request = rc.request();
-            ServerWebSocket ctx = request.upgrade();
 
-            onOpen(ctx, userId);
+            request.toWebSocket(as -> {
+                if (as.succeeded()) {
+                    ServerWebSocket ctx = as.result();
+                    onOpen(ctx, userId);
 
-            ctx.closeHandler(n -> this.onClose(userId));
-            ctx.exceptionHandler(n -> this.onClose(userId));
+                    ctx.closeHandler(n -> this.onClose(userId));
+                    ctx.exceptionHandler(n -> this.onClose(userId));
 
-            ctx.handler(buff -> onMessage(ctx, buff.getBytes(), userId));
+                    ctx.handler(buff -> onMessage(ctx, buff.getBytes(), userId));
 
-            ctx.accept();
+                    ctx.accept();
+                } else {
+                    LOGGER.warning(() -> "Failed to open websocket: " + as.cause());
+                }
+            });
         });
     }
 
@@ -109,7 +115,7 @@ public class GameRoutes {
 
     private Optional<RequestCommand> getCommand(byte[] value) {
         try {
-            RequestCommand.Builder builder = RequestCommand.newBuilder();
+            var builder = RequestCommand.newBuilder();
             builder.mergeFrom(value);
             return Optional.of(builder.build());
         } catch (IOException | RuntimeException ex) {
@@ -119,7 +125,7 @@ public class GameRoutes {
     }
 
     private void syncClock(ServerWebSocket ctx) {
-        Buffer buffer = Buffer.buffer(Dto.newBuilder()
+        var buffer = Buffer.buffer(Dto.newBuilder()
                 .setClock(ClockSync.newBuilder()
                         .setTime(this.gameTime.getTime())
                 ).build()
