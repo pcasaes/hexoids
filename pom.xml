@@ -16,7 +16,7 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <mockito.version>4.4.0</mockito.version>
-    <lmax.disruptor.version>3.3.0</lmax.disruptor.version>
+    <lmax.disruptor.version>3.4.4</lmax.disruptor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus-plugin.version>2.7.5.Final</quarkus-plugin.version>
