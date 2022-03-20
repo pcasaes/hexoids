@@ -103,7 +103,7 @@
     <dependency>
       <groupId>com.github.davidmoten</groupId>
       <artifactId>rtree2</artifactId>
-      <version>0.9-RC1</version>
+      <version>0.9.1  </version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
