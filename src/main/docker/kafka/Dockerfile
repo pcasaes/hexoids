@@ -1,4 +1,4 @@
-FROM confluentinc/cp-kafka:6.1.1-2-ubi8
+FROM confluentinc/cp-kafka:7.0.1-3-ubi8
 
 # prometheus
 ADD --chown=appuser:appuser prometheus-config.yml /var/lib/kafka/prometheus-config.yml
