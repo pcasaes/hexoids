@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.infrastructure.producer;
 
-import io.smallrye.reactive.messaging.kafka.KafkaRecord;
+import io.smallrye.reactive.messaging.kafka.Record;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import me.pcasaes.hexoids.core.domain.model.GameTopic;
 import org.eclipse.microprofile.reactive.messaging.Channel;
@@ -10,6 +10,7 @@ import pcasaes.hexoids.proto.Event;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.UUID;
 
 /**
  * Used to generate domain events. Domain events are used to keep server nodes in sync
@@ -19,18 +20,18 @@ public class DomainEventProducer {
 
     private static final String NAME = "domain-event-producer";
 
-    private final Emitter<Event>[] emitters;
+    private final Emitter<Record<UUID, Event>>[] emitters;
 
     @Inject
     public DomainEventProducer(
-            @Channel("join-game-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> joinGameEmitter,
-            @Channel("player-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> playerActionEmitter,
-            @Channel("bolt-life-cycle-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltLifeCycleEmitter,
-            @Channel("bolt-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> boltActionEmitter,
-            @Channel("score-board-control-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardControlEmitter,
-            @Channel("score-board-update-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Event> scoreBoardUpdateEmitter
+            @Channel("join-game-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> joinGameEmitter,
+            @Channel("player-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> playerActionEmitter,
+            @Channel("bolt-life-cycle-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> boltLifeCycleEmitter,
+            @Channel("bolt-action-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> boltActionEmitter,
+            @Channel("score-board-control-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> scoreBoardControlEmitter,
+            @Channel("score-board-update-out") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) Emitter<Record<UUID, Event>> scoreBoardUpdateEmitter
     ) {
-        Emitter<Event>[] em = new Emitter[GameTopic.values().length];
+        Emitter<Record<UUID, Event>>[] em = new Emitter[GameTopic.values().length];
         em[GameTopic.JOIN_GAME_TOPIC.ordinal()] = joinGameEmitter;
         em[GameTopic.PLAYER_ACTION_TOPIC.ordinal()] = playerActionEmitter;
         em[GameTopic.BOLT_LIFECYCLE_TOPIC.ordinal()] = boltLifeCycleEmitter;
@@ -44,7 +45,7 @@ public class DomainEventProducer {
     public void accept(DomainEvent event) {
         if (event != null) {
             this.emitters[GameTopic.valueOf(event.getTopic()).ordinal()]
-                    .send(KafkaRecord.of(event.getKey(), event.getEvent()));
+                    .send(Record.of(event.getKey(), event.getEvent()));
         }
     }
 
