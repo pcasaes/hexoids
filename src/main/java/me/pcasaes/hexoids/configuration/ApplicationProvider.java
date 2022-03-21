@@ -1,7 +1,6 @@
 package me.pcasaes.hexoids.configuration;
 
 import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
-import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -17,12 +16,6 @@ public class ApplicationProvider {
     @Inject
     public ApplicationProvider(GameQueue gameQueue) {
         this.gameQueue = gameQueue;
-    }
-
-    @Produces
-    @Singleton
-    public ApplicationConsumers getApplicationConsumers() {
-        return ApplicationConsumers.create(gameQueue);
     }
 
     @Produces

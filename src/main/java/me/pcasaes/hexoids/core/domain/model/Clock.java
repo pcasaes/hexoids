@@ -7,9 +7,10 @@ public interface Clock {
 
     long getTime();
 
+    long getNanos();
 
     static Clock create() {
-        return new Implementation();
+        return Implementation.holder;
     }
 
     /**
@@ -17,6 +18,8 @@ public interface Clock {
      * monotonic clock.
      */
     class Implementation implements Clock {
+
+        static Implementation holder = new Implementation();
 
         private final long adjustment;
 
@@ -30,6 +33,11 @@ public interface Clock {
         public long getTime() {
             long currentCpuTimeMillis = System.nanoTime() / 1000000L;
             return currentCpuTimeMillis + adjustment;
+        }
+
+        @Override
+        public long getNanos() {
+            return System.nanoTime() % 1000000L;
         }
     }
 
