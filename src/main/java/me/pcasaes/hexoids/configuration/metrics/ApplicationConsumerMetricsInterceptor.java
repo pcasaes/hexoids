@@ -61,9 +61,12 @@ public class ApplicationConsumerMetricsInterceptor {
     }
 
     private void register(long timestamp, String eventName) {
+        long diff = clock.getTime() - timestamp;
+        diff = 1_000_000L * diff + clock.getNanos();
         timers.computeIfAbsent(eventName, k -> Timer.builder("hexoids_event_consumer_received")
                 .tag("event", k)
+                .description("Measures time between an event production and consumption")
                 .publishPercentiles(0.5,0.75,0.90,0.95,0.99)
-                .register(meterRegistry)).record(clock.getTime() - timestamp, TimeUnit.MILLISECONDS);
+                .register(meterRegistry)).record(diff, TimeUnit.NANOSECONDS);
     }
 }

@@ -7,6 +7,7 @@ public interface Clock {
 
     long getTime();
 
+    long getNanos();
 
     static Clock create() {
         return Implementation.holder;
@@ -32,6 +33,11 @@ public interface Clock {
         public long getTime() {
             long currentCpuTimeMillis = System.nanoTime() / 1000000L;
             return currentCpuTimeMillis + adjustment;
+        }
+
+        @Override
+        public long getNanos() {
+            return System.nanoTime() % 1000000L;
         }
     }
 
