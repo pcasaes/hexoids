@@ -1,8 +1,9 @@
 package me.pcasaes.hexoids.entrypoints.jobs;
 
 import io.quarkus.runtime.StartupEvent;
+import io.smallrye.mutiny.tuples.Tuple3;
 import io.smallrye.reactive.messaging.kafka.Record;
-import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
+import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -16,7 +17,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 public class KafkaConsumers {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaConsumers.class.getName());
+
+    private static final Tuple3<String, Integer, Long> NONE = Tuple3.of("", 0, 0L);
 
     private final ApplicationConsumers applicationConsumers;
 
@@ -41,14 +43,15 @@ public class KafkaConsumers {
 
 
     @Incoming("join-game")
-    @Outgoing("join-game-time")
+    @Outgoing("join-game-metadata")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
-    public Message<Long> onJoinGame(Message<Record<UUID, Event>> message) {
+    public Message<Tuple3<String, Integer, Long>> onJoinGame(Message<Record<UUID, Event>> message) {
         applicationConsumers.onJoinGame(toDomainEvent(message.getPayload()));
-        return Message.of(message.getMetadata(KafkaMessageMetadata.class)
-                .map(KafkaMessageMetadata::getTimestamp)
-                .map(Instant::toEpochMilli)
-                .orElse(System.currentTimeMillis()));
+        return Message.of(
+                message.getMetadata(IncomingKafkaRecordMetadata.class)
+                        .map(md -> Tuple3.of(md.getTopic(), md.getPartition(), md.getOffset()))
+                        .orElse(NONE)
+        );
     }
 
     @Incoming("player-action")
