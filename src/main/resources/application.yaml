@@ -151,6 +151,8 @@ mp:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
         key:
           deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
+        consumer-rebalance-listener:
+          name: CatchupRebalanceListener
         enable:
           auto:
             commit: false
