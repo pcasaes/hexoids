@@ -77,7 +77,7 @@ public class DelayedStartConsumerHandler {
         }
     }
 
-    public Uni<Void> onPartitionsAssigned() {
+    public Uni<Void> onStarted() {
         return Uni
                 .createFrom()
                 .emitter(uniEmitter -> {

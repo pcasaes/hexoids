@@ -22,7 +22,7 @@ public class DelayedStartConsumerRebalanceListener implements KafkaConsumerRebal
     @Override
     public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<org.apache.kafka.common.TopicPartition> partitions) {
         this.handler
-                .onPartitionsAssigned()
+                .onStarted()
                 .await()
                 .indefinitely();
     }

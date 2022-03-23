@@ -50,7 +50,7 @@ public class KafkaBoltLifeCycleConsumerRebalanceListener implements KafkaConsume
                 );
 
         handler
-                .onPartitionsAssigned()
+                .onStarted()
                 .await()
                 .indefinitely();
     }
