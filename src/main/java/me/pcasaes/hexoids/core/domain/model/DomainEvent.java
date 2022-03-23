@@ -23,11 +23,6 @@ public class DomainEvent {
         return new DomainEvent(null, key, event);
     }
 
-    public static DomainEvent withoutKey(
-            Event event) {
-        return new DomainEvent(null, null, event);
-    }
-
     public static DomainEvent create(String topic, UUID key, Event event) {
         return new DomainEvent(topic, key, event);
     }

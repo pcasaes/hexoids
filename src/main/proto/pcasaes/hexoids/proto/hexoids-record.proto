@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pcasaes.hexoids.record.proto;
+
+import "hexoids.proto";
+
+option java_multiple_files = true;
+
+option optimize_for = LITE_RUNTIME;
+
+message UUIDKey {
+  int64 mostSignificantDigits = 1;
+  int64 leastSignificantDigits = 2;
+}
+
+message EventRecord {
+  UUIDKey key = 1;
+  pcasaes.hexoids.proto.Event event = 2;
+}

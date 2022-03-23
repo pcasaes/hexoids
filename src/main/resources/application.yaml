@@ -85,39 +85,8 @@ mp:
           serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         retries: 0
-        waitForWriteCompletion: false
-
-      player-action-out:
-        connector: smallrye-kafka
-        topic: PLAYER_ACTION_TOPIC
-        value:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
-        key:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
-        acks: 0
-        retries: 0
-        waitForWriteCompletion: false
-
-      bolt-life-cycle-out:
-        connector: smallrye-kafka
-        topic: BOLT_LIFECYCLE_TOPIC
-        value:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
-        key:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
-        acks: 0
-        retries: 0
-        waitForWriteCompletion: false
-
-      bolt-action-out:
-        connector: smallrye-kafka
-        topic: BOLT_ACTION_TOPIC
-        value:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoSerializer
-        key:
-          serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
-        acks: 0
-        retries: 0
+        linger:
+          ms: 50
         waitForWriteCompletion: false
 
       score-board-control-out:
@@ -129,6 +98,8 @@ mp:
           serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         retries: 0
+        linger:
+          ms: 100
         waitForWriteCompletion: false
 
       score-board-update-out:
@@ -140,6 +111,8 @@ mp:
           serializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesSerializer
         acks: 0
         retries: 0
+        linger:
+          ms: 100
         waitForWriteCompletion: false
 
     incoming:
@@ -167,71 +140,6 @@ mp:
           timeout:
             ms: 60000
 
-      player-action:
-        connector: smallrye-kafka
-        topic: PLAYER_ACTION_TOPIC
-        pause-if-no-requests: false
-        value:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
-        key:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
-        consumer-rebalance-listener:
-          name: DelayedStartConsumerRebalanceListener
-        enable:
-          auto:
-            commit: false
-        commit-strategy: ignore
-        auto:
-          offset:
-            reset: earliest
-        group:
-          instance:
-            id: static-player-action
-        session:
-          timeout:
-            ms: 60000
-
-      bolt-life-cycle:
-        connector: smallrye-kafka
-        topic: BOLT_LIFECYCLE_TOPIC
-        pause-if-no-requests: false
-        value:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
-        key:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
-        enable:
-          auto:
-            commit: false
-        commit-strategy: ignore
-        auto:
-          offset:
-            reset: latest
-        group:
-          id: hexoids-server-bolt-life-cycle
-
-      bolt-action:
-        connector: smallrye-kafka
-        topic: BOLT_ACTION_TOPIC
-        pause-if-no-requests: false
-        value:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.EventDtoDeserializer
-        key:
-          deserializer: me.pcasaes.hexoids.infrastructure.kafka.converter.UUIDBytesDeserializer
-        consumer-rebalance-listener:
-          name: DelayedStartConsumerRebalanceListener
-        enable:
-          auto:
-            commit: false
-        commit-strategy: ignore
-        auto:
-          offset:
-            reset: earliest
-        group:
-          instance:
-            id: static-bolt-action
-        session:
-          timeout:
-            ms: 60000
 
       score-board-control:
         connector: smallrye-kafka
@@ -287,6 +195,8 @@ kafka:
 quarkus:
   vertx:
     prefer-native-transport: true
+    cluster:
+      clustered: true
   http:
     so-reuse-port: true
     tcp-quick-ack: true
