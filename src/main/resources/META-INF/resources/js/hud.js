@@ -10,6 +10,26 @@ const Hud = (function () {
         return name;
     }
 
+    function deriveName(guid, nameLength) {
+        let id = "";
+        for (let i = 0; i < guid.length && id.length < nameLength; i++) {
+            id += guid[i];
+        }
+        return id.substr(0, nameLength)
+    }
+
+    function samePlayerId(guid1, guid2) {
+        if (guid1 && guid2 && guid1.length === guid2.length) {
+            for (let i = 0; i < guid1.length; i++) {
+                if (guid1[i] !== guid2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Message that appears in the center screen
      */
@@ -119,7 +139,7 @@ const Hud = (function () {
                     this.entries[i].setText(p.displayName + " " + entry.score);
                     this.entries[i].setTintFill(p.color);
                 } else {
-                    this.entries[i].setText(entry.playerId.guid.substr(0, this.gameConfig.hud.nameLength) + " " + entry.score);
+                    this.entries[i].setText(deriveName(entry.playerId.guid, this.gameConfig.hud.nameLength) + " " + entry.score);
                     this.entries[i].setTintFill(this.colors.getDarkTextColor().toRgbNumber());
                 }
             });
@@ -158,7 +178,7 @@ const Hud = (function () {
 
                 this.scoreView = text;
             }
-            const name = p ? p.displayName : resp.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
+            const name = p ? p.displayName : deriveName(resp.playerId.guid, this.gameConfig.hud.nameLength);
 
             this.scoreView.setText(name + ' ' + resp.score);
             this.scoreView.x = this.scene.game.config.width - (this.scoreView.width - this.gameConfig.hud.font.offset.x);
@@ -216,7 +236,7 @@ const Hud = (function () {
         }
 
         update(resp) {
-            if (resp.playerId.guid === this.myPlayerId) {
+            if (samePlayerId(resp.playerId.guid, this.myPlayerId[0])) {
                 return;
             }
 
@@ -254,7 +274,7 @@ const Hud = (function () {
 
                     if (text) {
                         text.setTintFill(p ? p.color : this.colors.getDarkTextColor());
-                        text.setText(p ? p.displayName : playerId.sub(0, this.gameConfig.hud.nameLength));
+                        text.setText(p ? p.displayName : deriveName(playerId, this.gameConfig.hud.nameLength));
 
                         text.x = this.scene.game.config.width - (text.width - this.gameConfig.hud.font.offset.x);
 
@@ -328,12 +348,12 @@ const Hud = (function () {
                             const destroyer = this.getPlayer(playerDestroyed.destroyedByPlayerId.guid);
                             const destroyerLabel = destroyer ?
                                 destroyer.actionName :
-                                playerDestroyed.destroyedByPlayerId.guid.substr(0, this.gameConfig.hud.nameLength);
+                                deriveName(playerDestroyed.destroyedByPlayerId.guid, this.gameConfig.hud.nameLength);
 
                             const destroyed = this.getPlayer(playerDestroyed.playerId.guid);
                             const destroyedLabel = destroyed ?
                                 destroyed.name :
-                                playerDestroyed.playerId.guid.substr(0, this.gameConfig.hud.nameLength);
+                                deriveName(playerDestroyed.playerId.guid, this.gameConfig.hud.nameLength);
 
                             const timestamp = new Date(playerDestroyed.destroyedTimestamp);
                             const timeStr = `${timestamp.getUTCHours() < 10 ? '0' : ''}${timestamp.getUTCHours()}${timestamp.getUTCMinutes() < 10 ? '0' : ''}${timestamp.getUTCMinutes()}${timestamp.getUTCSeconds() < 10 ? '0' : ''}${timestamp.getUTCSeconds()}`;
@@ -433,7 +453,7 @@ const Hud = (function () {
                 .add('playerSpawned', resp => {
                     resp = resp.location;
                     this.nearestPlayers.update(resp);
-                    if (this.myPlayerId === resp.playerId.guid) {
+                    if (samePlayerId(this.myPlayerId, resp.playerId.guid)) {
                         this.nearestPlayers.removeAll();
                     }
                 })

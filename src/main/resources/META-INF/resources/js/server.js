@@ -4,6 +4,18 @@ const Server = (function () {
 
     let backOff = 50;
 
+    function samePlayerId(guid1, guid2) {
+        if (guid1 && guid2 && guid1.length === guid2.length) {
+            for (let i = 0; i < guid1.length; i++) {
+                if (guid1[i] !== guid2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     const synDto = {
         "dto": "event",
         "event": null
@@ -23,7 +35,7 @@ const Server = (function () {
         }
 
         createSocket() {
-            const endpoint = "ws://" + this.host + "/game/" + this.userId.get();
+            const endpoint = "ws://" + this.host + "/game/" + this.userId.idStr();
             console.log(endpoint);
             this.socket = new WebSocket(endpoint);
             this.socket.binaryType = "arraybuffer";
@@ -80,7 +92,7 @@ const Server = (function () {
             this.createSocket();
 
             this.queues.event.add('playerLeft', resp => {
-                if (resp.playerId.guid === this.userId.get()) {
+                if (samePlayerId(resp.playerId.guid, this.userId.get())) {
                     console.log('Player left or booted. Disconnecting');
                     this.booted = true;
                     this.socket.close();

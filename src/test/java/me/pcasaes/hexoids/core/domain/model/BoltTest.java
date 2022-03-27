@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -128,7 +129,7 @@ class BoltTest {
         BoltExhaustedEventDto exhaustedEvent = domainEvent.getEvent().getBoltExhausted();
 
         assertNotNull(exhaustedEvent);
-        assertEquals(boltId.getGuid().getGuid(), exhaustedEvent.getBoltId().getGuid());
+        assertArrayEquals(boltId.getGuid().getGuid().toByteArray(), exhaustedEvent.getBoltId().getGuid().toByteArray());
 
         assertTrue(bolt.isExhausted());
         assertFalse(bolt.isActive());
@@ -386,7 +387,7 @@ class BoltTest {
                 .findFirst().orElse(null);
 
         assertNotNull(boltExhaustedEventDto);
-        assertEquals(boltId.getGuid().getGuid(), boltExhaustedEventDto.getBoltId().getGuid());
+        assertArrayEquals(boltId.getGuid().getGuid().toByteArray(), boltExhaustedEventDto.getBoltId().getGuid().toByteArray());
 
     }
 
