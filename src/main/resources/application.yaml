@@ -47,6 +47,9 @@ hexoids:
         bolts: 12
         angle:
           divisor: 4
+      destroyed:
+        shockwave:
+          distance: 0.04
     bolt:
       max:
         duration: 10000

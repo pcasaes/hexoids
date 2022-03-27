@@ -54,9 +54,12 @@ public class HexoidConfigurations {
 
     private float boltInertiaNegativeProjectionScale;
 
+    private float playerDestroyedShockwaveDistance;
+
 
     /**
      * This singleton will eager load before all others
+     *
      * @param event
      */
     public void startup(@Observes @Priority(Interceptor.Priority.APPLICATION) StartupEvent event) {
@@ -74,6 +77,7 @@ public class HexoidConfigurations {
         LOGGER.info("hexoids.config.player.max.bolts=" + getMaxBolts());
         LOGGER.info("hexoids.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
         LOGGER.info("hexoids.config.player.reset.position=" + getPlayerResetPosition());
+        LOGGER.info("hexoids.config.player.destroyed.shockwave.distance=" + getPlayerDestroyedShockwaveDistance());
         LOGGER.info("hexoids.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("hexoids.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("hexoids.config.bolt.collision.radius=" + getBoltCollisionRadius());
@@ -98,6 +102,7 @@ public class HexoidConfigurations {
         Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale());
         Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale());
         Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale());
+        Config.get().setPlayerDestroyedShockwaveDistance(getPlayerDestroyedShockwaveDistance());
     }
 
 
@@ -320,5 +325,16 @@ public class HexoidConfigurations {
         this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
     }
 
+    public float getPlayerDestroyedShockwaveDistance() {
+        return playerDestroyedShockwaveDistance;
+    }
 
+    @Inject
+    public void setPlayerDestroyedShockwaveDistance(
+            @ConfigProperty(
+                    name = "hexoids.config.player.destroyed.shockwave.distance",
+                    defaultValue = "0.04"
+            ) float playerDestroyedShockwaveDistance) {
+        this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance;
+    }
 }
