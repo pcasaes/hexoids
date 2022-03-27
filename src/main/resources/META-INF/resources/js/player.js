@@ -25,6 +25,18 @@ const Players = (function () {
         (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS) ? r : -r;
     }
 
+    function samePlayerId(guid1, guid2) {
+        if (guid1 && guid2 && guid1.length === guid2.length) {
+            for (let i = 0; i < guid1.length; i++) {
+                if (guid1[i] !== guid2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     const OUT_OF_VIEW_SHIPS = {};
 
     class Ship {
@@ -535,7 +547,7 @@ const Players = (function () {
                             p.spawn();
                         });
 
-                    if (this.playerToFollow === resp.playerId.guid) {
+                    if (samePlayerId(this.playerToFollow, resp.playerId.guid)) {
                         this._setCameraToFollow();
                     }
                 })

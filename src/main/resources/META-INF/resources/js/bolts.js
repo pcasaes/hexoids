@@ -1,5 +1,13 @@
 const Bolts = (function () {
 
+    function deriveName(guid, nameLength) {
+        let id = "";
+        for (let i = 0; i < guid.length && id.length < nameLength; i++) {
+            id += guid[i];
+        }
+        return id.substr(0, nameLength)
+    }
+
     const EMPTY_OBJ = {};
 
     const PULSE = [0xfffff, 0x888888, 0x888888, 0x000000];

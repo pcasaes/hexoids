@@ -2,11 +2,20 @@ const Users = (function () {
     const USER_ID = 'hexoids_user_id';
     const USER_NAME = 'hexoids_user_name';
 
+    function deriveName(guid, nameLength) {
+        let id = "";
+        for (let i = 0; i < guid.length && id.length < nameLength; i++) {
+            id += guid[i];
+        }
+        return id.substr(0, nameLength)
+    }
+
     class UserClass {
 
-        constructor(gameConfig, id, name, sessionUser) {
+        constructor(gameConfig, id, idStr, name, sessionUser) {
             this.gameConfig = gameConfig;
             this._id = id;
+            this._idStr = idStr;
             this._name = name;
             this.sessionUser = sessionUser;
         }
@@ -19,6 +28,10 @@ const Users = (function () {
             return this._id;
         }
 
+        idStr() {
+            return this._idStr;
+        }
+
         id() {
             return this._id;
         }
@@ -28,7 +41,7 @@ const Users = (function () {
         }
 
         name() {
-            return this._name || this._id.substr(0, this.gameConfig.hud.nameLength);
+            return this._name || deriveName(this._id, this.gameConfig.hud.nameLength)
         }
 
         setName(n) {
@@ -56,18 +69,18 @@ const Users = (function () {
             if (!this.sessionUser) {
                 const userIdFromCookie = this.getCookie(USER_ID);
                 const userNameFromCookie = this.getCookie(USER_NAME);
-                const id = !userIdFromCookie ? this.genUuid() : userIdFromCookie;
-                document.cookie = USER_ID + "=" + id;
-                this.sessionUser = new UserClass(this.gameConfig, id, userNameFromCookie, true);
+                const id = !userIdFromCookie ? this.genUuid() : this.genUuid(userIdFromCookie);
+                document.cookie = USER_ID + "=" + id.str;
+                this.sessionUser = new UserClass(this.gameConfig, id.id, id.str, userNameFromCookie, true);
                 console.log(this.sessionUser.id() + " " + this.sessionUser.name());
                 this.users[this.sessionUser.id()] = this.sessionUser;
             }
             return this.sessionUser;
         }
 
-        get(id) {
+        get(id, idStr) {
             if (!this.users[id]) {
-                this.users[id] = new UserClass(this.gameConfig, id, null, false);
+                this.users[id] = new UserClass(this.gameConfig, id, idStr, null, false);
             }
             return this.users[id];
         }

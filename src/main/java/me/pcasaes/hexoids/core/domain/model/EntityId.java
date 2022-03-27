@@ -1,16 +1,17 @@
 package me.pcasaes.hexoids.core.domain.model;
 
+import com.google.protobuf.ByteString;
 import pcasaes.hexoids.proto.GUID;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
  * Identifier immutable.
- *
+ * <p>
  * The identifier uses a {@link UUID} and holds its DTO {@link GUID} analog.
- *
  */
 public class EntityId {
 
@@ -28,6 +29,7 @@ public class EntityId {
 
     /**
      * Constructs an EntityId from a {@link UUID}
+     *
      * @param id a uuid
      * @return
      */
@@ -47,10 +49,10 @@ public class EntityId {
 
     /**
      * Constructs an entity from a string representation of a UUID.
-     * @see UUID#fromString(String)
      *
      * @param uuid a string representation of a UUID
      * @return
+     * @see UUID#fromString(String)
      */
     public static EntityId of(String uuid) {
         return of(stringToUuid(uuid));
@@ -58,6 +60,7 @@ public class EntityId {
 
     /**
      * Generates a new identifier based on UUIDv4
+     *
      * @return
      */
     public static EntityId newId() {
@@ -101,14 +104,22 @@ public class EntityId {
     }
 
     private static UUID guidToUuid(GUID guid) {
-        return stringToUuid(guid.getGuid());
+        ByteBuffer bb = ByteBuffer.wrap(guid.getGuid().toByteArray());
+        long high = bb.getLong();
+        long low = bb.getLong();
+        return new UUID(high, low);
     }
 
     private static GUID uuidToGuid(UUID uuid) {
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+
+
         return GUID_THREAD_SAFE_BUILDER
                 .get()
                 .clear()
-                .setGuid(uuid.toString())
+                .setGuid(ByteString.copyFrom(bb.array()))
                 .build();
     }
 

@@ -4,14 +4,14 @@ package pcasaes.hexoids.proto;
 
 option java_multiple_files = true;
 
-option optimize_for = LITE_RUNTIME;
+option optimize_for = SPEED;
 
 message FloatValue {
     float value = 1;
 }
 
 message GUID {
-    string guid = 1;
+    bytes guid = 1;
 }
 
 

@@ -10,7 +10,7 @@ if (isMainThread) {
 } else {
     global.WebSocket = require('ws');
     global.Optional = require('../src/main/resources/META-INF/resources/js/optional');
-    const crypto = require('crypto');
+    global.crypto = require('crypto');
     const Server = require('../src/main/resources/META-INF/resources/js/server');
     const QueueConsumer = require('../src/main/resources/META-INF/resources/js/event-queue-consumer');
     const GameConfig = require('../src/main/resources/META-INF/resources/js/game-config');
@@ -20,6 +20,7 @@ if (isMainThread) {
     const Transform = require('../src/main/resources/META-INF/resources/js/transform');
     const AiBot = require('../src/main/resources/META-INF/resources/js/ai');
     const Clock = require('../src/main/resources/META-INF/resources/js/clock');
+    const Uuid = require('../src/main/resources/META-INF/resources/js/uuid');
     const ProtoProcessor = require('../src/main/js-proto/main');
 
 
@@ -29,13 +30,7 @@ if (isMainThread) {
     };
 
     function genUuid() {
-        const flat = crypto.randomBytes(16).toString('hex');
-        return flat.substr(0, 8) + '-' +
-            flat.substr(8, 4) + '-' +
-            flat.substr(12, 4) + '-' +
-            flat.substr(16, 4) + '-' +
-            flat.substr(20);
-
+        return Uuid();
     }
 
     function getUsers() {
@@ -196,8 +191,8 @@ if (isMainThread) {
             getColors());
     }
 
-    function getServer(userId) {
-        return Server.get(getUsers().get(userId), QUEUES, settings.host, ProtoProcessor, getClock());
+    function getServer(userId, userIdStr) {
+        return Server.get(getUsers().get(userId, userIdStr), QUEUES, settings.host, ProtoProcessor, getClock());
     }
 
     const BOTS = [];
@@ -218,17 +213,18 @@ if (isMainThread) {
     }
 
     function startUpOne() {
-        const USER = getUsers().get(genUuid());
-        console.log("user id " + USER.get());
+        const USER_ID = genUuid();
+        const USER = getUsers().get(USER_ID.id, USER_ID.str);
+        console.log("user id " + USER.id() + " " + USER.idStr());
 
 
         getPlayers()
-            .addControllableUser(USER.get());
+            .addControllableUser(USER_ID.id);
 
         const bot = new AiBot(USER,
-            getServer(USER.get()),
+            getServer(USER_ID.id, USER_ID.str),
             getPlayers()
-                .addControllableUser(USER.get()),
+                .addControllableUser(USER_ID.id),
             transform,
             GameConfig.get());
 
