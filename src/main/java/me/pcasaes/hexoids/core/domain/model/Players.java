@@ -3,12 +3,15 @@ package me.pcasaes.hexoids.core.domain.model;
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
+import me.pcasaes.hexoids.core.domain.utils.MathUtil;
+import me.pcasaes.hexoids.core.domain.vector.Vector2;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
 import pcasaes.hexoids.proto.CurrentViewCommandDto;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
+import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 
 import java.util.HashMap;
@@ -183,12 +186,65 @@ public class Players implements Iterable<Player> {
         }
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerDestroyed()) {
             get(domainEvent.getKey())
-                    .ifPresent(p -> p.destroyed(domainEvent.getEvent().getPlayerDestroyed()));
+                    .ifPresent(p -> handleDestroyed(p, domainEvent.getEvent().getPlayerDestroyed()));
         }
         if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerSpawned()) {
             get(domainEvent.getKey())
                     .ifPresent(p -> p.spawned(domainEvent.getEvent().getPlayerSpawned()));
         }
+    }
+
+    void handleDestroyed(Player player, PlayerDestroyedEventDto playerDestroyedEvent) {
+        handleShockwave(player);
+        player.destroyed(playerDestroyedEvent);
+    }
+
+    /**
+     * When a player is destroyed we generate a shockwave that pushes nearby players away
+     * from the destroyed players last position.
+     *
+     * @param fromPlayer
+     */
+    void handleShockwave(Player fromPlayer) {
+        final var dist = Config.get().getPlayerDestroyedShockwaveDistance();
+        if (dist <= 0F) {
+            return;
+        }
+        Vector2 fromPlayerPosition = Vector2.fromXY(fromPlayer.getX(), fromPlayer.getY());
+        getSpatialIndex()
+                .search(fromPlayer.getX(), fromPlayer.getY(), fromPlayer.getX(), fromPlayer.getY(), dist)
+                .forEach(nearPlayer -> {
+                    if (nearPlayer != fromPlayer) {
+                        Vector2 distanceBetweenPlayers = Vector2
+                                .fromXY(nearPlayer.getX(), nearPlayer.getY())
+                                .minus(fromPlayerPosition);
+
+                        // rescaled to be between 0.0 and 1.0 inclusive
+                        float absMagRescaled = Math.abs(distanceBetweenPlayers.getMagnitude()) / dist;
+
+                        boolean isNotCenteredNorOutOfRange = absMagRescaled <= 1F && absMagRescaled > 0F;
+                        if (isNotCenteredNorOutOfRange) {
+                            int sign = distanceBetweenPlayers.getMagnitude() < 0F ? -1 : 1;
+
+                            float invertedAbsMag = (1F - absMagRescaled);
+                            if (invertedAbsMag > 0.5) {
+                                // if near destroyed player let's limit non-linearly (quadratic) the shockwave magnitude
+                                // f(x) =   0.75 - (x - 1)^2    : x > 0.5
+                                //          x                   : x <= 0.5
+                                // at 0.5 the quadratic transform intersects tangentially to f(x) = x
+                                invertedAbsMag = 0.75F - MathUtil.square(invertedAbsMag - 1F);
+                            }
+
+                            Vector2 move = Vector2
+                                    .fromAngleMagnitude(
+                                            distanceBetweenPlayers.getAngle(),
+                                            sign * invertedAbsMag * dist
+                                    );
+
+                            nearPlayer.move(move.getX(), move.getY(), null);
+                        }
+                    }
+                });
     }
 
     /**

@@ -27,6 +27,8 @@ public class Config {
 
     private float boltCollisionIndexSearchDistance;
 
+    private float playerDestroyedShockwaveDistance;
+
 
     private static class ConfigHolder {
         static final Config INSTANCE = new Config();
@@ -177,5 +179,13 @@ public class Config {
 
     public float getBoltCollisionIndexSearchDistance() {
         return boltCollisionIndexSearchDistance;
+    }
+
+    public float getPlayerDestroyedShockwaveDistance() {
+        return playerDestroyedShockwaveDistance;
+    }
+
+    public void setPlayerDestroyedShockwaveDistance(float playerDestroyedShockwaveDistance) {
+        this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance;
     }
 }
