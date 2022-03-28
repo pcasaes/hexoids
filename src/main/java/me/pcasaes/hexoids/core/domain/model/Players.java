@@ -207,14 +207,14 @@ public class Players implements Iterable<Player> {
      */
     void handleShockwave(Player fromPlayer) {
         final var dist = Config.get().getPlayerDestroyedShockwaveDistance();
-        if (dist <= 0F) {
+        if (dist <= 0F || playerServerUpdateSet.isEmpty()) {
             return;
         }
         Vector2 fromPlayerPosition = Vector2.fromXY(fromPlayer.getX(), fromPlayer.getY());
         getSpatialIndex()
                 .search(fromPlayer.getX(), fromPlayer.getY(), fromPlayer.getX(), fromPlayer.getY(), dist)
                 .forEach(nearPlayer -> {
-                    if (nearPlayer != fromPlayer) {
+                    if (nearPlayer != fromPlayer && isConnected(nearPlayer.id())) {
                         Vector2 distanceBetweenPlayers = Vector2
                                 .fromXY(nearPlayer.getX(), nearPlayer.getY())
                                 .minus(fromPlayerPosition);

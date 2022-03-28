@@ -52,6 +52,8 @@ public interface Player {
         return new Implementation(id, players, bolts, barriers, clock, scoreBoard);
     }
 
+    EntityId id();
+
     /**
      * Fires a bolt. Will generate a {@link BoltFiredEventDto} domain event
      */
@@ -246,6 +248,11 @@ public interface Player {
                     0,
                     0,
                     PLAYER_POSITION_CONFIGURATION);
+        }
+
+        @Override
+        public EntityId id() {
+            return this.id;
         }
 
         private void setSpawned(boolean spawned) {
