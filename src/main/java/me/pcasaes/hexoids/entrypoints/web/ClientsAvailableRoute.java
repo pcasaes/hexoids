@@ -19,10 +19,10 @@ public class ClientsAvailableRoute {
     static {
         Map<String, String> versions = new HashMap<>();
 
-        versions.put("OSX", "0.4.0");
-        versions.put("Windows", "0.4.0");
-        versions.put("X11", "0.4.0");
-        versions.put("HTML5", "0.4.0");
+        versions.put("OSX", "0.4.1");
+        versions.put("Windows", "0.4.1");
+        versions.put("X11", "0.4.1");
+        versions.put("HTML5", "0.4.1");
 
         try {
             AVAILABLE = new ObjectMapper().writeValueAsString(versions);
