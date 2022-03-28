@@ -261,7 +261,7 @@
         <executions>
           <execution>
             <id>install-webasm-client</id>
-            <phase>pre-integration-test</phase>
+            <phase>generate-resources</phase>
             <goals>
               <goal>wget</goal>
             </goals>
