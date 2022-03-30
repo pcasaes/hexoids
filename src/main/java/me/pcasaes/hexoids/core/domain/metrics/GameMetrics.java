@@ -19,6 +19,7 @@ public class GameMetrics {
     private final GameMetric playerStalled;
     private final GameMetric boltFired;
     private final GameMetric boltExhausted;
+    private final GameMetric movedByShockwave;
 
     private final List<GameMetric> metrics;
 
@@ -30,6 +31,7 @@ public class GameMetrics {
         this.playerStalled = GameMetric.of("player-stalled-total");
         this.boltFired = GameMetric.of("bolt-fired-total");
         this.boltExhausted = GameMetric.of("bolt-exhausted-total");
+        this.movedByShockwave = GameMetric.of("moved-by-shockwave-total");
 
         List<GameMetric> list = new ArrayList<>(7);
         list.add(playerDestroyed);
@@ -39,6 +41,7 @@ public class GameMetrics {
         list.add(playerStalled);
         list.add(boltFired);
         list.add(boltExhausted);
+        list.add(movedByShockwave);
 
         this.metrics = new CopyOnWriteArrayList<>(list);
     }
@@ -73,5 +76,9 @@ public class GameMetrics {
 
     public GameMetric getPlayerStalled() {
         return playerStalled;
+    }
+
+    public GameMetric getMovedByShockwave() {
+        return movedByShockwave;
     }
 }

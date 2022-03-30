@@ -54,6 +54,9 @@ class PlayerTest {
     @Mock
     private Barriers barriers;
 
+    @Mock
+    private PhysicsQueue physicsQueue;
+
     private Bolts bolts;
 
     private Players players;
@@ -62,7 +65,7 @@ class PlayerTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.bolts = Bolts.create();
-        this.players = Players.create(bolts, clock, scoreBoard, barriers, PlayerSpatialIndexFactory.factory());
+        this.players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, PlayerSpatialIndexFactory.factory());
         assertEquals(0, this.players.getTotalNumberOfPlayers());
         assertEquals(0, this.players.getNumberOfConnectedPlayers());
 

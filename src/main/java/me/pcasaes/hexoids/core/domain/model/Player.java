@@ -178,6 +178,8 @@ public interface Player {
 
     float getY();
 
+    ClientPlatforms getClientPlatform();
+
     /**
      * Updates the player's vector position up tot he supplied timestamp.
      *
@@ -712,6 +714,11 @@ public interface Player {
         @Override
         public float getY() {
             return this.position.getY();
+        }
+
+        @Override
+        public ClientPlatforms getClientPlatform() {
+            return clientPlatform;
         }
 
         @Override

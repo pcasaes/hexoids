@@ -3,8 +3,6 @@ package me.pcasaes.hexoids.core.domain.model;
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
-import me.pcasaes.hexoids.core.domain.utils.MathUtil;
-import me.pcasaes.hexoids.core.domain.vector.Vector2;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
@@ -31,8 +29,8 @@ import java.util.stream.StreamSupport;
  */
 public class Players implements Iterable<Player> {
 
-    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PlayerSpatialIndexFactory spatialIndexFactory) {
-        return new Players(bolts, clock, scoreBoard, barriers, spatialIndexFactory);
+    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
+        return new Players(bolts, clock, scoreBoard, barriers, physicsQueue, spatialIndexFactory);
     }
 
     /**
@@ -53,12 +51,15 @@ public class Players implements Iterable<Player> {
 
     private final Barriers barriers;
 
+    private final PhysicsQueue physicsQueue;
+
     private final PlayerSpatialIndexFactory spatialIndexFactory;
 
-    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PlayerSpatialIndexFactory spatialIndexFactory) {
+    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
         this.bolts = bolts;
         this.clock = clock;
         this.scoreBoard = scoreBoard;
+        this.physicsQueue = physicsQueue;
         this.barriers = barriers;
         this.spatialIndexFactory = spatialIndexFactory;
     }
@@ -195,7 +196,7 @@ public class Players implements Iterable<Player> {
     }
 
     void handleDestroyed(Player player, PlayerDestroyedEventDto playerDestroyedEvent) {
-        handleShockwave(player);
+        handleShockwave(player, playerDestroyedEvent.getDestroyedTimestamp());
         player.destroyed(playerDestroyedEvent);
     }
 
@@ -205,46 +206,8 @@ public class Players implements Iterable<Player> {
      *
      * @param fromPlayer
      */
-    void handleShockwave(Player fromPlayer) {
-        final var dist = Config.get().getPlayerDestroyedShockwaveDistance();
-        if (dist <= 0F || playerServerUpdateSet.isEmpty()) {
-            return;
-        }
-        Vector2 fromPlayerPosition = Vector2.fromXY(fromPlayer.getX(), fromPlayer.getY());
-        getSpatialIndex()
-                .search(fromPlayer.getX(), fromPlayer.getY(), fromPlayer.getX(), fromPlayer.getY(), dist)
-                .forEach(nearPlayer -> {
-                    if (nearPlayer != fromPlayer && isConnected(nearPlayer.id())) {
-                        Vector2 distanceBetweenPlayers = Vector2
-                                .fromXY(nearPlayer.getX(), nearPlayer.getY())
-                                .minus(fromPlayerPosition);
-
-                        // rescaled to be between 0.0 and 1.0 inclusive
-                        float absMagRescaled = Math.abs(distanceBetweenPlayers.getMagnitude()) / dist;
-
-                        boolean isNotCenteredNorOutOfRange = absMagRescaled <= 1F && absMagRescaled > 0F;
-                        if (isNotCenteredNorOutOfRange) {
-                            int sign = distanceBetweenPlayers.getMagnitude() < 0F ? -1 : 1;
-
-                            float invertedAbsMag = (1F - absMagRescaled);
-                            if (invertedAbsMag > 0.5) {
-                                // if near destroyed player let's limit non-linearly (quadratic) the shockwave magnitude
-                                // f(x) =   0.75 - (x - 1)^2    : x > 0.5
-                                //          x                   : x <= 0.5
-                                // at 0.5 the quadratic transform intersects tangentially to f(x) = x
-                                invertedAbsMag = 0.75F - MathUtil.square(invertedAbsMag - 1F);
-                            }
-
-                            Vector2 move = Vector2
-                                    .fromAngleMagnitude(
-                                            distanceBetweenPlayers.getAngle(),
-                                            sign * invertedAbsMag * dist
-                                    );
-
-                            nearPlayer.move(move.getX(), move.getY(), null);
-                        }
-                    }
-                });
+    void handleShockwave(Player fromPlayer, long destroyedAt) {
+        this.physicsQueue.enqueue(Shockwave.shipExploded(fromPlayer, this, this.physicsQueue, destroyedAt));
     }
 
     /**

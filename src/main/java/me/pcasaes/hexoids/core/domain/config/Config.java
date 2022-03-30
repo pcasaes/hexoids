@@ -27,7 +27,7 @@ public class Config {
 
     private float boltCollisionIndexSearchDistance;
 
-    private float playerDestroyedShockwaveDistance;
+    private final PlayerDestroyedShockwave playerDestroyedShockwave = new PlayerDestroyedShockwave();
 
 
     private static class ConfigHolder {
@@ -181,11 +181,40 @@ public class Config {
         return boltCollisionIndexSearchDistance;
     }
 
-    public float getPlayerDestroyedShockwaveDistance() {
-        return playerDestroyedShockwaveDistance;
+    public PlayerDestroyedShockwave getPlayerDestroyedShockwave() {
+        return playerDestroyedShockwave;
     }
 
-    public void setPlayerDestroyedShockwaveDistance(float playerDestroyedShockwaveDistance) {
-        this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance;
+    public static class PlayerDestroyedShockwave {
+        private float distance;
+        private long duration;
+        private float impulse;
+
+        private PlayerDestroyedShockwave() {
+        }
+
+        public float getDistance() {
+            return distance;
+        }
+
+        public void setDistance(float distance) {
+            this.distance = distance;
+        }
+
+        public long getDuration() {
+            return duration;
+        }
+
+        public void setDuration(long duration) {
+            this.duration = duration;
+        }
+
+        public float getImpulse() {
+            return impulse;
+        }
+
+        public void setImpulse(float impulse) {
+            this.impulse = impulse;
+        }
     }
 }

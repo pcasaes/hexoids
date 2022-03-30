@@ -56,6 +56,10 @@ public class HexoidConfigurations {
 
     private float playerDestroyedShockwaveDistance;
 
+    private long playerDestroyedShockwaveDuration;
+
+    private float playerDestroyedShockwaveImpulse;
+
 
     /**
      * This singleton will eager load before all others
@@ -78,6 +82,8 @@ public class HexoidConfigurations {
         LOGGER.info("hexoids.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
         LOGGER.info("hexoids.config.player.reset.position=" + getPlayerResetPosition());
         LOGGER.info("hexoids.config.player.destroyed.shockwave.distance=" + getPlayerDestroyedShockwaveDistance());
+        LOGGER.info("hexoids.config.player.destroyed.shockwave.duration.ms=" + getPlayerDestroyedShockwaveDuration());
+        LOGGER.info("hexoids.config.player.destroyed.shockwave.impulse=" + getPlayerDestroyedShockwaveImpulse());
         LOGGER.info("hexoids.config.bolt.max.duration=" + getBoltMaxDuration());
         LOGGER.info("hexoids.config.bolt.speed=" + getBoltSpeed());
         LOGGER.info("hexoids.config.bolt.collision.radius=" + getBoltCollisionRadius());
@@ -102,7 +108,9 @@ public class HexoidConfigurations {
         Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale());
         Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale());
         Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale());
-        Config.get().setPlayerDestroyedShockwaveDistance(getPlayerDestroyedShockwaveDistance());
+        Config.get().getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance());
+        Config.get().getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration());
+        Config.get().getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse());
     }
 
 
@@ -333,8 +341,33 @@ public class HexoidConfigurations {
     public void setPlayerDestroyedShockwaveDistance(
             @ConfigProperty(
                     name = "hexoids.config.player.destroyed.shockwave.distance",
-                    defaultValue = "0.04"
+                    defaultValue = "0.0408"
             ) float playerDestroyedShockwaveDistance) {
         this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance;
+    }
+
+    public long getPlayerDestroyedShockwaveDuration() {
+        return playerDestroyedShockwaveDuration;
+    }
+
+    @Inject
+    public void setPlayerDestroyedShockwaveDuration(
+            @ConfigProperty(
+                    name = "hexoids.config.player.destroyed.shockwave.duration.ms",
+                    defaultValue = "400"
+            ) long playerDestroyedShockwaveDuration) {
+        this.playerDestroyedShockwaveDuration = playerDestroyedShockwaveDuration;
+    }
+
+    public float getPlayerDestroyedShockwaveImpulse() {
+        return playerDestroyedShockwaveImpulse;
+    }
+
+    @Inject
+    public void setPlayerDestroyedShockwaveImpulse(@ConfigProperty(
+            name = "hexoids.config.player.destroyed.shockwave.impulse",
+            defaultValue = "0.007"
+    ) float playerDestroyedShockwaveImpulse) {
+        this.playerDestroyedShockwaveImpulse = playerDestroyedShockwaveImpulse;
     }
 }
