@@ -10,7 +10,7 @@ import java.util.function.LongPredicate;
 public class Shockwave implements LongPredicate {
 
 
-    private final Player fromPlayer;
+    private final Player destroyedPlayer;
     private final Vector2 center;
     private final Players players;
     private final long startedAt;
@@ -21,11 +21,11 @@ public class Shockwave implements LongPredicate {
     private final float impulse;
 
 
-    private Shockwave(Player fromPlayer, Players players, long startedAt) {
-        this.fromPlayer = fromPlayer;
+    private Shockwave(Player destroyedPlayer, Players players, long startedAt) {
+        this.destroyedPlayer = destroyedPlayer;
         this.players = players;
         this.startedAt = startedAt;
-        this.center = Vector2.fromXY(fromPlayer.getX(), fromPlayer.getY());
+        this.center = Vector2.fromXY(destroyedPlayer.getX(), destroyedPlayer.getY());
 
         this.duration = Config.get().getPlayerDestroyedShockwave().getDuration();
         this.durationWithPadding = this.duration + 20;
@@ -62,7 +62,7 @@ public class Shockwave implements LongPredicate {
     }
 
     private void handleMove(Player nearPlayer, float dist) {
-        if (nearPlayer != fromPlayer && players.isConnected(nearPlayer.id())) {
+        if (nearPlayer != destroyedPlayer  && players.isConnected(nearPlayer.id())) {
             Vector2 distanceBetweenPlayers = Vector2
                     .fromXY(nearPlayer.getX(), nearPlayer.getY())
                     .minus(center);
