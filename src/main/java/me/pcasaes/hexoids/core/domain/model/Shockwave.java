@@ -5,15 +5,14 @@ import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
 import me.pcasaes.hexoids.core.domain.utils.MathUtil;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
 
-import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 
-public class Shockwave implements LongConsumer {
+public class Shockwave implements LongPredicate {
 
 
     private final Player fromPlayer;
     private final Vector2 center;
     private final Players players;
-    private final PhysicsQueueEnqueue physicsQueue;
     private final long startedAt;
 
     private final long duration;
@@ -22,10 +21,9 @@ public class Shockwave implements LongConsumer {
     private final float impulse;
 
 
-    private Shockwave(Player fromPlayer, Players players, PhysicsQueueEnqueue physicsQueue, long startedAt) {
+    private Shockwave(Player fromPlayer, Players players, long startedAt) {
         this.fromPlayer = fromPlayer;
         this.players = players;
-        this.physicsQueue = physicsQueue;
         this.startedAt = startedAt;
         this.center = Vector2.fromXY(fromPlayer.getX(), fromPlayer.getY());
 
@@ -35,8 +33,8 @@ public class Shockwave implements LongConsumer {
         this.impulse = Config.get().getPlayerDestroyedShockwave().getImpulse();
     }
 
-    static Shockwave shipExploded(Player fromPlayer, Players players, PhysicsQueueEnqueue physicsQueue, long startedAt) {
-        return new Shockwave(fromPlayer, players, physicsQueue, startedAt);
+    static Shockwave shipExploded(Player fromPlayer, Players players, long startedAt) {
+        return new Shockwave(fromPlayer, players, startedAt);
     }
 
     private float range(long elapsed) {
@@ -45,10 +43,10 @@ public class Shockwave implements LongConsumer {
     }
 
     @Override
-    public void accept(long timestamp) {
+    public boolean test(long timestamp) {
         long elapsed = timestamp - this.startedAt;
         if (elapsed > this.durationWithPadding) {
-            return;
+            return false;
         }
 
         if (this.players.getNumberOfConnectedPlayers() > 0 && elapsed > 0) {
@@ -60,7 +58,7 @@ public class Shockwave implements LongConsumer {
 
         }
 
-        this.physicsQueue.enqueue(this);
+        return true;
     }
 
     private void handleMove(Player nearPlayer, float dist) {

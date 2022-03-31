@@ -29,7 +29,7 @@ import java.util.stream.StreamSupport;
  */
 public class Players implements Iterable<Player> {
 
-    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
+    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueueEnqueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
         return new Players(bolts, clock, scoreBoard, barriers, physicsQueue, spatialIndexFactory);
     }
 
@@ -51,11 +51,11 @@ public class Players implements Iterable<Player> {
 
     private final Barriers barriers;
 
-    private final PhysicsQueue physicsQueue;
+    private final PhysicsQueueEnqueue physicsQueue;
 
     private final PlayerSpatialIndexFactory spatialIndexFactory;
 
-    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
+    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueueEnqueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
         this.bolts = bolts;
         this.clock = clock;
         this.scoreBoard = scoreBoard;
@@ -207,7 +207,7 @@ public class Players implements Iterable<Player> {
      * @param fromPlayer
      */
     void handleShockwave(Player fromPlayer, long destroyedAt) {
-        this.physicsQueue.enqueue(Shockwave.shipExploded(fromPlayer, this, this.physicsQueue, destroyedAt));
+        this.physicsQueue.enqueue(Shockwave.shipExploded(fromPlayer, this, destroyedAt));
     }
 
     /**

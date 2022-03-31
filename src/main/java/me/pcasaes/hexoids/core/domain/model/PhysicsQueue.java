@@ -2,11 +2,11 @@ package me.pcasaes.hexoids.core.domain.model;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 
 public interface PhysicsQueue extends PhysicsQueueEnqueue {
 
-    void fixedUpdate(long timestamp);
+    int fixedUpdate(long timestamp);
 
     static PhysicsQueue create() {
         return new Implementation();
@@ -14,26 +14,31 @@ public interface PhysicsQueue extends PhysicsQueueEnqueue {
 
     class Implementation implements PhysicsQueue {
 
-        private final Deque<LongConsumer> queue = new ArrayDeque<>();
+        private int enqueuedCount = 0;
+        private final Deque<LongPredicate> queue = new ArrayDeque<>();
 
         @Override
-        public void enqueue(LongConsumer action) {
-            this.queue.offer(action);
+        public void enqueue(LongPredicate action) {
+            this.queue.offerLast(action);
+            this.enqueuedCount++;
+        }
+
+        private LongPredicate poll() {
+            enqueuedCount--;
+            return queue.pollFirst();
         }
 
         @Override
-        public void fixedUpdate(long timestamp) {
-            LongConsumer last = queue.peekLast();
-            if (last == null) {
-                return;
+        public int fixedUpdate(long timestamp) {
+
+            final int processUpTo = enqueuedCount;
+            for (int i = 0; i < processUpTo; i++) {
+                LongPredicate proc = poll();
+                if (proc != null && proc.test(timestamp)) {
+                    this.enqueue(proc);
+                }
             }
-
-            LongConsumer consumer;
-            do {
-                consumer = queue.pollFirst();
-                consumer.accept(timestamp);
-
-            } while (consumer != last);
+            return processUpTo;
         }
     }
 }

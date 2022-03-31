@@ -1,9 +1,9 @@
 package me.pcasaes.hexoids.core.domain.model;
 
-import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 
 public interface PhysicsQueueEnqueue {
 
-    void enqueue(LongConsumer action);
+    void enqueue(LongPredicate action);
 
 }

@@ -55,7 +55,7 @@ class PlayerTest {
     private Barriers barriers;
 
     @Mock
-    private PhysicsQueue physicsQueue;
+    private PhysicsQueueEnqueue physicsQueue;
 
     private Bolts bolts;
 
