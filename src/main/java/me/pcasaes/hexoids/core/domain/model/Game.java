@@ -70,10 +70,11 @@ public interface Game {
             Clock clock = Clock.create();
             Bolts bolts = Bolts.create();
             ScoreBoard scoreBoard = ScoreBoard.create(clock);
+            PhysicsQueue physicsQueue = PhysicsQueue.create();
             Barriers barriers = Barriers.create();
-            Players players = Players.create(bolts, clock, scoreBoard, barriers, PlayerSpatialIndexFactory.factory());
+            Players players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, PlayerSpatialIndexFactory.factory());
 
-            INSTANCE = new Implementation(players, clock, bolts, scoreBoard, barriers);
+            INSTANCE = new Implementation(players, clock, bolts, scoreBoard, barriers, physicsQueue);
         }
 
 
@@ -87,13 +88,15 @@ public interface Game {
 
         private final Barriers barriers;
 
+        private final PhysicsQueue physicsQueue;
 
-        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers) {
+        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue) {
             this.players = players;
             this.clock = clock;
             this.bolts = bolts;
             this.scoreBoard = scoreBoard;
             this.barriers = barriers;
+            this.physicsQueue = physicsQueue;
 
             GameTopic.setGame(this);
         }
@@ -105,6 +108,7 @@ public interface Game {
             players.fixedUpdate(timestamp);
             bolts.fixedUpdate(timestamp);
             scoreBoard.fixedUpdate(timestamp);
+            physicsQueue.fixedUpdate(timestamp);
         }
 
         @Override

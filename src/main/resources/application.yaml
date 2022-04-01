@@ -49,7 +49,10 @@ hexoids:
           divisor: 4
       destroyed:
         shockwave:
-          distance: 0.04
+          distance: 0.0408
+          impulse: 0.007
+          duration:
+            ms: 400
     bolt:
       max:
         duration: 10000
