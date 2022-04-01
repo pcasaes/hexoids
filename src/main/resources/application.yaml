@@ -212,5 +212,7 @@ quarkus:
     category:
       "io.quarkus.vertx.core.runtime.VertxCoreRecorder":
         level: DEBUG
-  package:
-    type: fast-jar
+  micrometer:
+    binder:
+      vertx:
+        enabled: false
