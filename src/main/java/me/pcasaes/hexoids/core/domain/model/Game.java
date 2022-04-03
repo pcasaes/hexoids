@@ -52,6 +52,8 @@ public interface Game {
      */
     Barriers getBarriers();
 
+    PhysicsQueueEnqueue getPhysicsQueue();
+
 
     /**
      * Returns the game's singleton.
@@ -134,6 +136,11 @@ public interface Game {
         @Override
         public Barriers getBarriers() {
             return barriers;
+        }
+
+        @Override
+        public PhysicsQueueEnqueue getPhysicsQueue() {
+            return physicsQueue;
         }
     }
 }
