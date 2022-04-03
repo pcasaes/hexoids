@@ -1,6 +1,9 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
+import me.pcasaes.hexoids.core.domain.metrics.PhysicsMetrics;
+
+import java.util.function.LongConsumer;
 
 /**
  * The Game object is a singleton access through {@link Game#get()} that is
@@ -54,6 +57,7 @@ public interface Game {
 
     PhysicsQueueEnqueue getPhysicsQueue();
 
+    PhysicsMetrics getPhysicsMetrics();
 
     /**
      * Returns the game's singleton.
@@ -92,6 +96,16 @@ public interface Game {
 
         private final PhysicsQueue physicsQueue;
 
+        private final LongConsumer barriersUpdate;
+
+        private final LongConsumer playersUpdate;
+
+        private final LongConsumer boltsUpdate;
+
+        private final LongConsumer scoreBoardUpdate;
+
+        private final LongConsumer physicsQueueUpdate;
+
         private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue) {
             this.players = players;
             this.clock = clock;
@@ -100,17 +114,23 @@ public interface Game {
             this.barriers = barriers;
             this.physicsQueue = physicsQueue;
 
+            this.barriersUpdate = PhysicsMetrics.get().intercept(barriers::fixedUpdate, "barriers");
+            this.playersUpdate = PhysicsMetrics.get().intercept(players::fixedUpdate, "players");
+            this.boltsUpdate = PhysicsMetrics.get().intercept(bolts::fixedUpdate, "bolts");
+            this.scoreBoardUpdate = PhysicsMetrics.get().intercept(scoreBoard::fixedUpdate, "score-board");
+            this.physicsQueueUpdate = PhysicsMetrics.get().intercept(physicsQueue::fixedUpdate, "physics-queue");
+
             GameTopic.setGame(this);
         }
 
 
         @Override
         public void fixedUpdate(long timestamp) {
-            barriers.fixedUpdate(timestamp);
-            players.fixedUpdate(timestamp);
-            bolts.fixedUpdate(timestamp);
-            scoreBoard.fixedUpdate(timestamp);
-            physicsQueue.fixedUpdate(timestamp);
+            barriersUpdate.accept(timestamp);
+            playersUpdate.accept(timestamp);
+            boltsUpdate.accept(timestamp);
+            scoreBoardUpdate.accept(timestamp);
+            physicsQueueUpdate.accept(timestamp);
         }
 
         @Override
@@ -141,6 +161,11 @@ public interface Game {
         @Override
         public PhysicsQueueEnqueue getPhysicsQueue() {
             return physicsQueue;
+        }
+
+        @Override
+        public PhysicsMetrics getPhysicsMetrics() {
+            return PhysicsMetrics.get();
         }
     }
 }
