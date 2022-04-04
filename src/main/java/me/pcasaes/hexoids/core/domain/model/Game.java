@@ -120,6 +120,8 @@ public interface Game {
             this.scoreBoardUpdate = PhysicsMetrics.get().intercept(scoreBoard::fixedUpdate, "score-board");
             this.physicsQueueUpdate = PhysicsMetrics.get().intercept(physicsQueue::fixedUpdate, "physics-queue");
 
+            //this.physicsQueue.enqueue(Blackhole.massCollapsed(0.5F, 0.5F, players));
+
             GameTopic.setGame(this);
         }
 

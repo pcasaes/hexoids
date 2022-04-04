@@ -144,6 +144,8 @@ public interface Player {
      */
     void destroy(EntityId playerId);
 
+    void hazardDestroy(EntityId entityId);
+
     /**
      * Processes the destroyed player domain event
      *
@@ -187,6 +189,13 @@ public interface Player {
      */
     void fixedUpdate(long timestamp);
 
+    /**
+     * Can be used to increase or decrease inertial dampener.
+     * At end of next fixed update will reset to 1
+     * @param factor
+     */
+    void setDampenMovementFactor(float factor);
+
     class Implementation implements Player {
 
         private static final float SHIP_LENGTH = 0.003F;
@@ -209,7 +218,9 @@ public interface Player {
 
         private long lastSpawnOrUnspawnTimestamp;
 
-        private float angle = 0f;
+        private float previousAngle = 0F;
+
+        private float angle = 0F;
 
         private long movedTimestamp;
 
@@ -231,6 +242,8 @@ public interface Player {
 
         private final PositionVector position;
 
+        private final PlayerPositionConfiguration playerPositionConfiguration;
+
         private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
             this.bolts = bolts;
@@ -243,18 +256,24 @@ public interface Player {
             this.spawned = false;
             this.lastSpawnOrUnspawnTimestamp = clock.getTime();
             this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
+            this.playerPositionConfiguration = new PlayerPositionConfiguration();
             this.position = PositionVector.of(
                     0,
                     0,
                     0,
                     0,
                     0,
-                    PLAYER_POSITION_CONFIGURATION);
+                    playerPositionConfiguration);
         }
 
         @Override
         public EntityId id() {
             return this.id;
+        }
+
+        @Override
+        public void setDampenMovementFactor(float factor) {
+            this.playerPositionConfiguration.setDampenFactor(factor);
         }
 
         private void setSpawned(boolean spawned) {
@@ -484,20 +503,13 @@ public interface Player {
             if (!this.spawned) {
                 return;
             }
-            long now = clock.getTime();
 
-            boolean angleChanged = false;
             if (angle != null) {
-                float a = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
-                angleChanged = a != this.angle;
-                this.angle = a;
+                this.previousAngle = this.angle;
+                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
             }
 
-
-            if (this.position.moveBy(moveX, moveY, now) || angleChanged) {
-                tackleBarrierHit();
-                fireMoveDomainEvent(now);
-            }
+            position.scheduleMove(moveX, moveY);
         }
 
         @Override
@@ -580,19 +592,28 @@ public interface Player {
 
         @Override
         public void destroy(EntityId byPlayerId) {
-            GameEvents.getDomainEvents().dispatch(
-                    DomainEvent.create(
-                            GameTopic.PLAYER_ACTION_TOPIC.name(),
-                            this.id.getId(),
-                            Event.newBuilder()
-                                    .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
-                                            .setPlayerId(this.id.getGuid())
-                                            .setDestroyedByPlayerId(byPlayerId.getGuid())
-                                            .setDestroyedTimestamp(this.clock.getTime()))
-                                    .build()
-                    )
-            );
-            this.scoreBoard.updateScore(byPlayerId, 1);
+            if (spawned) {
+                hazardDestroy(byPlayerId);
+                this.scoreBoard.updateScore(byPlayerId, 1);
+            }
+        }
+
+        @Override
+        public void hazardDestroy(EntityId entityId) {
+            if (spawned) {
+                GameEvents.getDomainEvents().dispatch(
+                        DomainEvent.create(
+                                GameTopic.PLAYER_ACTION_TOPIC.name(),
+                                this.id.getId(),
+                                Event.newBuilder()
+                                        .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
+                                                .setPlayerId(this.id.getGuid())
+                                                .setDestroyedByPlayerId(entityId.getGuid())
+                                                .setDestroyedTimestamp(this.clock.getTime()))
+                                        .build()
+                        )
+                );
+            }
         }
 
         @Override
@@ -684,10 +705,17 @@ public interface Player {
             float x = position.getX();
             float y = position.getY();
             this.position.update(timestamp);
+            boolean angleChanged = this.previousAngle != this.angle;
             if (x != position.getX() || y != position.getY()) {
                 tackleBarrierHit();
                 fireMoveDomainEvent(timestamp);
+            } else if (angleChanged) {
+                fireMoveDomainEvent(timestamp);
             }
+            if (angleChanged) {
+                this.previousAngle = this.angle;
+            }
+            this.playerPositionConfiguration.setDampenFactor(1F);
         }
 
         private void tackleBarrierHit() {
@@ -734,7 +762,13 @@ public interface Player {
             return Objects.hash(id);
         }
 
-        static final PositionVector.Configuration PLAYER_POSITION_CONFIGURATION = new PositionVector.Configuration() {
+        static class PlayerPositionConfiguration implements PositionVector.Configuration {
+
+            private float dampenFactor = 1F;
+
+            public void setDampenFactor(float dampenFactor) {
+                this.dampenFactor = dampenFactor;
+            }
 
             @Override
             public AtBoundsOptions atBounds() {
@@ -748,8 +782,8 @@ public interface Player {
 
             @Override
             public float dampenMagnitudeCoefficient() {
-                return Config.get().getInertiaDampenCoefficient();
+                return Config.get().getInertiaDampenCoefficient() * dampenFactor;
             }
-        };
+        }
     }
 }

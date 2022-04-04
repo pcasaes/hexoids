@@ -20,6 +20,7 @@ public class PositionVector {
      */
     private final Vector2 velocity;
     private final Vector2 previousVelocity;
+    private final Vector2 scheduledMove = Vector2.fromXY(0, 0);
 
     private long previousTimestamp;
     private long currentTimestamp;
@@ -131,7 +132,7 @@ public class PositionVector {
     }
 
     /**
-     * Move the relative position and updates is velocity accordingly.
+     * Move the relative position and updates its velocity accordingly.
      *
      * @param moveX     the x to move by
      * @param moveY     the y to move by
@@ -172,6 +173,17 @@ public class PositionVector {
         return currentPosition.getX() != x || currentPosition.getY() != y;
     }
 
+    public void scheduleMove(float moveX, float moveY) {
+        float minMove = Config.get().getMinMove();
+        if (Math.abs(moveX) <= minMove &&
+                Math.abs(moveY) <= minMove
+        ) {
+            return;
+        }
+
+        this.scheduledMove.addXY(moveX, moveY);
+    }
+
     /**
      * Updates this vector's position (x,y) based on it's velocity and elapsed time.
      *
@@ -206,6 +218,17 @@ public class PositionVector {
         float minMove = Config.get().getMinMove();
 
         this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed));
+
+        if (!Vector2.ZERO.equals(scheduledMove)) {
+            Vector2 moveVector = scheduledMove.add(this.velocity);
+
+            if (maxMagnitude != null) {
+                moveVector = moveVector.absMax(maxMagnitude);
+            }
+
+            this.velocity.set(moveVector);
+            scheduledMove.setXY(0, 0);
+        }
 
         this.previousPosition.set(this.currentPosition);
         Vector2 moveDelta = calculateMoveDelta(this.velocity, minMove, elapsed);

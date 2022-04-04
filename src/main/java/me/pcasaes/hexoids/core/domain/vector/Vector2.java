@@ -6,7 +6,24 @@ import java.util.Objects;
 
 public class Vector2 {
 
-    public static final Vector2 ZERO = Vector2.fromXY(0, 0);
+    public static final Vector2 ZERO = new Vector2(0, 0, false, 0, 0, true) {
+
+        @Override
+        void setAngleMagnitude(float angle, float magnitude) {
+        }
+
+        @Override
+        void setXY(float x, float y) {
+        }
+
+        @Override
+        void addXY(float x, float y) {
+        }
+
+        @Override
+        void set(Vector2 vector) {
+        }
+    };
 
     private float angle;
     private float magnitude;
@@ -198,7 +215,7 @@ public class Vector2 {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Vector2)) return false;
         Vector2 vector2 = (Vector2) o;
         return Float.compare(vector2.getX(), getX()) == 0 &&
                 Float.compare(vector2.getY(), getY()) == 0;

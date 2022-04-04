@@ -281,6 +281,7 @@ class PlayerTest {
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
         player.move(0.1f, 0.1f, (float) Math.PI);
+        player.fixedUpdate(1025L);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -309,6 +310,7 @@ class PlayerTest {
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
         player.move(0f, 2f, null);
+        player.fixedUpdate(1025L);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -347,6 +349,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(2025L);
         // from (0.1,0.1) should hit (0,0) and bounce to about (0.2,0.2)
         player.move(-0.3f, -0.3f, -1f);
+        player.fixedUpdate(2025L);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -373,6 +376,7 @@ class PlayerTest {
         player.spawn();
         when(clock.getTime()).thenReturn(75L);
         player.move(0f, 0f, (float) Math.PI);
+        player.fixedUpdate(75L);
 
         assertTrue(eventReference.get().hasEvent());
         assertTrue(eventReference.get().getEvent().hasPlayerMoved());
@@ -562,6 +566,7 @@ class PlayerTest {
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
         player.move(0.54f, 0.54f, null);
+        player.fixedUpdate(1025L);
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
