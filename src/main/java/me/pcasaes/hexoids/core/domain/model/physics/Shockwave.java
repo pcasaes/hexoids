@@ -1,7 +1,9 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model.physics;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
+import me.pcasaes.hexoids.core.domain.model.Player;
+import me.pcasaes.hexoids.core.domain.model.Players;
 import me.pcasaes.hexoids.core.domain.utils.MathUtil;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
 
@@ -33,7 +35,7 @@ public class Shockwave implements LongPredicate {
         this.impulse = Config.get().getPlayerDestroyedShockwave().getImpulse();
     }
 
-    static Shockwave shipExploded(Player fromPlayer, Players players, long startedAt) {
+    public static Shockwave shipExploded(Player fromPlayer, Players players, long startedAt) {
         return new Shockwave(fromPlayer, players, startedAt);
     }
 

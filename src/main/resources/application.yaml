@@ -43,14 +43,14 @@ hexoids:
       name-length: 8
       expunge-since-last-spawn-timeout: 60000
       max:
-        move: 0.2
+        move: 0.75
         bolts: 12
         angle:
           divisor: 4
       destroyed:
         shockwave:
           distance: 0.0408
-          impulse: 0.007
+          impulse: 0.004
           duration:
             ms: 400
     bolt:

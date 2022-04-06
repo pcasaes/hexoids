@@ -3,6 +3,7 @@ package me.pcasaes.hexoids.core.domain.model;
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
+import me.pcasaes.hexoids.core.domain.model.physics.Shockwave;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
@@ -269,11 +270,15 @@ public class Players implements Iterable<Player> {
         return this.playerServerUpdateSet.size();
     }
 
-    PlayerSpatialIndex getSpatialIndex() {
+    public boolean hasConnectedPlayers() {
+        return !this.playerServerUpdateSet.isEmpty();
+    }
+
+    public PlayerSpatialIndex getSpatialIndex() {
         return spatialIndexFactory.get();
     }
 
-    boolean isConnected(EntityId id) {
+    public boolean isConnected(EntityId id) {
         return playerServerUpdateSet.contains(id);
     }
 }
