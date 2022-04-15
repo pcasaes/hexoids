@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import me.pcasaes.hexoids.core.domain.metrics.PhysicsMetrics;
+import me.pcasaes.hexoids.core.domain.model.physics.Blackhole;
 
 import java.util.function.LongConsumer;
 
@@ -77,10 +78,11 @@ public interface Game {
             Bolts bolts = Bolts.create();
             ScoreBoard scoreBoard = ScoreBoard.create(clock);
             PhysicsQueue physicsQueue = PhysicsQueue.create();
+            EventScheduler eventScheduler = EventScheduler.create(physicsQueue);
             Barriers barriers = Barriers.create();
             Players players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, PlayerSpatialIndexFactory.factory());
 
-            INSTANCE = new Implementation(players, clock, bolts, scoreBoard, barriers, physicsQueue);
+            INSTANCE = new Implementation(players, clock, bolts, scoreBoard, barriers, eventScheduler, physicsQueue);
         }
 
 
@@ -94,6 +96,8 @@ public interface Game {
 
         private final Barriers barriers;
 
+        private final EventScheduler eventScheduler;
+
         private final PhysicsQueue physicsQueue;
 
         private final LongConsumer barriersUpdate;
@@ -106,21 +110,25 @@ public interface Game {
 
         private final LongConsumer physicsQueueUpdate;
 
-        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueue physicsQueue) {
+        private final LongConsumer eventSchedulerUpdate;
+
+        private Implementation(Players players, Clock clock, Bolts bolts, ScoreBoard scoreBoard, Barriers barriers, EventScheduler eventScheduler, PhysicsQueue physicsQueue) {
             this.players = players;
             this.clock = clock;
             this.bolts = bolts;
             this.scoreBoard = scoreBoard;
             this.barriers = barriers;
+            this.eventScheduler = eventScheduler;
             this.physicsQueue = physicsQueue;
 
             this.barriersUpdate = PhysicsMetrics.get().intercept(barriers::fixedUpdate, "barriers");
             this.playersUpdate = PhysicsMetrics.get().intercept(players::fixedUpdate, "players");
             this.boltsUpdate = PhysicsMetrics.get().intercept(bolts::fixedUpdate, "bolts");
             this.scoreBoardUpdate = PhysicsMetrics.get().intercept(scoreBoard::fixedUpdate, "score-board");
+            this.eventSchedulerUpdate = PhysicsMetrics.get().intercept(eventScheduler::fixedUpdate, "event-scheduler");
             this.physicsQueueUpdate = PhysicsMetrics.get().intercept(physicsQueue::fixedUpdate, "physics-queue");
 
-            //this.physicsQueue.enqueue(Blackhole.massCollapsed(0.5F, 0.5F, players));
+            eventScheduler.register((r, s, e) -> Blackhole.massCollapsed(r, s, e, clock, players));
 
             GameTopic.setGame(this);
         }
@@ -132,6 +140,7 @@ public interface Game {
             playersUpdate.accept(timestamp);
             boltsUpdate.accept(timestamp);
             scoreBoardUpdate.accept(timestamp);
+            eventSchedulerUpdate.accept(timestamp);
             physicsQueueUpdate.accept(timestamp);
         }
 

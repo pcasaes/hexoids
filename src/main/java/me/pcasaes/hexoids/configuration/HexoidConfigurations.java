@@ -15,6 +15,11 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ApplicationScoped
@@ -60,6 +65,16 @@ public class HexoidConfigurations {
 
     private float playerDestroyedShockwaveImpulse;
 
+    private float blackholeEventHorizonRadius;
+
+    private float blackholeGravityRadius;
+
+    private float blackholeGravityImpulse;
+
+    private float blackholeDampenFactor;
+
+    private int blackholeGenesisProbabilityFactor;
+
 
     /**
      * This singleton will eager load before all others
@@ -72,25 +87,22 @@ public class HexoidConfigurations {
 
     @PostConstruct
     public void start() {
-        LOGGER.info("hexoids.config.inertia.dampen-coefficients=" + getInertiaDampenCoefficient());
-        LOGGER.info("hexoids.config.update-frequency-in-millis=" + getUpdateFrequencyInMillis());
-        LOGGER.info("hexoids.config.min.min=" + getMinMove());
-        LOGGER.info("hexoids.config.player.expunge-since-last-spawn-timeout=" + getExpungeSinceLastSpawnTimeout());
-        LOGGER.info("hexoids.config.player.name-length=" + getPlayerNameLength());
-        LOGGER.info("hexoids.config.player.max.move=" + getPlayerMaxMove());
-        LOGGER.info("hexoids.config.player.max.bolts=" + getMaxBolts());
-        LOGGER.info("hexoids.config.player.max.angle.divisors=" + getPlayerMaxAngleDivisor());
-        LOGGER.info("hexoids.config.player.reset.position=" + getPlayerResetPosition());
-        LOGGER.info("hexoids.config.player.destroyed.shockwave.distance=" + getPlayerDestroyedShockwaveDistance());
-        LOGGER.info("hexoids.config.player.destroyed.shockwave.duration.ms=" + getPlayerDestroyedShockwaveDuration());
-        LOGGER.info("hexoids.config.player.destroyed.shockwave.impulse=" + getPlayerDestroyedShockwaveImpulse());
-        LOGGER.info("hexoids.config.bolt.max.duration=" + getBoltMaxDuration());
-        LOGGER.info("hexoids.config.bolt.speed=" + getBoltSpeed());
-        LOGGER.info("hexoids.config.bolt.collision.radius=" + getBoltCollisionRadius());
-        LOGGER.info("hexoids.config.bolt.inertia.enabled=" + isBoltInertiaEnabled());
-        LOGGER.info("hexoids.config.bolt.inertia.rejection-scale=" + getBoltInertiaRejectionScale());
-        LOGGER.info("hexoids.config.bolt.inertia.projection-scale=" + getBoltInertiaProjectionScale());
-        LOGGER.info("hexoids.config.bolt.inertia.negative-projection-scale=" + getBoltInertiaNegativeProjectionScale());
+
+        if (LOGGER.isLoggable(Level.INFO)) {
+            try {
+                for (PropertyDescriptor pd : Introspector.getBeanInfo(HexoidConfigurations.class).getPropertyDescriptors()) {
+                    if (pd.getReadMethod() != null && pd.getWriteMethod() != null && !"class".equals(pd.getName())) {
+                        Annotation[][] annotations = pd.getWriteMethod().getParameterAnnotations();
+                        if (annotations.length == 1 && annotations[0].length == 1 &&
+                                annotations[0][0] instanceof ConfigProperty configProperty) {
+                            LOGGER.info(configProperty.name() + "=" + pd.getReadMethod().invoke(this));
+                        }
+                    }
+                }
+            } catch (ReflectiveOperationException | IntrospectionException | RuntimeException ex) {
+                LOGGER.warning(() -> "Could not introspect config. " + ex);
+            }
+        }
 
         Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis());
         Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
@@ -111,6 +123,11 @@ public class HexoidConfigurations {
         Config.get().getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance());
         Config.get().getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration());
         Config.get().getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse());
+        Config.get().getBlackhole().setDampenFactor(getBlackholeDampenFactor());
+        Config.get().getBlackhole().setEventHorizonRadius(getBlackholeEventHorizonRadius());
+        Config.get().getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor());
+        Config.get().getBlackhole().setGravityImpulse(getBlackholeGravityImpulse());
+        Config.get().getBlackhole().setGravityRadius(getBlackholeGravityRadius());
     }
 
 
@@ -369,5 +386,65 @@ public class HexoidConfigurations {
             defaultValue = "0.007"
     ) float playerDestroyedShockwaveImpulse) {
         this.playerDestroyedShockwaveImpulse = playerDestroyedShockwaveImpulse;
+    }
+
+    public float getBlackholeEventHorizonRadius() {
+        return blackholeEventHorizonRadius;
+    }
+
+    @Inject
+    public void setBlackholeEventHorizonRadius(@ConfigProperty(
+            name = "hexoids.config.blackhole.eventhorizon.radius",
+            defaultValue = "0.005"
+    ) float blackholeEventHorizonRadius) {
+        this.blackholeEventHorizonRadius = blackholeEventHorizonRadius;
+    }
+
+    public float getBlackholeGravityRadius() {
+        return blackholeGravityRadius;
+    }
+
+    @Inject
+    public void setBlackholeGravityRadius(@ConfigProperty(
+            name = "hexoids.config.blackhole.gravity.radius",
+            defaultValue = "0.07"
+    ) float blackholeGravityRadius) {
+        this.blackholeGravityRadius = blackholeGravityRadius;
+    }
+
+    public float getBlackholeGravityImpulse() {
+        return blackholeGravityImpulse;
+    }
+
+    @Inject
+    public void setBlackholeGravityImpulse(@ConfigProperty(
+            name = "hexoids.config.blackhole.gravity.impulse",
+            defaultValue = "0.07"
+    ) float blackholeGravityImpulse) {
+        this.blackholeGravityImpulse = blackholeGravityImpulse;
+    }
+
+    public float getBlackholeDampenFactor() {
+        return blackholeDampenFactor;
+    }
+
+    @Inject
+    public void setBlackholeDampenFactor(@ConfigProperty(
+            name = "hexoids.config.blackhole.dampen.factor",
+            defaultValue = "5"
+    ) float blackholeDampenFactor) {
+        this.blackholeDampenFactor = blackholeDampenFactor;
+    }
+
+    public int getBlackholeGenesisProbabilityFactor() {
+        return blackholeGenesisProbabilityFactor;
+    }
+
+    @Inject
+    public void setBlackholeGenesisProbabilityFactor(@ConfigProperty(
+            name = "hexoids.config.blackhole.genesis.probability.factor",
+            defaultValue = "3"
+    ) int blackholeGenesisProbabilityFactor) {
+        this.blackholeGenesisProbabilityFactor = blackholeGenesisProbabilityFactor;
     }
 }

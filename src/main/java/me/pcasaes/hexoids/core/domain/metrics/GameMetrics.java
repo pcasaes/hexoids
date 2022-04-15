@@ -20,6 +20,10 @@ public class GameMetrics {
     private final GameMetric boltFired;
     private final GameMetric boltExhausted;
     private final GameMetric movedByShockwave;
+    private final GameMetric massCollapsedIntoBlackhole;
+    private final GameMetric blackholeEvaporated;
+    private final GameMetric movedByBlackhole;
+    private final GameMetric destroyedByBlackhole;
 
     private final List<GameMetric> metrics;
 
@@ -32,8 +36,12 @@ public class GameMetrics {
         this.boltFired = GameMetric.of("bolt-fired-total");
         this.boltExhausted = GameMetric.of("bolt-exhausted-total");
         this.movedByShockwave = GameMetric.of("moved-by-shockwave-total");
+        this.massCollapsedIntoBlackhole = GameMetric.of("mass-collapsed-into-blackhole-total");
+        this.blackholeEvaporated = GameMetric.of("blackhole-evaporated-total");
+        this.movedByBlackhole = GameMetric.of("moved-by-blackhole-total");
+        this.destroyedByBlackhole = GameMetric.of("destroyed-by-blackhole-total");
 
-        List<GameMetric> list = new ArrayList<>(7);
+        List<GameMetric> list = new ArrayList<>(12);
         list.add(playerDestroyed);
         list.add(playerSpawned);
         list.add(playerJoined);
@@ -42,6 +50,10 @@ public class GameMetrics {
         list.add(boltFired);
         list.add(boltExhausted);
         list.add(movedByShockwave);
+        list.add(massCollapsedIntoBlackhole);
+        list.add(blackholeEvaporated);
+        list.add(movedByBlackhole);
+        list.add(destroyedByBlackhole);
 
         this.metrics = new CopyOnWriteArrayList<>(list);
     }
@@ -80,5 +92,21 @@ public class GameMetrics {
 
     public GameMetric getMovedByShockwave() {
         return movedByShockwave;
+    }
+
+    public GameMetric getMassCollapsedIntoBlackhole() {
+        return massCollapsedIntoBlackhole;
+    }
+
+    public GameMetric getBlackholeEvaporated() {
+        return blackholeEvaporated;
+    }
+
+    public GameMetric getMovedByBlackhole() {
+        return movedByBlackhole;
+    }
+
+    public GameMetric getDestroyedByBlackhole() {
+        return destroyedByBlackhole;
     }
 }

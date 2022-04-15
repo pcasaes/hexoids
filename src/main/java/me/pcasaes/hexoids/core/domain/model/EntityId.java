@@ -5,6 +5,7 @@ import pcasaes.hexoids.proto.GUID;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -65,6 +66,31 @@ public class EntityId {
      */
     public static EntityId newId() {
         return of(UUID.randomUUID());
+    }
+
+    public static EntityId newId(Random ng) {
+        // this code is copied and adapted from UUID
+
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+        randomBytes[6] = (byte) (randomBytes[6] & 15);
+        randomBytes[6] = (byte) (randomBytes[6] | 64);
+        randomBytes[8] = (byte) (randomBytes[8] & 63);
+        randomBytes[8] = (byte) (randomBytes[8] | 128);
+
+        long msb = 0L;
+        long lsb = 0L;
+
+        int i;
+        for (i = 0; i < 8; ++i) {
+            msb = msb << 8 | (long) (randomBytes[i] & 255);
+        }
+
+        for (i = 8; i < 16; ++i) {
+            lsb = lsb << 8 | (long) (randomBytes[i] & 255);
+        }
+
+        return of(new UUID(msb, lsb));
     }
 
 

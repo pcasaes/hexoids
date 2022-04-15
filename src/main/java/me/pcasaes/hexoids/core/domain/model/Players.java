@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -55,6 +56,8 @@ public class Players implements Iterable<Player> {
     private final PhysicsQueueEnqueue physicsQueue;
 
     private final PlayerSpatialIndexFactory spatialIndexFactory;
+
+    private final Map<EntityId, Consumer<CurrentViewCommandDto.Builder>> registeredCurrentViewModifiers = new HashMap<>();
 
     private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueueEnqueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
         this.bolts = bolts;
@@ -108,6 +111,14 @@ public class Players implements Iterable<Player> {
         return Player.create(id, this, this.bolts, this.barriers, this.clock, this.scoreBoard);
     }
 
+    public void registerCurrentViewModifier(EntityId modifierId, Consumer<CurrentViewCommandDto.Builder> builderConsumer) {
+        registeredCurrentViewModifiers.put(modifierId, builderConsumer);
+    }
+
+    public void unregisterCurrentViewModifier(EntityId modifierId) {
+        registeredCurrentViewModifiers.remove(modifierId);
+    }
+
     /**
      * Requests the game's current view to be sent to a specific player
      *
@@ -120,6 +131,10 @@ public class Players implements Iterable<Player> {
                         .collect(Collectors.toList())
                 )
                 .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.get().getMaxBolts()));
+
+        registeredCurrentViewModifiers
+                .values()
+                .forEach(c -> c.accept(currentViewBuilder));
 
         playerMap
                 .values()
