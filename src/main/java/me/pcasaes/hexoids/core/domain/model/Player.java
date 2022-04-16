@@ -194,7 +194,7 @@ public interface Player {
      * At end of next fixed update will reset to 1
      * @param factor
      */
-    void setDampenMovementFactor(float factor);
+    void setDampenMovementFactorUntilNextFixedUpdate(float factor);
 
     class Implementation implements Player {
 
@@ -272,7 +272,7 @@ public interface Player {
         }
 
         @Override
-        public void setDampenMovementFactor(float factor) {
+        public void setDampenMovementFactorUntilNextFixedUpdate(float factor) {
             this.playerPositionConfiguration.setDampenFactor(factor);
         }
 

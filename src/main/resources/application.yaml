@@ -53,6 +53,17 @@ hexoids:
           impulse: 0.004
           duration:
             ms: 400
+    blackhole:
+      eventhorizon:
+        radius: 0.005 # within this radius ships are destroyed
+      gravity:
+        radius: 0.07 # within this radius ships start to feel gravity's effect. The closer to the event horizon the higher the acceleration
+        impulse: 0.07 # at every physics iteration this factor is applied to acceleration
+      dampen:
+        factor: 5 # used to reduce effect of the inertial dampener. Factor is applied to acceleration
+      genesis:
+        probability:
+          factor: 3 # int: the higher, the more likely to appear. 0 disables. Probability = (factor-2)/factor
     bolt:
       max:
         duration: 10000

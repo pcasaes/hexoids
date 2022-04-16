@@ -29,6 +29,7 @@ public class Config {
 
     private final PlayerDestroyedShockwave playerDestroyedShockwave = new PlayerDestroyedShockwave();
 
+    private final Blackhole blackhole = new Blackhole();
 
     private static class ConfigHolder {
         static final Config INSTANCE = new Config();
@@ -185,6 +186,10 @@ public class Config {
         return playerDestroyedShockwave;
     }
 
+    public Blackhole getBlackhole() {
+        return blackhole;
+    }
+
     public static class PlayerDestroyedShockwave {
         private float distance;
         private long duration;
@@ -215,6 +220,54 @@ public class Config {
 
         public void setImpulse(float impulse) {
             this.impulse = impulse;
+        }
+    }
+
+    public static class Blackhole {
+        private float eventHorizonRadius;
+        private float gravityRadius;
+        private float gravityImpulse;
+        private float dampenFactor;
+        private int genesisProbabilityFactor;
+
+        public float getEventHorizonRadius() {
+            return eventHorizonRadius;
+        }
+
+        public void setEventHorizonRadius(float eventHorizonRadius) {
+            this.eventHorizonRadius = eventHorizonRadius;
+        }
+
+        public float getGravityRadius() {
+            return gravityRadius;
+        }
+
+        public void setGravityRadius(float gravityRadius) {
+            this.gravityRadius = gravityRadius;
+        }
+
+        public float getGravityImpulse() {
+            return gravityImpulse;
+        }
+
+        public void setGravityImpulse(float gravityImpulse) {
+            this.gravityImpulse = gravityImpulse;
+        }
+
+        public float getDampenFactor() {
+            return dampenFactor;
+        }
+
+        public void setDampenFactor(float dampenFactor) {
+            this.dampenFactor = dampenFactor;
+        }
+
+        public int getGenesisProbabilityFactor() {
+            return genesisProbabilityFactor;
+        }
+
+        public void setGenesisProbabilityFactor(int genesisProbabilityFactor) {
+            this.genesisProbabilityFactor = genesisProbabilityFactor;
         }
     }
 }

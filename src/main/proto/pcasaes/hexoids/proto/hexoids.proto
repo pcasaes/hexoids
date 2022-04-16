@@ -109,6 +109,14 @@ message ScoreBoardUpdatedEventDto {
     repeated ScoreEntry scores = 1;
 }
 
+message MassCollapsedIntoBlackHoleEventDto {
+    GUID id = 1;
+    float x = 2;
+    float y = 3;
+    int64 startTimestamp = 4;
+    int64 endTimestamp = 5;
+}
+
 
 message Event {
     oneof event {
@@ -123,6 +131,7 @@ message Event {
         PlayerScoreIncreasedEventDto playerScoreIncreased = 9;
         PlayerScoreUpdatedEventDto playerScoreUpdated = 10;
         ScoreBoardUpdatedEventDto scoreBoardUpdated = 11;
+        MassCollapsedIntoBlackHoleEventDto massCollapsedIntoBlackHole = 12;
     }
 }
 
@@ -166,6 +175,7 @@ message CurrentViewCommandDto {
     repeated PlayerDto players = 1;
     BoltsAvailableCommandDto boltsAvailable = 2;
     repeated BarrierDto barriers = 3;
+    MassCollapsedIntoBlackHoleEventDto blackhole = 4;
 }
 
 message PlayerScoreUpdateCommandDto {
