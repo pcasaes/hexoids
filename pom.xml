@@ -8,7 +8,7 @@
   <properties>
     <!-- WEB ASM CLIENT INFO -->
     <client.webasm.version>0.5.0</client.webasm.version>
-    <client.webasm.md5>f5d16a7b1de1f04f84d0f2f7aa12ddd9</client.webasm.md5>
+    <client.webasm.md5>2593669e18b49465c933518614de658c</client.webasm.md5>
     <!-- END -->
 
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
