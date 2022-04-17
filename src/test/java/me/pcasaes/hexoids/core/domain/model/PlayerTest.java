@@ -685,7 +685,7 @@ class PlayerTest {
         List<DomainEvent> domainEvents = new ArrayList<>();
         GameEvents.getDomainEvents().registerEventDispatcher(domainEvents::add);
 
-        player1.destroy(two);
+        player1.destroy(two, clock.getTime());
 
         List<Event> events = domainEvents
                 .stream()

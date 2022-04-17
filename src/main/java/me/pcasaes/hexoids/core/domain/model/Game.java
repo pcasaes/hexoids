@@ -128,7 +128,7 @@ public interface Game {
             this.eventSchedulerUpdate = PhysicsMetrics.get().intercept(eventScheduler::fixedUpdate, "event-scheduler");
             this.physicsQueueUpdate = PhysicsMetrics.get().intercept(physicsQueue::fixedUpdate, "physics-queue");
 
-            eventScheduler.register((r, s, e) -> Blackhole.massCollapsed(r, s, e, clock, players));
+            eventScheduler.register((r, s, e) -> Blackhole.massCollapsed(r, s, e, clock, players, bolts));
 
             GameTopic.setGame(this);
         }
