@@ -131,12 +131,12 @@ public class Bolts implements Iterable<Bolt> {
             } else if (domainEvent.getEvent().hasBoltExhausted()) {
                 publishableBoltDtos.remove(domainEvent.getEvent().getBoltExhausted().getBoltId());
             } else if (domainEvent.getEvent().hasBoltDiverted()) {
-                consumerBoltDiverted(domainEvent.getEvent().getBoltDiverted());
+                consumeBoltDiverted(domainEvent.getEvent().getBoltDiverted());
             }
         }
     }
 
-    private void consumerBoltDiverted(BoltDivertedEventDto boltDiverted) {
+    private void consumeBoltDiverted(BoltDivertedEventDto boltDiverted) {
         GUID boltId = boltDiverted.getBoltId();
         BoltFiredEventDto boltFiredEventDto = publishableBoltDtos.get(boltId);
         if (boltFiredEventDto != null) {
