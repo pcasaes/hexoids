@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.vector.PositionVector;
+import pcasaes.hexoids.proto.BoltDivertedEventDto;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.Event;
@@ -13,7 +14,7 @@ import java.util.Queue;
 /**
  * A model representation of a bolt.
  */
-public class Bolt {
+public class Bolt implements GameObject {
 
     private static final Queue<Bolt> POOL = new ArrayDeque<>(1024);
 
@@ -29,6 +30,8 @@ public class Bolt {
     private final Optional<Bolt> optionalThis; // NOSONAR: optional memo
 
     private final Players players;
+
+    private BoltFiredEventDto firedEventDto;
 
     private Bolt(Players players,
                  EntityId boltId,
@@ -119,6 +122,7 @@ public class Bolt {
     }
 
     public void fire(BoltFiredEventDto event) {
+        this.firedEventDto = event;
         GameEvents.getDomainEvents()
                 .dispatch(
                         DomainEvent
@@ -142,9 +146,36 @@ public class Bolt {
         if (elapsed > 0L) {
             this.timestamp = timestamp;
             this.positionVector.update(timestamp);
+            tackleDiverted(timestamp);
+
             return optionalThis;
         }
         return Optional.empty();
+    }
+
+    private void tackleDiverted(long timestamp) {
+        if (!this.positionVector.movedByScheduledMove()) {
+            return;
+        }
+
+        GameEvents.getDomainEvents()
+                .dispatch(
+                        DomainEvent
+                                .create(GameTopic.BOLT_ACTION_TOPIC.name(),
+                                        this.id.getId(),
+                                        Event.newBuilder()
+                                                .setBoltDiverted(BoltDivertedEventDto
+                                                        .newBuilder()
+                                                        .setBoltId(firedEventDto.getBoltId())
+                                                        .setAngle(positionVector.getVelocity().getAngle())
+                                                        .setSpeed(positionVector.getVelocity().getMagnitude())
+                                                        .setX(positionVector.getX())
+                                                        .setY(positionVector.getY())
+                                                        .setDivertTimestamp(timestamp)
+                                                        .build())
+                                                .build()
+                                )
+                );
     }
 
     /**
@@ -155,10 +186,24 @@ public class Bolt {
      */
     Bolt tackleBoltExhaustion(long timestamp) {
         if (positionVector.isOutOfBounds() || isExpired()) {
-            this.exhausted = true;
-            GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp));
+            hazardDestroy(null, timestamp);
         }
         return this;
+    }
+
+    @Override
+    public void hazardDestroy(EntityId hazardId, long timestamp) {
+        this.exhausted = true;
+        GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp));
+    }
+
+    public void move(float x, float y) {
+        if (this.exhausted || positionVector.isOutOfBounds() || isExpired()) {
+            return;
+        }
+
+        positionVector.scheduleMove(x, y);
+
     }
 
     /**
@@ -210,7 +255,7 @@ public class Bolt {
                 player.collision(positionVector, Config.get().getBoltCollisionRadius());
 
         if (isHit) {
-            player.destroy(this.ownerPlayerId);
+            player.destroy(this.ownerPlayerId, timestamp);
             if (!this.exhausted) {
                 this.exhausted = true;
 
@@ -240,6 +285,16 @@ public class Bolt {
 
     boolean isOwnedBy(EntityId playerId) {
         return this.ownerPlayerId.equals(playerId);
+    }
+
+    @Override
+    public float getX() {
+        return positionVector.getX();
+    }
+
+    @Override
+    public float getY() {
+        return positionVector.getY();
     }
 
 

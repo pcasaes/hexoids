@@ -35,7 +35,7 @@ import java.util.Random;
  * The action method will generate a domain event which will be distributed to all nodes and processed in
  * the corresponding process method.
  */
-public interface Player {
+public interface Player extends GameObject {
 
     /**
      * Creates an instanceof a player
@@ -141,10 +141,9 @@ public interface Player {
      * This informed player destroys this player
      *
      * @param playerId
+     * @param timestamp
      */
-    void destroy(EntityId playerId);
-
-    void hazardDestroy(EntityId entityId);
+    void destroy(EntityId playerId, long timestamp);
 
     /**
      * Processes the destroyed player domain event
@@ -176,25 +175,12 @@ public interface Player {
      */
     void expungeIfStalled();
 
-    float getX();
-
-    float getY();
-
-    ClientPlatforms getClientPlatform();
-
     /**
      * Updates the player's vector position up tot he supplied timestamp.
      *
      * @param timestamp
      */
     void fixedUpdate(long timestamp);
-
-    /**
-     * Can be used to increase or decrease inertial dampener.
-     * At end of next fixed update will reset to 1
-     * @param factor
-     */
-    void setDampenMovementFactorUntilNextFixedUpdate(float factor);
 
     class Implementation implements Player {
 
@@ -499,6 +485,11 @@ public interface Player {
         }
 
         @Override
+        public void move(float moveX, float moveY) {
+            move(moveX, moveY, null);
+        }
+
+        @Override
         public void move(float moveX, float moveY, Float angle) {
             if (!this.spawned) {
                 return;
@@ -591,15 +582,15 @@ public interface Player {
         }
 
         @Override
-        public void destroy(EntityId byPlayerId) {
+        public void destroy(EntityId byPlayerId, long timestamp) {
             if (spawned) {
-                hazardDestroy(byPlayerId);
+                hazardDestroy(byPlayerId, timestamp);
                 this.scoreBoard.updateScore(byPlayerId, 1);
             }
         }
 
         @Override
-        public void hazardDestroy(EntityId entityId) {
+        public void hazardDestroy(EntityId hazardId, long timestamp) {
             if (spawned) {
                 GameEvents.getDomainEvents().dispatch(
                         DomainEvent.create(
@@ -608,8 +599,8 @@ public interface Player {
                                 Event.newBuilder()
                                         .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
                                                 .setPlayerId(this.id.getGuid())
-                                                .setDestroyedByPlayerId(entityId.getGuid())
-                                                .setDestroyedTimestamp(this.clock.getTime()))
+                                                .setDestroyedByPlayerId(hazardId.getGuid())
+                                                .setDestroyedTimestamp(timestamp))
                                         .build()
                         )
                 );
@@ -747,6 +738,11 @@ public interface Player {
         @Override
         public ClientPlatforms getClientPlatform() {
             return clientPlatform;
+        }
+
+        @Override
+        public boolean supportsInertialDampener() {
+            return true;
         }
 
         @Override

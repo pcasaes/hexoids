@@ -1,5 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model;
 
+import pcasaes.hexoids.proto.BoltDivertedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
@@ -113,7 +114,9 @@ public class Bolts implements Iterable<Bolt> {
      */
     public void consumeFromBoltActionTopic(DomainEvent domainEvent) {
         if (domainEvent.getEvent() != null &&
-                (domainEvent.getEvent().hasBoltExhausted() || domainEvent.getEvent().hasBoltFired())) {
+                (domainEvent.getEvent().hasBoltExhausted() ||
+                        domainEvent.getEvent().hasBoltFired() ||
+                        domainEvent.getEvent().hasBoltDiverted())) {
 
             GameEvents.getClientEvents()
                     .dispatch(Dto.newBuilder()
@@ -127,6 +130,31 @@ public class Bolts implements Iterable<Bolt> {
 
             } else if (domainEvent.getEvent().hasBoltExhausted()) {
                 publishableBoltDtos.remove(domainEvent.getEvent().getBoltExhausted().getBoltId());
+            } else if (domainEvent.getEvent().hasBoltDiverted()) {
+                consumerBoltDiverted(domainEvent.getEvent().getBoltDiverted());
+            }
+        }
+    }
+
+    private void consumerBoltDiverted(BoltDivertedEventDto boltDiverted) {
+        GUID boltId = boltDiverted.getBoltId();
+        BoltFiredEventDto boltFiredEventDto = publishableBoltDtos.get(boltId);
+        if (boltFiredEventDto != null) {
+            int newTtl = boltFiredEventDto.getTtl() - (int) (boltDiverted.getDivertTimestamp() - boltFiredEventDto.getStartTimestamp());
+            if (newTtl > 0) {
+                publishableBoltDtos.put(
+                        boltId,
+                        BoltFiredEventDto.newBuilder()
+                                .mergeFrom(boltFiredEventDto)
+                                .setX(boltDiverted.getX())
+                                .setY(boltDiverted.getY())
+                                .setAngle(boltDiverted.getAngle())
+                                .setSpeed(boltDiverted.getSpeed())
+                                .setStartTimestamp(boltDiverted.getDivertTimestamp())
+                                .setTtl(newTtl)
+                                .build());
+            } else {
+                publishableBoltDtos.remove(boltId);
             }
         }
     }

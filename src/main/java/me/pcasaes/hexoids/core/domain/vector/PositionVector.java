@@ -28,6 +28,8 @@ public class PositionVector {
     private Vector2 currentPosition;
     private Vector2 previousPosition;
 
+    private boolean movedByScheduledMove = false;
+
     private PositionVector(Vector2 velocity,
                            float startX,
                            float startY,
@@ -219,7 +221,7 @@ public class PositionVector {
 
         this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed));
 
-        if (!Vector2.ZERO.equals(scheduledMove)) {
+        if (hasScheduledMove()) {
             Vector2 moveVector = scheduledMove.add(this.velocity);
 
             if (maxMagnitude != null) {
@@ -228,6 +230,9 @@ public class PositionVector {
 
             this.velocity.set(moveVector);
             scheduledMove.setXY(0, 0);
+            this.movedByScheduledMove  = true;
+        } else {
+            this.movedByScheduledMove = false;
         }
 
         this.previousPosition.set(this.currentPosition);
@@ -435,6 +440,18 @@ public class PositionVector {
         );
 
         return Vector2.intersectedWith(previousPosition, extendCurrentPosition, fixedFrom, fixedTo);
+    }
+
+    private boolean hasScheduledMove() {
+        return !Vector2.ZERO.equals(scheduledMove);
+    }
+
+    /**
+     * Will return true if the last call to update consumed moves from scheduleMove
+     * @return
+     */
+    public boolean movedByScheduledMove() {
+        return this.movedByScheduledMove;
     }
 
 

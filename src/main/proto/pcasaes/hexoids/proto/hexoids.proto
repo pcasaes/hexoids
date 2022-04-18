@@ -58,6 +58,15 @@ message BoltFiredEventDto {
     int32 ttl = 8;
 }
 
+message BoltDivertedEventDto {
+    GUID boltId = 1;
+    float x = 2;
+    float y = 3;
+    float angle = 4;
+    int64 divertTimestamp = 5;
+    float speed = 6;
+}
+
 message PlayerDestroyedEventDto {
     GUID playerId = 1;
     GUID destroyedByPlayerId = 2;
@@ -132,6 +141,7 @@ message Event {
         PlayerScoreUpdatedEventDto playerScoreUpdated = 10;
         ScoreBoardUpdatedEventDto scoreBoardUpdated = 11;
         MassCollapsedIntoBlackHoleEventDto massCollapsedIntoBlackHole = 12;
+        BoltDivertedEventDto boltDiverted = 13;
     }
 }
 
