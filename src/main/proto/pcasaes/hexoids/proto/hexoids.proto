@@ -69,7 +69,7 @@ message BoltDivertedEventDto {
 
 message PlayerDestroyedEventDto {
     GUID playerId = 1;
-    GUID destroyedByPlayerId = 2;
+    GUID destroyedById = 2;
     int64 destroyedTimestamp = 3;
 }
 
@@ -124,6 +124,7 @@ message MassCollapsedIntoBlackHoleEventDto {
     float y = 3;
     int64 startTimestamp = 4;
     int64 endTimestamp = 5;
+    string name = 6;
 }
 
 

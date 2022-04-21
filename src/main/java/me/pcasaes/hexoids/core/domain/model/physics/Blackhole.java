@@ -25,6 +25,7 @@ public class Blackhole implements LongPredicate {
     private static final Logger LOGGER = Logger.getLogger(Blackhole.class.getName());
 
     private final EntityId entityId;
+    private final String name;
     private final Clock clock;
     private final float eventHorizonRadius;
     private final float gravityRadius;
@@ -53,6 +54,22 @@ public class Blackhole implements LongPredicate {
         this.startTimestamp = startTimestamp;
         this.endTimestamp = endTimestamp;
         this.clock = clock;
+
+        String idStr = entityId.toString();
+        StringBuilder sbName = new StringBuilder();
+        for (char c : idStr.toUpperCase().toCharArray()) {
+            boolean firstChar = sbName.isEmpty();
+            if (firstChar && c >= 'A' && c <= 'Z') {
+                sbName.append((char)(c + 6));
+            } else if (!firstChar && c >= '0' && c <= '9') {
+                sbName.append(c);
+            }
+            if (sbName.length() > 3) {
+                break;
+            }
+        }
+        sbName.append("*");
+        this.name = sbName.toString();
     }
 
     public static Optional<LongPredicate> massCollapsed(Random rng,
@@ -83,7 +100,7 @@ public class Blackhole implements LongPredicate {
                 bolts).start();
 
         GameMetrics.get().getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN);
-        LOGGER.info(() -> "Mass collapsed. id = " + blackhole.entityId + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp);
+        LOGGER.info(() -> "Mass collapsed. id = " + blackhole.entityId + ", name = " + blackhole.name + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp);
 
         return Optional.of(blackhole);
     }
@@ -93,10 +110,12 @@ public class Blackhole implements LongPredicate {
 
         final MassCollapsedIntoBlackHoleEventDto massCollapsedIntoBlackHoleEventDto =
                 MassCollapsedIntoBlackHoleEventDto.newBuilder()
+                        .setId(entityId.getGuid())
                         .setX(center.getX())
                         .setY(center.getY())
                         .setStartTimestamp(startTimestamp)
                         .setEndTimestamp(endTimestamp)
+                        .setName(name)
                         .build();
 
         eventBuilder.setMassCollapsedIntoBlackHole(massCollapsedIntoBlackHoleEventDto);
