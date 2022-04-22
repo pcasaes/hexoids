@@ -599,7 +599,7 @@ public interface Player extends GameObject {
                                 Event.newBuilder()
                                         .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
                                                 .setPlayerId(this.id.getGuid())
-                                                .setDestroyedByPlayerId(hazardId.getGuid())
+                                                .setDestroyedById(hazardId.getGuid())
                                                 .setDestroyedTimestamp(timestamp))
                                         .build()
                         )
