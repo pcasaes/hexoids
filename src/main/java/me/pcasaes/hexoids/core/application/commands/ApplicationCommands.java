@@ -9,6 +9,7 @@ public class ApplicationCommands {
     private final LeaveGame leaveGameCommand;
     private final Move moveCommand;
     private final Spawn spawn;
+    private final SetInertialDampenFactor setInertialDampenFactorCommand;
 
     private ApplicationCommands(GameQueue gameQueue) {
         this.fireCommand = new Fire(gameQueue);
@@ -16,6 +17,7 @@ public class ApplicationCommands {
         this.leaveGameCommand = new LeaveGame(gameQueue);
         this.moveCommand = new Move(gameQueue);
         this.spawn = new Spawn(gameQueue);
+        this.setInertialDampenFactorCommand = new SetInertialDampenFactor(gameQueue);
     }
 
     public static ApplicationCommands create(GameQueue gameQueue) {
@@ -40,5 +42,9 @@ public class ApplicationCommands {
 
     public Spawn getSpawn() {
         return spawn;
+    }
+
+    public SetInertialDampenFactor getSetInertialDampenFactorCommand() {
+        return setInertialDampenFactorCommand;
     }
 }

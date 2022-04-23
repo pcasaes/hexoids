@@ -92,6 +92,7 @@ message PlayerMovedEventDto {
     float thrustAngle = 5;
     int64 timestamp = 6;
     float velocity = 7;
+    float inertialDampenFactor = 8;
 }
 
 message PlayerSpawnedEventDto {
@@ -158,6 +159,10 @@ message MoveCommandDto {
     FloatValue angle = 3;
 }
 
+message SetFixedInertialDampenFactorCommandDto {
+    float factor = 1;
+}
+
 message FireBoltCommandDto {
 
 }
@@ -177,6 +182,7 @@ message RequestCommand {
         FireBoltCommandDto fire = 2;
         SpawnCommandDto spawn = 3;
         JoinCommandDto join = 4;
+        SetFixedInertialDampenFactorCommandDto setFixedIntertialDampenFactor = 5;
     }
 }
 

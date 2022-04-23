@@ -4,6 +4,7 @@ import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 import pcasaes.hexoids.proto.JoinCommandDto;
 import pcasaes.hexoids.proto.MoveCommandDto;
+import pcasaes.hexoids.proto.SetFixedInertialDampenFactorCommandDto;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -36,5 +37,9 @@ class CommandDelegate {
 
     void move(EntityId userId, MoveCommandDto command) {
         this.applicationCommands.getMoveCommand().move(userId, command);
+    }
+
+    void setFixedInertialDampenFactor(EntityId userId, SetFixedInertialDampenFactorCommandDto command) {
+        this.applicationCommands.getSetInertialDampenFactorCommand().setFactor(userId, command);
     }
 }

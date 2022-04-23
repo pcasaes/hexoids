@@ -129,6 +129,12 @@ public interface Player extends GameObject {
     void left();
 
     /**
+     * Set's the dampen fa
+     * @param value
+     */
+    void setFixedInertialDampenFactor(float value);
+
+    /**
      * Will return true if the player's ship collides with the supplied {@link PositionVector}
      *
      * @param velocityVector
@@ -229,6 +235,8 @@ public interface Player extends GameObject {
         private final PositionVector position;
 
         private final PlayerPositionConfiguration playerPositionConfiguration;
+
+        private float fixedInertialDampenFactor = 1F;
 
         private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
@@ -485,6 +493,11 @@ public interface Player extends GameObject {
         }
 
         @Override
+        public void setFixedInertialDampenFactor(float value) {
+            this.fixedInertialDampenFactor = Math.min(1F, value);
+        }
+
+        @Override
         public void move(float moveX, float moveY) {
             move(moveX, moveY, null);
         }
@@ -550,6 +563,7 @@ public interface Player extends GameObject {
                                                     .setThrustAngle(position.getVelocity().getAngle())
                                                     .setVelocity(position.getVelocity().getMagnitude())
                                                     .setTimestamp(eventTime)
+                                                    .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
 
                                     ).build()));
         }
@@ -662,6 +676,7 @@ public interface Player extends GameObject {
                                                                 .setAngle(angle)
                                                                 .setThrustAngle(position.getVelocity().getAngle())
                                                                 .setTimestamp(now)
+                                                                .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
                                                 )
                                         )
                                         .build()
@@ -706,7 +721,7 @@ public interface Player extends GameObject {
             if (angleChanged) {
                 this.previousAngle = this.angle;
             }
-            this.playerPositionConfiguration.setDampenFactor(1F);
+            this.playerPositionConfiguration.setDampenFactor(this.fixedInertialDampenFactor);
         }
 
         private void tackleBarrierHit() {
@@ -764,6 +779,10 @@ public interface Player extends GameObject {
 
             public void setDampenFactor(float dampenFactor) {
                 this.dampenFactor = dampenFactor;
+            }
+
+            public float getDampenFactor() {
+                return dampenFactor;
             }
 
             @Override
