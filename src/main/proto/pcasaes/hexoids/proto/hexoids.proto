@@ -84,6 +84,12 @@ message PlayerLeftEventDto {
     GUID playerId = 1;
 }
 
+enum MoveReason {
+    SHOCKWAVE_PUSH = 0;
+    BLACKHOLE_PULL = 1;
+    BLACKHOLE_TELEPORT = 2;
+}
+
 message PlayerMovedEventDto {
     GUID playerId = 1;
     float x = 2;
@@ -93,6 +99,7 @@ message PlayerMovedEventDto {
     int64 timestamp = 6;
     float velocity = 7;
     float inertialDampenFactor = 8;
+    repeated MoveReason reasons = 9;
 }
 
 message PlayerSpawnedEventDto {

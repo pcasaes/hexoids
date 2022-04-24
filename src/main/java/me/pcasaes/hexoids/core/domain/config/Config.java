@@ -229,6 +229,7 @@ public class Config {
         private float gravityImpulse;
         private float dampenFactor;
         private int genesisProbabilityFactor;
+        private float teleportProbability;
 
         public float getEventHorizonRadius() {
             return eventHorizonRadius;
@@ -268,6 +269,14 @@ public class Config {
 
         public void setGenesisProbabilityFactor(int genesisProbabilityFactor) {
             this.genesisProbabilityFactor = genesisProbabilityFactor;
+        }
+
+        public float getTeleportProbability() {
+            return teleportProbability;
+        }
+
+        public void setTeleportProbability(float teleportProbability) {
+            this.teleportProbability = teleportProbability;
         }
     }
 }

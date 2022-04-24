@@ -6,6 +6,7 @@ import me.pcasaes.hexoids.core.domain.model.Player;
 import me.pcasaes.hexoids.core.domain.model.Players;
 import me.pcasaes.hexoids.core.domain.utils.MathUtil;
 import me.pcasaes.hexoids.core.domain.vector.Vector2;
+import pcasaes.hexoids.proto.MoveReason;
 
 import java.util.function.LongPredicate;
 
@@ -82,7 +83,7 @@ public class Shockwave implements LongPredicate {
                                 sign * this.impulse
                         );
 
-                nearPlayer.move(move.getX(), move.getY(), null);
+                nearPlayer.move(move.getX(), move.getY(), MoveReason.SHOCKWAVE_PUSH);
                 GameMetrics.get().getMovedByShockwave().increment(nearPlayer.getClientPlatform());
             }
         }

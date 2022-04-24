@@ -6,6 +6,7 @@ import pcasaes.hexoids.proto.BoltDivertedEventDto;
 import pcasaes.hexoids.proto.BoltExhaustedEventDto;
 import pcasaes.hexoids.proto.BoltFiredEventDto;
 import pcasaes.hexoids.proto.Event;
+import pcasaes.hexoids.proto.MoveReason;
 
 import java.util.ArrayDeque;
 import java.util.Optional;
@@ -197,7 +198,8 @@ public class Bolt implements GameObject {
         GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp));
     }
 
-    public void move(float x, float y) {
+    @Override
+    public void move(float x, float y, MoveReason moveReason) {
         if (this.exhausted || positionVector.isOutOfBounds() || isExpired()) {
             return;
         }

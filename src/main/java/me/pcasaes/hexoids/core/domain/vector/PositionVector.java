@@ -93,6 +93,12 @@ public class PositionVector {
         this.currentTimestamp = this.previousTimestamp = timestamp;
     }
 
+    public void teleport(float x, float y, long timestamp) {
+        this.previousPosition.setXY(x, y);
+        this.currentPosition.setXY(x, y);
+        this.currentTimestamp = this.previousTimestamp = timestamp;
+    }
+
     public void reflect(Vector2 at, Vector2 normal, float bodySize, float dampen) {
         Vector2 bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize);
         Vector2 atWithBody = at.minus(bodyVector);

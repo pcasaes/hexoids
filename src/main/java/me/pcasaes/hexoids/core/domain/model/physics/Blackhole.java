@@ -14,6 +14,7 @@ import pcasaes.hexoids.proto.ClientPlatforms;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.proto.MassCollapsedIntoBlackHoleEventDto;
+import pcasaes.hexoids.proto.MoveReason;
 
 import java.util.Optional;
 import java.util.Random;
@@ -36,6 +37,8 @@ public class Blackhole implements LongPredicate {
     private final Bolts bolts;
     private final long startTimestamp;
     private final long endTimestamp;
+    private final Random rng;
+    private final float destroyProbability;
 
     private Blackhole(EntityId entityId,
                       Vector2 center,
@@ -54,13 +57,15 @@ public class Blackhole implements LongPredicate {
         this.startTimestamp = startTimestamp;
         this.endTimestamp = endTimestamp;
         this.clock = clock;
+        this.rng = new Random();
+        this.destroyProbability = 1F - Config.get().getBlackhole().getTeleportProbability();
 
         String idStr = entityId.toString();
         StringBuilder sbName = new StringBuilder();
         for (char c : idStr.toUpperCase().toCharArray()) {
             boolean firstChar = sbName.isEmpty();
             if (firstChar && c >= 'A' && c <= 'Z') {
-                sbName.append((char)(c + 6));
+                sbName.append((char) (c + 6));
             } else if (!firstChar && c >= '0' && c <= '9') {
                 sbName.append(c);
             }
@@ -178,11 +183,22 @@ public class Blackhole implements LongPredicate {
 
             int sign = distanceFromSingularity.getMagnitude() < 0F ? -1 : 1;
 
-            boolean destroyed = absMagnitude <= this.eventHorizonRadius;
+            boolean hitEventHorizon = absMagnitude <= this.eventHorizonRadius;
 
-            if (destroyed) {
-                nearByGameObject.hazardDestroy(entityId, timestamp);
-                GameMetrics.get().getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform());
+            if (hitEventHorizon) {
+                boolean destroyed = rng.nextFloat() <= this.destroyProbability;
+                if (!destroyed) {
+                    float jumpX = rng.nextFloat();
+                    float jumpY = rng.nextFloat();
+                    destroyed = !nearByGameObject.teleport(jumpX, jumpY, timestamp, MoveReason.BLACKHOLE_TELEPORT);
+                }
+
+                if (destroyed) {
+                    nearByGameObject.hazardDestroy(entityId, timestamp);
+                    GameMetrics.get().getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform());
+                } else {
+                    GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform());
+                }
             } else {
 
                 float acceleration = accel(absMagnitude);
@@ -198,7 +214,7 @@ public class Blackhole implements LongPredicate {
                             .setDampenMovementFactorUntilNextFixedUpdate(1F / (acceleration * this.dampenFactor + 1F));
                 }
 
-                nearByGameObject.move(move.getX(), move.getY());
+                nearByGameObject.move(move.getX(), move.getY(), MoveReason.BLACKHOLE_PULL);
                 GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform());
             }
         }

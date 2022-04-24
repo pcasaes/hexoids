@@ -64,6 +64,8 @@ hexoids:
       genesis:
         probability:
           factor: 3 # int: the higher, the more likely to appear. 0 disables. Probability = (factor-2)/factor
+      teleport:
+        probability: 0.05 # Chances of random teleportation when passing event horizon
     bolt:
       max:
         duration: 10000
