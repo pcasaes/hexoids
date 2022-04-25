@@ -14,6 +14,7 @@ import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.proto.JoinCommandDto;
+import pcasaes.hexoids.proto.MoveReason;
 import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
 import pcasaes.hexoids.proto.PlayerMovedEventDto;
@@ -309,7 +310,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0f, 2f, null);
+        player.move(0f, 2f, (MoveReason) null);
         player.fixedUpdate(1025L);
 
         assertTrue(eventReference.get().hasEvent());
@@ -404,7 +405,7 @@ class PlayerTest {
         AtomicReference<Dto> eventReference = new AtomicReference<>(null);
         GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
 
-        player.move(0f, 0f, null);
+        player.move(0f, 0f, (MoveReason) null);
 
         assertNull(eventReference.get());
     }
@@ -539,7 +540,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0.5f, 0.5f, null);
+        player.move(0.5f, 0.5f, (MoveReason) null);
 
         PositionVector positionVector = PositionVector.of(
                 1f,
@@ -565,7 +566,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(1025L);
-        player.move(0.54f, 0.54f, null);
+        player.move(0.54f, 0.54f, (MoveReason) null);
         player.fixedUpdate(1025L);
 
         PositionVector positionVector = PositionVector.of(
@@ -593,7 +594,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.4f, 0.6f, null);
+        player.move(0.4f, 0.6f, (MoveReason) null);
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -620,7 +621,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.2f, 0.2f, null);
+        player.move(0.2f, 0.2f, (MoveReason) null);
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,
@@ -645,7 +646,7 @@ class PlayerTest {
         when(clock.getTime()).thenReturn(25L);
         player.spawn();
         when(clock.getTime()).thenReturn(50L);
-        player.move(0.5f, 0.2f, null);
+        player.move(0.5f, 0.2f, (MoveReason) null);
 
         PositionVector positionVector = PositionVector.of(
                 0.45f,

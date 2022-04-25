@@ -7,8 +7,8 @@
   <version>999-SNAPSHOT</version>
   <properties>
     <!-- WEB ASM CLIENT INFO -->
-    <client.webasm.version>0.7.0</client.webasm.version>
-    <client.webasm.md5>23bc706b919742e8162fd5fe46280735</client.webasm.md5>
+    <client.webasm.version>0.8.0</client.webasm.version>
+    <client.webasm.md5>e9c46d9531da07a25155541f9cf83c44</client.webasm.md5>
     <!-- END -->
 
     <compiler-plugin.version>3.8.1</compiler-plugin.version>

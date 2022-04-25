@@ -12,6 +12,7 @@ import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.proto.JoinCommandDto;
+import pcasaes.hexoids.proto.MoveReason;
 import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
 import pcasaes.hexoids.proto.PlayerDto;
 import pcasaes.hexoids.proto.PlayerJoinedEventDto;
@@ -19,10 +20,12 @@ import pcasaes.hexoids.proto.PlayerLeftEventDto;
 import pcasaes.hexoids.proto.PlayerMovedEventDto;
 import pcasaes.hexoids.proto.PlayerSpawnedEventDto;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * A model representation of the player. This model conflates player and ship information.
@@ -129,6 +132,13 @@ public interface Player extends GameObject {
     void left();
 
     /**
+     * Set's the dampen fa
+     *
+     * @param value
+     */
+    void setFixedInertialDampenFactor(float value);
+
+    /**
      * Will return true if the player's ship collides with the supplied {@link PositionVector}
      *
      * @param velocityVector
@@ -229,6 +239,10 @@ public interface Player extends GameObject {
         private final PositionVector position;
 
         private final PlayerPositionConfiguration playerPositionConfiguration;
+
+        private float fixedInertialDampenFactor = 1F;
+
+        private final Set<MoveReason> lastMoveReasons = new HashSet<>();
 
         private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
             this.players = players;
@@ -447,6 +461,14 @@ public interface Player extends GameObject {
         }
 
         @Override
+        public boolean teleport(float x, float y, long timestamp, MoveReason moveReason) {
+            position.teleport(x, y, timestamp);
+            lastMoveReasons.add(moveReason);
+
+            return true;
+        }
+
+        @Override
         public void join(JoinCommandDto command) {
             setName(command.getName());
             setClientPlatform(command.getClientPlatform());
@@ -485,8 +507,16 @@ public interface Player extends GameObject {
         }
 
         @Override
-        public void move(float moveX, float moveY) {
-            move(moveX, moveY, null);
+        public void setFixedInertialDampenFactor(float value) {
+            this.fixedInertialDampenFactor = Math.min(1F, value);
+        }
+
+        @Override
+        public void move(float moveX, float moveY, MoveReason moveReason) {
+            move(moveX, moveY, (Float) null);
+            if (moveReason != null) {
+                this.lastMoveReasons.add(moveReason);
+            }
         }
 
         @Override
@@ -550,8 +580,12 @@ public interface Player extends GameObject {
                                                     .setThrustAngle(position.getVelocity().getAngle())
                                                     .setVelocity(position.getVelocity().getMagnitude())
                                                     .setTimestamp(eventTime)
+                                                    .addAllReasons(lastMoveReasons)
+                                                    .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
 
                                     ).build()));
+
+            lastMoveReasons.clear();
         }
 
         @Override
@@ -662,6 +696,7 @@ public interface Player extends GameObject {
                                                                 .setAngle(angle)
                                                                 .setThrustAngle(position.getVelocity().getAngle())
                                                                 .setTimestamp(now)
+                                                                .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
                                                 )
                                         )
                                         .build()
@@ -706,7 +741,7 @@ public interface Player extends GameObject {
             if (angleChanged) {
                 this.previousAngle = this.angle;
             }
-            this.playerPositionConfiguration.setDampenFactor(1F);
+            this.playerPositionConfiguration.setDampenFactor(this.fixedInertialDampenFactor);
         }
 
         private void tackleBarrierHit() {
@@ -764,6 +799,10 @@ public interface Player extends GameObject {
 
             public void setDampenFactor(float dampenFactor) {
                 this.dampenFactor = dampenFactor;
+            }
+
+            public float getDampenFactor() {
+                return dampenFactor;
             }
 
             @Override

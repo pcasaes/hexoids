@@ -75,6 +75,8 @@ public class HexoidConfigurations {
 
     private int blackholeGenesisProbabilityFactor;
 
+    private float blackholeTeleportProbability;
+
 
     /**
      * This singleton will eager load before all others
@@ -128,6 +130,7 @@ public class HexoidConfigurations {
         Config.get().getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor());
         Config.get().getBlackhole().setGravityImpulse(getBlackholeGravityImpulse());
         Config.get().getBlackhole().setGravityRadius(getBlackholeGravityRadius());
+        Config.get().getBlackhole().setTeleportProbability(getBlackholeTeleportProbability());
     }
 
 
@@ -446,5 +449,17 @@ public class HexoidConfigurations {
             defaultValue = "3"
     ) int blackholeGenesisProbabilityFactor) {
         this.blackholeGenesisProbabilityFactor = blackholeGenesisProbabilityFactor;
+    }
+
+    public float getBlackholeTeleportProbability() {
+        return blackholeTeleportProbability;
+    }
+
+    @Inject
+    public void setBlackholeTeleportProbability(@ConfigProperty(
+            name = "hexoids.config.blackhole.teleport.probability",
+            defaultValue = "0.05"
+    ) float blackholeTeleportProbability) {
+        this.blackholeTeleportProbability = blackholeTeleportProbability;
     }
 }

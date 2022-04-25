@@ -107,6 +107,8 @@ public class GameRoutes {
             this.commandDelegate.fire(userId);
         } else if (command.hasSpawn()) {
             this.commandDelegate.spawn(userId);
+        } else if (command.hasSetFixedIntertialDampenFactor()) {
+            this.commandDelegate.setFixedInertialDampenFactor(userId, command.getSetFixedIntertialDampenFactor());
         } else if (command.hasJoin()) {
             syncClock(ctx);
             this.commandDelegate.join(userId, command.getJoin());
