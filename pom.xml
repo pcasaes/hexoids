@@ -24,7 +24,7 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>2.7.5.Final</quarkus.platform.version>
-    <protobuf.version>3.11.1</protobuf.version>
+    <protobuf.version>3.16.3</protobuf.version>
     <archunit.version>0.23.1</archunit.version>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     <download-maven-plugin.version>1.6.0</download-maven-plugin.version>
