@@ -1,4 +1,4 @@
-FROM confluentinc/cp-kafka:7.0.1-3-ubi8
+FROM confluentinc/cp-kafka:7.3.1-1-ubi8
 
 # kraft
 ADD --chown=appuser:appuser update_run.sh /tmp/update_run.sh
