@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker-compose -f docker-compose-singleton.yml stop
+docker compose -f docker-compose-singleton.yml stop

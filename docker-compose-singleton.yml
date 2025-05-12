@@ -1,4 +1,3 @@
-version: '3.5'
 services:
 
   hexoids-kafka:
@@ -19,7 +18,6 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@hexoids-kafka:29093'
       KAFKA_LISTENERS: 'PLAINTEXT://hexoids-kafka:29092,CONTROLLER://hexoids-kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
     volumes:
