@@ -1,12 +1,12 @@
 package me.pcasaes.hexoids.configuration;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import me.pcasaes.hexoids.entrypoints.jobs.periodictasks.FlushClientBroadcasterPeriodicTask;
 import me.pcasaes.hexoids.infrastructure.disruptor.DisruptorIn;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @ApplicationScoped
 public class FlushClientBroadcasterPeriodicTaskClientQueueProvider {

@@ -1,13 +1,13 @@
 package me.pcasaes.hexoids.configuration;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import me.pcasaes.hexoids.entrypoints.web.ClientBroadcaster;
 import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer;
 import pcasaes.hexoids.proto.Dto;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @ApplicationScoped
 public class ClientEventProducerProvider {

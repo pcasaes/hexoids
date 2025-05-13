@@ -1,0 +1,12 @@
+hexoids:
+  config:
+    player:
+      reset:
+        position: rng
+
+quarkus:
+  http:
+    cors:
+      enabled: true
+      origins: "*"
+      methods: "GET,POST,PUT,DELETE,OPTIONS,HEAD"

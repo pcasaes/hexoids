@@ -1,17 +1,17 @@
 package me.pcasaes.hexoids.configuration;
 
 import io.quarkus.arc.properties.IfBuildProperty;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.periodictasks.GameLoopPeriodicTask;
 import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
 import me.pcasaes.hexoids.core.domain.periodictasks.StalledPlayersPeriodTask;
 import me.pcasaes.hexoids.core.domain.service.GameLoopService;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 @ApplicationScoped
 public class PeriodicTasksProvider {

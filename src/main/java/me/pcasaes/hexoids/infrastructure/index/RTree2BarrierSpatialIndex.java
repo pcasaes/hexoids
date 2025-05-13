@@ -5,11 +5,11 @@ import com.github.davidmoten.rtree2.RTree;
 import com.github.davidmoten.rtree2.geometry.Geometries;
 import com.github.davidmoten.rtree2.geometry.Rectangle;
 import io.quarkus.runtime.StartupEvent;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
 import me.pcasaes.hexoids.core.domain.model.Barrier;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

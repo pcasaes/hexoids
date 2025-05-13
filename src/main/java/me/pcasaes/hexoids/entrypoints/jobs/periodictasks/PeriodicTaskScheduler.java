@@ -1,16 +1,16 @@
 package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
 
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
+import jakarta.interceptor.Interceptor;
 import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Instance;
-import javax.interceptor.Interceptor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

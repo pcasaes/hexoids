@@ -1,12 +1,12 @@
 package me.pcasaes.hexoids.infrastructure.index;
 
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.model.Game;
 import me.pcasaes.hexoids.core.domain.model.Player;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.logging.Logger;
 
 @DefaultBean

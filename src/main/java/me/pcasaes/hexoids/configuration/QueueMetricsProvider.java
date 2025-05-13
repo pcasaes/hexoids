@@ -1,10 +1,10 @@
 package me.pcasaes.hexoids.configuration;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
 import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
 import java.util.List;
 
 @ApplicationScoped

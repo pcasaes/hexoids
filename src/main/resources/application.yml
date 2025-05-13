@@ -1,33 +1,3 @@
-"%dev":
-  hexoids:
-    config:
-      player:
-        reset:
-          position: rng
-
-"%test":
-  hexoids:
-    config:
-      player:
-        reset:
-          position: 0,0
-        max:
-          move: 1
-
-"%prod":
-  hexoids:
-    config:
-      player:
-        expunge-since-last-spawn-timeout: 180000
-        reset:
-          position: rng
-      service:
-        kafka:
-          topics:
-            bolt-life-cycle:
-              partitions: 1
-
-
 hexoids:
   config:
     infrastructure:
@@ -225,7 +195,3 @@ quarkus:
     category:
       "io.quarkus.vertx.core.runtime.VertxCoreRecorder":
         level: DEBUG
-  micrometer:
-    binder:
-      vertx:
-        enabled: false

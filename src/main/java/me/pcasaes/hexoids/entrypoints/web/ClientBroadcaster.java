@@ -1,5 +1,7 @@
 package me.pcasaes.hexoids.entrypoints.web;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 import me.pcasaes.hexoids.core.domain.service.GameTimeService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -7,8 +9,6 @@ import pcasaes.hexoids.proto.DirectedCommand;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Events;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 /**
  * Used to broadcast events to the game clients

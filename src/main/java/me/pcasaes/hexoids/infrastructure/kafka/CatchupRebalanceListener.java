@@ -1,12 +1,12 @@
 package me.pcasaes.hexoids.infrastructure.kafka;
 
 import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.time.Duration;
 import java.util.Collection;
 

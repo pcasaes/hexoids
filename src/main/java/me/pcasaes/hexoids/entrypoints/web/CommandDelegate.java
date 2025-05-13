@@ -1,13 +1,13 @@
 package me.pcasaes.hexoids.entrypoints.web;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 import pcasaes.hexoids.proto.JoinCommandDto;
 import pcasaes.hexoids.proto.MoveCommandDto;
 import pcasaes.hexoids.proto.SetFixedInertialDampenFactorCommandDto;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @ApplicationScoped
 class CommandDelegate {
