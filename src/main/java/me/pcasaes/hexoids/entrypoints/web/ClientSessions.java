@@ -3,12 +3,12 @@ package me.pcasaes.hexoids.entrypoints.web;
 import io.quarkus.runtime.ShutdownEvent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
 import me.pcasaes.hexoids.core.domain.model.EntityId;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

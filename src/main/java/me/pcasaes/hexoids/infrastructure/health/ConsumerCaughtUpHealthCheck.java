@@ -1,12 +1,11 @@
 package me.pcasaes.hexoids.infrastructure.health;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @Readiness
 @ApplicationScoped

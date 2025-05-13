@@ -14,16 +14,17 @@
     <compiler-plugin.version>3.14.0</compiler-plugin.version>
     <failsafe.useModulePath>false</failsafe.useModulePath>
     <maven.compiler.parameters>true</maven.compiler.parameters>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <mockito.version>4.11.0</mockito.version>
-    <lmax.disruptor.version>3.4.4</lmax.disruptor.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.release>21</maven.compiler.release>
+    <mockito.version>5.17.0</mockito.version>
+    <lmax.disruptor.version>4.0.0</lmax.disruptor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus-plugin.version>2.7.5.Final</quarkus-plugin.version>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>2.7.5.Final</quarkus.platform.version>
+    <quarkus.platform.version>3.22.2</quarkus.platform.version>
     <protobuf.version>3.25.7</protobuf.version>
     <archunit.version>1.4.0</archunit.version>
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
@@ -41,11 +42,6 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>3.9.0</version>
-    </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
@@ -77,16 +73,11 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-smallrye-reactive-messaging-kafka</artifactId>
+      <artifactId>quarkus-messaging-kafka</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-micrometer-metrics</artifactId>
     </dependency>
 
     <dependency>
@@ -254,7 +245,8 @@
 
         </executions>
         <configuration>
-          <nodeVersion>v14.3.0</nodeVersion>
+          <nodeVersion>v22.15.0</nodeVersion>
+          <npmVersion>10.5.0</npmVersion>
           <workingDirectory>src/main/js-proto</workingDirectory>
         </configuration>
       </plugin>

@@ -6,6 +6,11 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import me.pcasaes.hexoids.core.domain.model.GameEvents;
 import me.pcasaes.hexoids.infrastructure.clock.HRClock;
@@ -14,11 +19,6 @@ import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -75,13 +75,13 @@ public class DisruptorOut {
         final AtomicInteger threadCount = new AtomicInteger(0);
         this.disruptor = new Disruptor<>(DisruptorOutEvent::new,
                 bufferSize,
-                Executors.newCachedThreadPool(runnable -> {
+                runnable -> {
                     Thread thread = Executors
                             .defaultThreadFactory()
                             .newThread(runnable);
                     thread.setName("disruptor-out-thread-" + threadCount.incrementAndGet());
                     return thread;
-                }),
+                },
                 ProducerType.SINGLE,
                 new BlockingWaitStrategy());
 

@@ -1,14 +1,14 @@
 package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
 
 import io.quarkus.arc.properties.IfBuildProperty;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pcasaes.hexoids.proto.Dto;
 import pcasaes.hexoids.proto.Flush;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.function.Consumer;
 
 @ApplicationScoped

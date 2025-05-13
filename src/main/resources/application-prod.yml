@@ -1,0 +1,11 @@
+hexoids:
+  config:
+    player:
+      expunge-since-last-spawn-timeout: 180000
+      reset:
+        position: rng
+    service:
+      kafka:
+        topics:
+          bolt-life-cycle:
+            partitions: 1

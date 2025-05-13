@@ -1,0 +1,7 @@
+hexoids:
+  config:
+    player:
+      reset:
+        position: 0,0
+      max:
+        move: 1

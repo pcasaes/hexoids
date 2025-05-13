@@ -12,7 +12,7 @@ if [ $# -eq 0 ]; then
   fi
   JAVA_OPTIONS="${JAVA_OPTIONS} -Dquarkus.vertx.cluster.host=${HOSTNAME}"
   echo "JAVA_OPTIONS: ${JAVA_OPTIONS}"
-  exec /deployments/run-java.sh
+  exec /opt/jboss/container/java/run/run-java.sh
 fi
 
 exec "$@"

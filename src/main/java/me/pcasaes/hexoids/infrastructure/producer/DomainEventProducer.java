@@ -1,6 +1,8 @@
 package me.pcasaes.hexoids.infrastructure.producer;
 
 import io.smallrye.reactive.messaging.kafka.Record;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 import me.pcasaes.hexoids.core.domain.model.GameTopic;
 import org.eclipse.microprofile.reactive.messaging.Channel;
@@ -8,8 +10,6 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 import pcasaes.hexoids.proto.Event;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.UUID;
 
 /**

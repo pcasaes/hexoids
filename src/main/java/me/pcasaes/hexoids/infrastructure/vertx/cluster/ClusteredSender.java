@@ -6,16 +6,16 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.core.domain.model.GameTopic;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import pcasaes.hexoids.proto.Event;
 import pcasaes.hexoids.record.proto.EventRecord;
 import pcasaes.hexoids.record.proto.UUIDKey;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.UUID;
 import java.util.logging.Logger;
 

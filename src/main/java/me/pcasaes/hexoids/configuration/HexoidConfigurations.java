@@ -2,6 +2,12 @@ package me.pcasaes.hexoids.configuration;
 
 
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 import me.pcasaes.hexoids.core.domain.config.Config;
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
@@ -9,12 +15,6 @@ import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;

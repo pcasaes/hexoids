@@ -1,13 +1,13 @@
 package me.pcasaes.hexoids.configuration;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import me.pcasaes.hexoids.configuration.metrics.ApplicationConsumerMetrics;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
 import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumersImpl;
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
 import me.pcasaes.hexoids.core.domain.model.DomainEvent;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @ApplicationScoped
 @ApplicationConsumerMetrics
