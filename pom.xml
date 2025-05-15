@@ -21,7 +21,6 @@
     <lmax.disruptor.version>4.0.0</lmax.disruptor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus-plugin.version>2.7.5.Final</quarkus-plugin.version>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.22.2</quarkus.platform.version>
@@ -29,6 +28,8 @@
     <archunit.version>1.4.0</archunit.version>
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
     <download-maven-plugin.version>1.13.0</download-maven-plugin.version>
+    <awaitility.version>4.3.0</awaitility.version>
+    <rtree2.version>0.9.3</rtree2.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -60,7 +61,7 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
-      <version>4.0.1</version>
+      <version>${awaitility.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -99,7 +100,7 @@
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-javalite</artifactId>
+      <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
     </dependency>
     <dependency>
@@ -110,12 +111,17 @@
     <dependency>
       <groupId>com.github.davidmoten</groupId>
       <artifactId>rtree2</artifactId>
-      <version>0.9.1  </version>
+      <version>${rtree2.version}</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-epoll</artifactId>
       <classifier>linux-x86_64</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>linux-aarch_64</classifier>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
