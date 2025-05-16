@@ -84,7 +84,7 @@ ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 EXPOSE 8080
 USER 185
 # Configure the JAVA_OPTIONS, you can add -XshowSettings:vm to also display the heap size.
-ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
 COPY --chown=185 src/main/docker/docker-entrypoint.sh /deployments/docker-entrypoint.sh
