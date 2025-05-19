@@ -1,81 +1,76 @@
-package me.pcasaes.hexoids.configuration;
+package me.pcasaes.hexoids.configuration
 
+import io.quarkus.runtime.StartupEvent
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.Priority
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.inject.Inject
+import jakarta.interceptor.Interceptor
+import me.pcasaes.hexoids.core.domain.config.Config
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import java.beans.IntrospectionException
+import java.beans.Introspector
+import java.util.function.Supplier
+import java.util.logging.Level
+import java.util.logging.Logger
 
-import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @ApplicationScoped
-public class HexoidConfigurations {
+class HexoidConfigurations {
+    private var inertiaDampenCoefficient = 0f
 
-    private static final Logger LOGGER = Logger.getLogger(HexoidConfigurations.class.getName());
+    private var updateFrequencyInMillis: Long = 0
 
-    private float inertiaDampenCoefficient;
+    private var minMove = 0f
 
-    private long updateFrequencyInMillis;
+    private var playerMaxMove = 0f
 
-    private float minMove;
+    private var playerMaxAngleDivisor = 0f
 
-    private float playerMaxMove;
+    private var expungeSinceLastSpawnTimeout: Long = 0
 
-    private float playerMaxAngleDivisor;
+    private var playerResetPosition: String = ""
 
-    private long expungeSinceLastSpawnTimeout;
+    private var maxBolts = 0
 
-    private String playerResetPosition;
+    private var playerNameLength = 0
 
-    private int maxBolts;
+    private var boltMaxDuration = 0
 
-    private int playerNameLength;
+    private var boltSpeed = 0f
 
-    private int boltMaxDuration;
+    private var boltCollisionRadius = 0f
 
-    private float boltSpeed;
+    private var boltInertiaEnabled: Boolean = false
 
-    private float boltCollisionRadius;
+    private var boltInertiaRejectionScale = 0f
 
-    private boolean boltInertiaEnabled;
+    private var boltInertiaProjectionScale = 0f
 
-    private float boltInertiaRejectionScale;
+    private var boltInertiaNegativeProjectionScale = 0f
 
-    private float boltInertiaProjectionScale;
+    private var playerDestroyedShockwaveDistance = 0f
 
-    private float boltInertiaNegativeProjectionScale;
+    private var playerDestroyedShockwaveDuration: Long = 0
 
-    private float playerDestroyedShockwaveDistance;
+    private var playerDestroyedShockwaveImpulse = 0f
 
-    private long playerDestroyedShockwaveDuration;
+    private var blackholeEventHorizonRadius = 0f
 
-    private float playerDestroyedShockwaveImpulse;
+    private var blackholeGravityRadius = 0f
 
-    private float blackholeEventHorizonRadius;
+    private var blackholeGravityImpulse = 0f
 
-    private float blackholeGravityRadius;
+    private var blackholeDampenFactor = 0f
 
-    private float blackholeGravityImpulse;
+    private var blackholeGenesisProbabilityFactor = 0
 
-    private float blackholeDampenFactor;
-
-    private int blackholeGenesisProbabilityFactor;
-
-    private float blackholeTeleportProbability;
+    private var blackholeTeleportProbability = 0f
 
 
     /**
@@ -83,383 +78,403 @@ public class HexoidConfigurations {
      *
      * @param event
      */
-    public void startup(@Observes @Priority(Interceptor.Priority.APPLICATION) StartupEvent event) {
-        LOGGER.info("Eager load Configuration");
+    fun startup(@Observes @Priority(Interceptor.Priority.APPLICATION) event: StartupEvent?) {
+        LOGGER.info("Eager load Configuration")
     }
 
     @PostConstruct
-    public void start() {
-
+    fun start() {
         if (LOGGER.isLoggable(Level.INFO)) {
             try {
-                for (PropertyDescriptor pd : Introspector.getBeanInfo(HexoidConfigurations.class).getPropertyDescriptors()) {
-                    if (pd.getReadMethod() != null && pd.getWriteMethod() != null && !"class".equals(pd.getName())) {
-                        Annotation[][] annotations = pd.getWriteMethod().getParameterAnnotations();
-                        if (annotations.length == 1 && annotations[0].length == 1 &&
-                                annotations[0][0] instanceof ConfigProperty configProperty) {
-                            LOGGER.info(configProperty.name() + "=" + pd.getReadMethod().invoke(this));
+                for (pd in Introspector.getBeanInfo(HexoidConfigurations::class.java).getPropertyDescriptors()) {
+                    if (pd.getReadMethod() != null && pd.getWriteMethod() != null && ("class" != pd.getName())) {
+                        val annotations = pd.getWriteMethod().parameterAnnotations
+                        if (annotations.size == 1 && annotations[0].size == 1 &&
+                            annotations[0][0] is ConfigProperty
+                        ) {
+                            val configProperty =
+                                annotations[0][0] as ConfigProperty
+                            LOGGER.info(configProperty.name + "=" + pd.getReadMethod().invoke(this))
                         }
                     }
                 }
-            } catch (ReflectiveOperationException | IntrospectionException | RuntimeException ex) {
-                LOGGER.warning(() -> "Could not introspect config. " + ex);
+            } catch (ex: ReflectiveOperationException) {
+                LOGGER.warning { "Could not introspect config. " + ex }
+            } catch (ex: IntrospectionException) {
+                LOGGER.warning { "Could not introspect config. " + ex }
+            } catch (ex: RuntimeException) {
+                LOGGER.warning { "Could not introspect config. " + ex }
             }
         }
 
-        Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis());
-        Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient());
-        Config.get().setMaxBolts(getMaxBolts());
-        Config.get().setMinMove(getMinMove());
-        Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout());
-        Config.get().setPlayerNameLength(getPlayerNameLength());
-        Config.get().setPlayerMaxMove(getPlayerMaxMove());
-        Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor());
-        Config.get().setPlayerResetPosition(getPlayerResetPosition());
-        Config.get().setBoltMaxDuration(getBoltMaxDuration());
-        Config.get().setBoltSpeed(getBoltSpeed());
-        Config.get().setBoltCollisionRadius(getBoltCollisionRadius());
-        Config.get().setBoltInertiaEnabled(isBoltInertiaEnabled());
-        Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale());
-        Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale());
-        Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale());
-        Config.get().getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance());
-        Config.get().getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration());
-        Config.get().getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse());
-        Config.get().getBlackhole().setDampenFactor(getBlackholeDampenFactor());
-        Config.get().getBlackhole().setEventHorizonRadius(getBlackholeEventHorizonRadius());
-        Config.get().getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor());
-        Config.get().getBlackhole().setGravityImpulse(getBlackholeGravityImpulse());
-        Config.get().getBlackhole().setGravityRadius(getBlackholeGravityRadius());
-        Config.get().getBlackhole().setTeleportProbability(getBlackholeTeleportProbability());
+        Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis())
+        Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient())
+        Config.get().setMaxBolts(getMaxBolts())
+        Config.get().setMinMove(getMinMove())
+        Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout())
+        Config.get().setPlayerNameLength(getPlayerNameLength())
+        Config.get().setPlayerMaxMove(getPlayerMaxMove())
+        Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor())
+        Config.get().setPlayerResetPosition(getPlayerResetPosition())
+        Config.get().setBoltMaxDuration(getBoltMaxDuration())
+        Config.get().setBoltSpeed(getBoltSpeed())
+        Config.get().setBoltCollisionRadius(getBoltCollisionRadius())
+        Config.get().setBoltInertiaEnabled(isBoltInertiaEnabled())
+        Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale())
+        Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale())
+        Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale())
+        Config.get().getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance())
+        Config.get().getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration())
+        Config.get().getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse())
+        Config.get().getBlackhole().setDampenFactor(getBlackholeDampenFactor())
+        Config.get().getBlackhole().setEventHorizonRadius(getBlackholeEventHorizonRadius())
+        Config.get().getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor())
+        Config.get().getBlackhole().setGravityImpulse(getBlackholeGravityImpulse())
+        Config.get().getBlackhole().setGravityRadius(getBlackholeGravityRadius())
+        Config.get().getBlackhole().setTeleportProbability(getBlackholeTeleportProbability())
     }
 
 
-    public float getInertiaDampenCoefficient() {
-        return inertiaDampenCoefficient;
-    }
-
-    @Inject
-    public void setPlayerSpatialIndex(PlayerSpatialIndex playerSpatialIndex) {
-        PlayerSpatialIndexFactory.factory().setPlayerSpatialIndex(playerSpatialIndex);
+    fun getInertiaDampenCoefficient(): Float {
+        return inertiaDampenCoefficient
     }
 
     @Inject
-    public void setBarrierSpatialIndex(BarrierSpatialIndex barrierSpatialIndex) {
-        BarrierSpatialIndexFactory.factory().setBarrierSpatialIndex(barrierSpatialIndex);
+    fun setPlayerSpatialIndex(playerSpatialIndex: PlayerSpatialIndex) {
+        PlayerSpatialIndexFactory.factory().setPlayerSpatialIndex(playerSpatialIndex)
     }
 
     @Inject
-    public void setInertiaDampenCoefficient(
-            @ConfigProperty(
-                    name = "hexoids.config.inertia.dampen-coefficient",
-                    defaultValue = "-0.001"
-            ) float inertiaDampenCoefficient) {
-        this.inertiaDampenCoefficient = inertiaDampenCoefficient;
-    }
-
-    public long getUpdateFrequencyInMillis() {
-        return updateFrequencyInMillis;
+    fun setBarrierSpatialIndex(barrierSpatialIndex: BarrierSpatialIndex) {
+        BarrierSpatialIndexFactory.factory().setBarrierSpatialIndex(barrierSpatialIndex)
     }
 
     @Inject
-    public void setUpdateFrequencyInMillis(
-            @ConfigProperty(
-                    name = "hexoids.config.update-frequency-in-millis",
-                    defaultValue = "50"
-            ) long updateFrequencyInMillis) {
-        this.updateFrequencyInMillis = updateFrequencyInMillis;
+    fun setInertiaDampenCoefficient(
+        @ConfigProperty(
+            name = "hexoids.config.inertia.dampen-coefficient",
+            defaultValue = "-0.001"
+        ) inertiaDampenCoefficient: Float
+    ) {
+        this.inertiaDampenCoefficient = inertiaDampenCoefficient
     }
 
-    public float getMinMove() {
-        return minMove;
-    }
-
-    @Inject
-    public void setMinMove(
-            @ConfigProperty(
-                    name = "hexoids.config.min.move",
-                    defaultValue = "0.0001"
-            ) float minMove) {
-        this.minMove = minMove;
-    }
-
-    public float getPlayerMaxMove() {
-        return playerMaxMove;
+    fun getUpdateFrequencyInMillis(): Long {
+        return updateFrequencyInMillis
     }
 
     @Inject
-    public void setPlayerMaxMove(
-            @ConfigProperty(
-                    name = "hexoids.config.player.max.move",
-                    defaultValue = "10"
-            ) float playerMaxMove) {
-        this.playerMaxMove = playerMaxMove;
+    fun setUpdateFrequencyInMillis(
+        @ConfigProperty(
+            name = "hexoids.config.update-frequency-in-millis",
+            defaultValue = "50"
+        ) updateFrequencyInMillis: Long
+    ) {
+        this.updateFrequencyInMillis = updateFrequencyInMillis
     }
 
-    public float getPlayerMaxAngleDivisor() {
-        return playerMaxAngleDivisor;
-    }
-
-    @Inject
-    public void setPlayerMaxAngleDivisor(
-            @ConfigProperty(
-                    name = "hexoids.config.player.max.angle.divisor",
-                    defaultValue = "4"
-            ) float playerMaxAngleDivisor) {
-        this.playerMaxAngleDivisor = playerMaxAngleDivisor;
-    }
-
-    public long getExpungeSinceLastSpawnTimeout() {
-        return expungeSinceLastSpawnTimeout;
+    fun getMinMove(): Float {
+        return minMove
     }
 
     @Inject
-
-    public void setExpungeSinceLastSpawnTimeout(
-            @ConfigProperty(
-                    name = "hexoids.config.player.expunge-since-last-spawn-timeout",
-                    defaultValue = "60000"
-            ) long expungeSinceLastSpawnTimeout) {
-        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
+    fun setMinMove(
+        @ConfigProperty(name = "hexoids.config.min.move", defaultValue = "0.0001") minMove: Float
+    ) {
+        this.minMove = minMove
     }
 
-    public String getPlayerResetPosition() {
-        return playerResetPosition;
+    fun getPlayerMaxMove(): Float {
+        return playerMaxMove
     }
 
     @Inject
-    public void setPlayerResetPosition(
-            @ConfigProperty(
-                    name = "hexoids.config.player.reset.position",
-                    defaultValue = "rng"
-            ) String playerResetPosition) {
-        this.playerResetPosition = playerResetPosition;
+    fun setPlayerMaxMove(
+        @ConfigProperty(name = "hexoids.config.player.max.move", defaultValue = "10") playerMaxMove: Float
+    ) {
+        this.playerMaxMove = playerMaxMove
     }
 
-    public int getMaxBolts() {
-        return maxBolts;
-    }
-
-    @Inject
-    public void setMaxBolts(
-            @ConfigProperty(
-                    name = "hexoids.config.player.max.bolts",
-                    defaultValue = "10"
-            ) int maxBolts) {
-        this.maxBolts = maxBolts;
-    }
-
-    public int getPlayerNameLength() {
-        return playerNameLength;
+    fun getPlayerMaxAngleDivisor(): Float {
+        return playerMaxAngleDivisor
     }
 
     @Inject
-    public void setPlayerNameLength(
-            @ConfigProperty(
-                    name = "hexoids.config.player.name-length",
-                    defaultValue = "7"
-            ) int playerNameLength) {
-        this.playerNameLength = playerNameLength;
+    fun setPlayerMaxAngleDivisor(
+        @ConfigProperty(
+            name = "hexoids.config.player.max.angle.divisor",
+            defaultValue = "4"
+        ) playerMaxAngleDivisor: Float
+    ) {
+        this.playerMaxAngleDivisor = playerMaxAngleDivisor
     }
 
-    public int getBoltMaxDuration() {
-        return boltMaxDuration;
-    }
-
-    @Inject
-    public void setBoltMaxDuration(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.max.duration",
-                    defaultValue = "10000"
-            ) int boltMaxDuration) {
-        this.boltMaxDuration = boltMaxDuration;
-    }
-
-    public float getBoltSpeed() {
-        return boltSpeed;
+    fun getExpungeSinceLastSpawnTimeout(): Long {
+        return expungeSinceLastSpawnTimeout
     }
 
     @Inject
-    public void setBoltSpeed(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.speed",
-                    defaultValue = "0.07"
-            ) float boltSpeed) {
-        this.boltSpeed = boltSpeed;
+    fun setExpungeSinceLastSpawnTimeout(
+        @ConfigProperty(
+            name = "hexoids.config.player.expunge-since-last-spawn-timeout",
+            defaultValue = "60000"
+        ) expungeSinceLastSpawnTimeout: Long
+    ) {
+        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout
     }
 
-    public float getBoltCollisionRadius() {
-        return boltCollisionRadius;
-    }
-
-    @Inject
-    public void setBoltCollisionRadius(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.collision.radius",
-                    defaultValue = "0.001"
-            ) float boltCollisionRadius) {
-        this.boltCollisionRadius = boltCollisionRadius;
-    }
-
-    public boolean isBoltInertiaEnabled() {
-        return boltInertiaEnabled;
+    fun getPlayerResetPosition(): String {
+        return playerResetPosition
     }
 
     @Inject
-    public void setBoltInertiaEnabled(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.inertia.enabled",
-                    defaultValue = "true"
-            ) boolean boltInertiaEnabled) {
-        this.boltInertiaEnabled = boltInertiaEnabled;
+    fun setPlayerResetPosition(
+        @ConfigProperty(
+            name = "hexoids.config.player.reset.position",
+            defaultValue = "rng"
+        ) playerResetPosition: String
+    ) {
+        this.playerResetPosition = playerResetPosition
     }
 
-    public float getBoltInertiaRejectionScale() {
-        return boltInertiaRejectionScale;
-    }
-
-    @Inject
-    public void setBoltInertiaRejectionScale(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.inertia.rejection-scale",
-                    defaultValue = "0.8"
-            ) float boltInertiaRejectionScale) {
-        this.boltInertiaRejectionScale = boltInertiaRejectionScale;
-    }
-
-    public float getBoltInertiaProjectionScale() {
-        return boltInertiaProjectionScale;
+    fun getMaxBolts(): Int {
+        return maxBolts
     }
 
     @Inject
-    public void setBoltInertiaProjectionScale(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.inertia.projection-scale",
-                    defaultValue = "0.8"
-            ) float boltInertiaProjectionScale) {
-        this.boltInertiaProjectionScale = boltInertiaProjectionScale;
+    fun setMaxBolts(
+        @ConfigProperty(name = "hexoids.config.player.max.bolts", defaultValue = "10") maxBolts: Int
+    ) {
+        this.maxBolts = maxBolts
     }
 
-    public float getBoltInertiaNegativeProjectionScale() {
-        return boltInertiaNegativeProjectionScale;
-    }
-
-    @Inject
-    public void setBoltInertiaNegativeProjectionScale(
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.inertia.negative-projection-scale",
-                    defaultValue = "0.1"
-            ) float boltInertiaNegativeProjectionScale) {
-        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
-    }
-
-    public float getPlayerDestroyedShockwaveDistance() {
-        return playerDestroyedShockwaveDistance;
+    fun getPlayerNameLength(): Int {
+        return playerNameLength
     }
 
     @Inject
-    public void setPlayerDestroyedShockwaveDistance(
-            @ConfigProperty(
-                    name = "hexoids.config.player.destroyed.shockwave.distance",
-                    defaultValue = "0.0408"
-            ) float playerDestroyedShockwaveDistance) {
-        this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance;
+    fun setPlayerNameLength(
+        @ConfigProperty(name = "hexoids.config.player.name-length", defaultValue = "7") playerNameLength: Int
+    ) {
+        this.playerNameLength = playerNameLength
     }
 
-    public long getPlayerDestroyedShockwaveDuration() {
-        return playerDestroyedShockwaveDuration;
-    }
-
-    @Inject
-    public void setPlayerDestroyedShockwaveDuration(
-            @ConfigProperty(
-                    name = "hexoids.config.player.destroyed.shockwave.duration.ms",
-                    defaultValue = "400"
-            ) long playerDestroyedShockwaveDuration) {
-        this.playerDestroyedShockwaveDuration = playerDestroyedShockwaveDuration;
-    }
-
-    public float getPlayerDestroyedShockwaveImpulse() {
-        return playerDestroyedShockwaveImpulse;
+    fun getBoltMaxDuration(): Int {
+        return boltMaxDuration
     }
 
     @Inject
-    public void setPlayerDestroyedShockwaveImpulse(@ConfigProperty(
+    fun setBoltMaxDuration(
+        @ConfigProperty(name = "hexoids.config.bolt.max.duration", defaultValue = "10000") boltMaxDuration: Int
+    ) {
+        this.boltMaxDuration = boltMaxDuration
+    }
+
+    fun getBoltSpeed(): Float {
+        return boltSpeed
+    }
+
+    @Inject
+    fun setBoltSpeed(
+        @ConfigProperty(name = "hexoids.config.bolt.speed", defaultValue = "0.07") boltSpeed: Float
+    ) {
+        this.boltSpeed = boltSpeed
+    }
+
+    fun getBoltCollisionRadius(): Float {
+        return boltCollisionRadius
+    }
+
+    @Inject
+    fun setBoltCollisionRadius(
+        @ConfigProperty(
+            name = "hexoids.config.bolt.collision.radius",
+            defaultValue = "0.001"
+        ) boltCollisionRadius: Float
+    ) {
+        this.boltCollisionRadius = boltCollisionRadius
+    }
+
+    fun isBoltInertiaEnabled(): Boolean {
+        return boltInertiaEnabled
+    }
+
+    @Inject
+    fun setBoltInertiaEnabled(
+        @ConfigProperty(name = "hexoids.config.bolt.inertia.enabled", defaultValue = "true") boltInertiaEnabled: Boolean
+    ) {
+        this.boltInertiaEnabled = boltInertiaEnabled
+    }
+
+    fun getBoltInertiaRejectionScale(): Float {
+        return boltInertiaRejectionScale
+    }
+
+    @Inject
+    fun setBoltInertiaRejectionScale(
+        @ConfigProperty(
+            name = "hexoids.config.bolt.inertia.rejection-scale",
+            defaultValue = "0.8"
+        ) boltInertiaRejectionScale: Float
+    ) {
+        this.boltInertiaRejectionScale = boltInertiaRejectionScale
+    }
+
+    fun getBoltInertiaProjectionScale(): Float {
+        return boltInertiaProjectionScale
+    }
+
+    @Inject
+    fun setBoltInertiaProjectionScale(
+        @ConfigProperty(
+            name = "hexoids.config.bolt.inertia.projection-scale",
+            defaultValue = "0.8"
+        ) boltInertiaProjectionScale: Float
+    ) {
+        this.boltInertiaProjectionScale = boltInertiaProjectionScale
+    }
+
+    fun getBoltInertiaNegativeProjectionScale(): Float {
+        return boltInertiaNegativeProjectionScale
+    }
+
+    @Inject
+    fun setBoltInertiaNegativeProjectionScale(
+        @ConfigProperty(
+            name = "hexoids.config.bolt.inertia.negative-projection-scale",
+            defaultValue = "0.1"
+        ) boltInertiaNegativeProjectionScale: Float
+    ) {
+        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale
+    }
+
+    fun getPlayerDestroyedShockwaveDistance(): Float {
+        return playerDestroyedShockwaveDistance
+    }
+
+    @Inject
+    fun setPlayerDestroyedShockwaveDistance(
+        @ConfigProperty(
+            name = "hexoids.config.player.destroyed.shockwave.distance",
+            defaultValue = "0.0408"
+        ) playerDestroyedShockwaveDistance: Float
+    ) {
+        this.playerDestroyedShockwaveDistance = playerDestroyedShockwaveDistance
+    }
+
+    fun getPlayerDestroyedShockwaveDuration(): Long {
+        return playerDestroyedShockwaveDuration
+    }
+
+    @Inject
+    fun setPlayerDestroyedShockwaveDuration(
+        @ConfigProperty(
+            name = "hexoids.config.player.destroyed.shockwave.duration.ms",
+            defaultValue = "400"
+        ) playerDestroyedShockwaveDuration: Long
+    ) {
+        this.playerDestroyedShockwaveDuration = playerDestroyedShockwaveDuration
+    }
+
+    fun getPlayerDestroyedShockwaveImpulse(): Float {
+        return playerDestroyedShockwaveImpulse
+    }
+
+    @Inject
+    fun setPlayerDestroyedShockwaveImpulse(
+        @ConfigProperty(
             name = "hexoids.config.player.destroyed.shockwave.impulse",
             defaultValue = "0.007"
-    ) float playerDestroyedShockwaveImpulse) {
-        this.playerDestroyedShockwaveImpulse = playerDestroyedShockwaveImpulse;
+        ) playerDestroyedShockwaveImpulse: Float
+    ) {
+        this.playerDestroyedShockwaveImpulse = playerDestroyedShockwaveImpulse
     }
 
-    public float getBlackholeEventHorizonRadius() {
-        return blackholeEventHorizonRadius;
+    fun getBlackholeEventHorizonRadius(): Float {
+        return blackholeEventHorizonRadius
     }
 
     @Inject
-    public void setBlackholeEventHorizonRadius(@ConfigProperty(
+    fun setBlackholeEventHorizonRadius(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.eventhorizon.radius",
             defaultValue = "0.005"
-    ) float blackholeEventHorizonRadius) {
-        this.blackholeEventHorizonRadius = blackholeEventHorizonRadius;
+        ) blackholeEventHorizonRadius: Float
+    ) {
+        this.blackholeEventHorizonRadius = blackholeEventHorizonRadius
     }
 
-    public float getBlackholeGravityRadius() {
-        return blackholeGravityRadius;
+    fun getBlackholeGravityRadius(): Float {
+        return blackholeGravityRadius
     }
 
     @Inject
-    public void setBlackholeGravityRadius(@ConfigProperty(
+    fun setBlackholeGravityRadius(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.gravity.radius",
             defaultValue = "0.07"
-    ) float blackholeGravityRadius) {
-        this.blackholeGravityRadius = blackholeGravityRadius;
+        ) blackholeGravityRadius: Float
+    ) {
+        this.blackholeGravityRadius = blackholeGravityRadius
     }
 
-    public float getBlackholeGravityImpulse() {
-        return blackholeGravityImpulse;
+    fun getBlackholeGravityImpulse(): Float {
+        return blackholeGravityImpulse
     }
 
     @Inject
-    public void setBlackholeGravityImpulse(@ConfigProperty(
+    fun setBlackholeGravityImpulse(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.gravity.impulse",
             defaultValue = "0.07"
-    ) float blackholeGravityImpulse) {
-        this.blackholeGravityImpulse = blackholeGravityImpulse;
+        ) blackholeGravityImpulse: Float
+    ) {
+        this.blackholeGravityImpulse = blackholeGravityImpulse
     }
 
-    public float getBlackholeDampenFactor() {
-        return blackholeDampenFactor;
+    fun getBlackholeDampenFactor(): Float {
+        return blackholeDampenFactor
     }
 
     @Inject
-    public void setBlackholeDampenFactor(@ConfigProperty(
+    fun setBlackholeDampenFactor(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.dampen.factor",
             defaultValue = "5"
-    ) float blackholeDampenFactor) {
-        this.blackholeDampenFactor = blackholeDampenFactor;
+        ) blackholeDampenFactor: Float
+    ) {
+        this.blackholeDampenFactor = blackholeDampenFactor
     }
 
-    public int getBlackholeGenesisProbabilityFactor() {
-        return blackholeGenesisProbabilityFactor;
+    fun getBlackholeGenesisProbabilityFactor(): Int {
+        return blackholeGenesisProbabilityFactor
     }
 
     @Inject
-    public void setBlackholeGenesisProbabilityFactor(@ConfigProperty(
+    fun setBlackholeGenesisProbabilityFactor(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.genesis.probability.factor",
             defaultValue = "3"
-    ) int blackholeGenesisProbabilityFactor) {
-        this.blackholeGenesisProbabilityFactor = blackholeGenesisProbabilityFactor;
+        ) blackholeGenesisProbabilityFactor: Int
+    ) {
+        this.blackholeGenesisProbabilityFactor = blackholeGenesisProbabilityFactor
     }
 
-    public float getBlackholeTeleportProbability() {
-        return blackholeTeleportProbability;
+    fun getBlackholeTeleportProbability(): Float {
+        return blackholeTeleportProbability
     }
 
     @Inject
-    public void setBlackholeTeleportProbability(@ConfigProperty(
+    fun setBlackholeTeleportProbability(
+        @ConfigProperty(
             name = "hexoids.config.blackhole.teleport.probability",
             defaultValue = "0.05"
-    ) float blackholeTeleportProbability) {
-        this.blackholeTeleportProbability = blackholeTeleportProbability;
+        ) blackholeTeleportProbability: Float
+    ) {
+        this.blackholeTeleportProbability = blackholeTeleportProbability
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(HexoidConfigurations::class.java.getName())
     }
 }

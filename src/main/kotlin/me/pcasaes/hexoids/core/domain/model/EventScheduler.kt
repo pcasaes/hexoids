@@ -1,10 +1,8 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.function.LongPredicate;
+import java.util.Optional
+import java.util.Random
+import java.util.function.LongPredicate
 
 /**
  * Every 3 minutes this object generates a deterministic RNG which is used to potentially generate events like
@@ -13,80 +11,73 @@ import java.util.function.LongPredicate;
  * At startup will replay the last 3 minutes worth of events in a deterministic way.
  *
  */
-public class EventScheduler {
+class EventScheduler private constructor(private val physicsQueueEnqueue: PhysicsQueueEnqueue) {
+    private val eventFactories: MutableList<EventFactory> = ArrayList<EventFactory>()
 
-    static final long HOUR_IN_MILLIS = 3_600_000L;
+    var currentTime: Long = -1
+    var replayed: Boolean = false
 
-    static final long MINUTE_IN_MILLIS = 60_000L;
-
-    static final int GRANULAR_TIME_IN_MINUTES = 3;
-
-    static final long GRANULAR_TIME_IN_MILLIS = GRANULAR_TIME_IN_MINUTES * MINUTE_IN_MILLIS;
-
-    private final PhysicsQueueEnqueue physicsQueueEnqueue;
-
-    private final List<EventFactory> eventFactories = new ArrayList<>();
-
-    long currentTime = -1;
-    boolean replayed = false;
-
-    private EventScheduler(PhysicsQueueEnqueue physicsQueueEnqueue) {
-        this.physicsQueueEnqueue = physicsQueueEnqueue;
+    fun register(eventFactory: EventFactory) {
+        this.eventFactories.add(eventFactory)
     }
 
-    public static EventScheduler create(PhysicsQueueEnqueue physicsQueueEnqueue) {
-        return new EventScheduler(physicsQueueEnqueue);
-    }
-
-    public void register(EventFactory eventFactory) {
-        this.eventFactories.add(eventFactory);
-    }
-
-    public void fixedUpdate(long timestamp) {
+    fun fixedUpdate(timestamp: Long) {
         if (!replayed) {
-            replay(timestamp);
-            replayed = true;
+            replay(timestamp)
+            replayed = true
         }
-        timer(timestamp);
+        timer(timestamp)
     }
 
-    void timer(long timestamp) {
+    fun timer(timestamp: Long) {
+        val truncateToHour: Long = (timestamp / HOUR_IN_MILLIS) * HOUR_IN_MILLIS
 
-        long truncateToHour = (timestamp / HOUR_IN_MILLIS) * HOUR_IN_MILLIS;
+        val inHour = timestamp - truncateToHour
 
-        long inHour = timestamp - truncateToHour;
+        val truncateToMinute: Long = (inHour / MINUTE_IN_MILLIS) * MINUTE_IN_MILLIS
 
-        long truncateToMinute = (inHour / MINUTE_IN_MILLIS) * MINUTE_IN_MILLIS;
-
-        long timeOfHour = truncateToMinute / GRANULAR_TIME_IN_MILLIS;
+        val timeOfHour: Long = truncateToMinute / GRANULAR_TIME_IN_MILLIS
 
         if (currentTime != timeOfHour) {
-            currentTime = timeOfHour;
+            currentTime = timeOfHour
 
-            long start = truncateToHour + (timeOfHour * GRANULAR_TIME_IN_MILLIS);
+            val start: Long = truncateToHour + (timeOfHour * GRANULAR_TIME_IN_MILLIS)
 
-            Random rng = new Random(start);
+            val rng = Random(start)
 
-            long end = start + GRANULAR_TIME_IN_MILLIS;
+            val end: Long = start + GRANULAR_TIME_IN_MILLIS
 
             eventFactories
-                    .stream()
-                    .map(ef -> ef.createEvent(rng, start, end))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .forEach(physicsQueueEnqueue::enqueue);
-
-        }
-
-    }
-
-    public void replay(long now) {
-        for (int i = GRANULAR_TIME_IN_MINUTES; i > 0; i--) {
-            timer(now - i * MINUTE_IN_MILLIS);
+                .stream()
+                .map { ef -> ef.createEvent(rng, start, end) }
+                .filter { obj -> obj.isPresent }
+                .map { obj -> obj.get() }
+                .forEach { action -> physicsQueueEnqueue.enqueue(action) }
         }
     }
 
-    public interface EventFactory {
-        Optional<LongPredicate> createEvent(Random rng, long start, long end);
+    fun replay(now: Long) {
+        for (i in GRANULAR_TIME_IN_MINUTES downTo 1) {
+            timer(now - i * MINUTE_IN_MILLIS)
+        }
+    }
+
+    fun interface EventFactory {
+        fun createEvent(rng: Random, start: Long, end: Long): Optional<LongPredicate>
+    }
+
+    companion object {
+        const val HOUR_IN_MILLIS: Long = 3600000L
+
+        const val MINUTE_IN_MILLIS: Long = 60000L
+
+        const val GRANULAR_TIME_IN_MINUTES: Int = 3
+
+        const val GRANULAR_TIME_IN_MILLIS: Long = GRANULAR_TIME_IN_MINUTES * MINUTE_IN_MILLIS
+
+        @JvmStatic
+        fun create(physicsQueueEnqueue: PhysicsQueueEnqueue): EventScheduler {
+            return EventScheduler(physicsQueueEnqueue)
+        }
     }
 }

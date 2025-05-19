@@ -1,25 +1,20 @@
-package me.pcasaes.hexoids.core.application.eventhandlers;
+package me.pcasaes.hexoids.core.application.eventhandlers
 
-import me.pcasaes.hexoids.core.domain.model.DomainEvent;
+import me.pcasaes.hexoids.core.domain.model.DomainEvent
+import java.util.function.BooleanSupplier
 
-import java.util.function.BooleanSupplier;
+interface ApplicationConsumers {
+    fun onJoinGame(domainEvent: DomainEvent)
 
-public interface ApplicationConsumers {
+    fun onPlayerAction(domainEvent: DomainEvent)
 
+    fun onBoltLifeCycle(domainEvent: DomainEvent)
 
-     void onJoinGame(DomainEvent domainEvent);
+    fun onBoltAction(domainEvent: DomainEvent)
 
-     void onPlayerAction(DomainEvent domainEvent);
+    fun onScoreBoardControl(domainEvent: DomainEvent)
 
-     void onBoltLifeCycle(DomainEvent domainEvent) ;
+    fun onScoreBoardUpdate(domainEvent: DomainEvent)
 
-     void onBoltAction(DomainEvent domainEvent);
-
-     void onScoreBoardControl(DomainEvent domainEvent);
-
-     void onScoreBoardUpdate(DomainEvent domainEvent);
-
-    interface HaveStarted extends BooleanSupplier {
-    }
-
+    fun interface HaveStarted : BooleanSupplier
 }

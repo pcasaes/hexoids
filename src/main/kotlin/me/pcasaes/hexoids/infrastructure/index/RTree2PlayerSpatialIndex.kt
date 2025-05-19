@@ -1,155 +1,155 @@
-package me.pcasaes.hexoids.infrastructure.index;
+package me.pcasaes.hexoids.infrastructure.index
 
-import com.github.davidmoten.rtree2.Entries;
-import com.github.davidmoten.rtree2.RTree;
-import com.github.davidmoten.rtree2.geometry.Geometries;
-import com.github.davidmoten.rtree2.geometry.Point;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import io.quarkus.arc.properties.IfBuildProperty;
-import io.quarkus.runtime.StartupEvent;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
-import me.pcasaes.hexoids.core.domain.model.Game;
-import me.pcasaes.hexoids.core.domain.model.Player;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.LongPredicate;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import com.github.davidmoten.rtree2.Entries
+import com.github.davidmoten.rtree2.RTree
+import com.github.davidmoten.rtree2.geometry.Geometries
+import com.github.davidmoten.rtree2.geometry.Point
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
+import io.quarkus.arc.properties.IfBuildProperty
+import io.quarkus.runtime.StartupEvent
+import io.vertx.core.AbstractVerticle
+import io.vertx.core.Promise
+import io.vertx.core.Vertx
+import jakarta.annotation.PreDestroy
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex
+import me.pcasaes.hexoids.core.domain.model.Game
+import me.pcasaes.hexoids.core.domain.model.Player
+import java.util.concurrent.TimeUnit
+import java.util.function.LongPredicate
+import java.util.logging.Logger
+import java.util.stream.Collectors
+import kotlin.math.max
+import kotlin.math.min
 
 @IfBuildProperty(name = "hexoids.config.infrastructure.players-spatial-index", stringValue = "rtree2")
 @ApplicationScoped
-public class RTree2PlayerSpatialIndex implements PlayerSpatialIndex {
+class RTree2PlayerSpatialIndex @Inject constructor(
+    gameQueue: GameQueue,
+    meterRegistry: MeterRegistry,
+    private val vertx: Vertx
+) : PlayerSpatialIndex {
 
-    private static final Logger LOGGER = Logger.getLogger(RTree2PlayerSpatialIndex.class.getName());
 
-    private final List<Player> results = new ArrayList<>();
-
-    private final Vertx vertx;
-
-    private final Updater updater;
-
-    @Inject
-    public RTree2PlayerSpatialIndex(GameQueue gameQueue, MeterRegistry meterRegistry, Vertx vertx) {
-        this.vertx = vertx;
-        this.updater = new Updater(gameQueue, meterRegistry);
-        LOGGER.info("Using RTree2 Spatial Index");
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(RTree2PlayerSpatialIndex::class.java.getName())
     }
 
-    public void startup(@Observes StartupEvent event) {
-        this.vertx.deployVerticle(updater);
+    private val results = ArrayList<Player>()
+
+    private val updater: Updater = Updater(gameQueue, meterRegistry)
+
+    init {
+        LOGGER.info("Using RTree2 Spatial Index")
+    }
+
+    fun startup(@Observes event: StartupEvent) {
+        this.vertx.deployVerticle(updater)
     }
 
     @PreDestroy
-    public void stop() {
-        this.vertx.undeploy(updater.deploymentID());
+    fun stop() {
+        this.vertx.undeploy(updater.deploymentID())
     }
 
 
-    @Override
-    public Iterable<Player> search(float x1, float y1, float x2, float y2, float distance) {
-        RTree<Player, Point> index = this.updater.getIndex();
-        if (index == null) {
-            return Collections.emptyList();
-        }
-        this.results.clear();
-        index
-                .search(Geometries
+    override fun search(x1: Float, y1: Float, x2: Float, y2: Float, distance: Float): Iterable<Player> {
+        val index = this.updater.index
+        return if (index == null) {
+            emptyList()
+        } else {
+            this.results.clear()
+            index
+                .search(
+                    Geometries
                         .rectangle(
-                                Math.min(x1, x2), Math.min(y1, y2),
-                                Math.max(x1, x2), Math.max(y1, y2)
-                        ), distance)
-                .forEach(entry -> this.results.add(entry.value()));
+                            min(x1, x2), min(y1, y2),
+                            max(x1, x2), max(y1, y2)
+                        ), distance.toDouble()
+                )
+                .forEach { entry -> this.results.add(entry.value()) }
 
-        return this.results;
+            this.results
+        }
     }
 
-    private static class Updater extends AbstractVerticle implements LongPredicate {
+    private class Updater(
+        private val gameQueue: GameQueue,
+        meterRegistry: MeterRegistry
+    ) : AbstractVerticle(), LongPredicate {
+        private val timer: Timer
+        private var running = false
+        var index: RTree<Player, Point>? = null
+            private set
 
-        private final GameQueue gameQueue;
-        private final Timer timer;
-        private boolean running = false;
-        private RTree<Player, Point> index;
-
-        private Updater(GameQueue gameQueue,
-                        MeterRegistry meterRegistry) {
-            this.gameQueue = gameQueue;
+        init {
             this.timer = Timer.builder("player_spatial_index_update")
-                    .description("Time to update the player spatial index.")
-                    .publishPercentiles(0.5, 0.75, 0.90, 0.95)
-                    .register(meterRegistry);
+                .description("Time to update the player spatial index.")
+                .publishPercentiles(0.5, 0.75, 0.90, 0.95)
+                .register(meterRegistry)
         }
 
-        @Override
-        public void start(Promise<Void> startPromise) throws Exception {
-            this.context.runOnContext(h -> {
-                running = true;
-                this.gameQueue.enqueue(() -> Game.get().getPhysicsQueue().enqueue(this));
-                startPromise.complete();
-            });
+        @Throws(Exception::class)
+        override fun start(startPromise: Promise<Void?>) {
+            this.context.runOnContext { _ ->
+                running = true
+                this.gameQueue.enqueue { Game.get().getPhysicsQueue().enqueue(this) }
+                startPromise.complete()
+            }
         }
 
-        @Override
-        public void stop(Promise<Void> stopPromise) throws Exception {
+        @Throws(Exception::class)
+        override fun stop(stopPromise: Promise<Void?>) {
             this.context
-                    .runOnContext(h -> {
-                        running = false;
-                        stopPromise.complete();
-                    });
+                .runOnContext { _ ->
+                    running = false
+                    stopPromise.complete()
+                }
         }
 
-        @Override
-        public boolean test(long l) {
-            long now = System.nanoTime();
-            final List<Player> list = new ArrayList<>();
+        override fun test(l: Long): Boolean {
+            val now = System.nanoTime()
+            val list = ArrayList<Player>()
             Game.get()
-                    .getPlayers()
-                    .forEach(list::add);
+                .getPlayers()
+                .forEach { list.add(it) }
 
-            update(list, now);
+            update(list, now)
 
-            return false;
+            return false
         }
 
-        private void update(List<Player> players, long start) {
+        fun update(players: MutableList<Player>, start: Long) {
             this.context
-                    .runOnContext(h -> {
-                        if (!running) {
-                            return;
-                        }
-
-                        final RTree<Player, Point> rtree = RTree.create(
-                                players
-                                        .stream()
-                                        .map(p -> Entries.entry(p, Geometries.point(p.getX(), p.getY())))
-                                        .collect(Collectors.toList()) // NOSONAR: we want a mutable list
-                        );
-
-                        finishedUpdate(rtree, start);
-                    });
+                .runOnContext { _ ->
+                    if (running) {
+                        val rtree = RTree.create(
+                            players
+                                .stream()
+                                .map { p ->
+                                    Entries.entry(
+                                        p,
+                                        Geometries.point(p.getX(), p.getY())
+                                    )
+                                }
+                                .collect(Collectors.toList()) // NOSONAR: we want a mutable list
+                        )
+                        finishedUpdate(rtree, start)
+                    }
+                }
         }
 
-        private void finishedUpdate(RTree<Player, Point> result, long start) {
-            this.gameQueue.enqueue(() -> {
-                this.index = result;
-                timer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                Game.get().getPhysicsQueue().enqueue(this);
-            });
-        }
-
-        private RTree<Player, Point> getIndex() {
-            return index;
+        fun finishedUpdate(result: RTree<Player, Point>?, start: Long) {
+            this.gameQueue.enqueue {
+                this.index = result
+                timer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+                Game.get().getPhysicsQueue().enqueue(this)
+            }
         }
     }
+
 }

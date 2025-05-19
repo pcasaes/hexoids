@@ -1,158 +1,154 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
-import me.pcasaes.hexoids.core.domain.vector.Vector2;
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory.Companion.factory
+import me.pcasaes.hexoids.core.domain.model.Barrier.Companion.place
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil
+import me.pcasaes.hexoids.core.domain.vector.Vector2
+import kotlin.math.pow
+import kotlin.math.sqrt
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+class Barriers private constructor() : Iterable<Barrier> {
 
-public class Barriers implements Iterable<Barrier> {
-
-    static Barriers create() {
-        return new Barriers();
+    companion object {
+        @JvmStatic
+        fun create(): Barriers {
+            return Barriers()
+        }
     }
 
-    private final List<Barrier> barriers = new ArrayList<>();
+    private val barriers = ArrayList<Barrier>()
 
-    private boolean started = false;
+    private var started = false
 
-    private Barriers() {
-    }
-
-    void fixedUpdate(long timestamp) {
+    fun fixedUpdate(timestamp: Long) {
         if (started) {
-            return;
+            return
         }
-        started = true;
+        started = true
 
-        createCenterDiamond();
-        createCornerSquares();
+        createCenterDiamond()
+        createCornerSquares()
 
 
-        BarrierSpatialIndexFactory
-                .factory()
-                .get()
-                .update(this);
-
+        factory()
+            .get()
+            .update(this)
     }
 
-    private void createCornerSquares() {
+    private fun createCornerSquares() {
+        val iter = (0.25F / Barrier.LENGTH).toInt() - 6
 
-        int iter = (int) (0.25F / Barrier.LENGTH) - 6;
-
-        Barrier s = Barrier.place(Vector2.fromXY(0.25F, 0F), TrigUtil.PI / 2f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        var s = place(Vector2.fromXY(0.25F, 0F), TrigUtil.PI / 2F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0F, 0.25F), 0);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0F, 0.25F), 0F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.25F, 0.75F), TrigUtil.PI / 2f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.25F, 0.75F), TrigUtil.PI / 2F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0F, 0.75F), 0);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0F, 0.75F), 0F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0F), TrigUtil.PI / 2f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0F), TrigUtil.PI / 2F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0.25F), 0);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0.25F), 0F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0.75F), TrigUtil.PI / 2f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0.75F), TrigUtil.PI / 2F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0.75F), 0);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0.75F), 0F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
     }
 
-    private void createCenterDiamond() {
-        int iter = (int) (Math.sqrt(Math.pow(0.5F - 0.25F, 2F) + Math.pow(0.75F - 0.5F, 2F)) / Barrier.LENGTH) - 6;
+    private fun createCenterDiamond() {
+        val iter =
+            (sqrt((0.5F - 0.25F).toDouble().pow(2.0) + (0.75F - 0.5F).toDouble().pow(2.0)) / Barrier.LENGTH).toInt() - 6
 
-        Barrier s = Barrier.place(Vector2.fromXY(0.25F, 0.5F), TrigUtil.PI / 4f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        var s = place(Vector2.fromXY(0.25F, 0.5F), TrigUtil.PI / 4F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.25F, 0.5F), TrigUtil.PI / -4f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.25F, 0.5F), TrigUtil.PI / -4F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0.5F), 3 * TrigUtil.PI / 4f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0.5F), 3 * TrigUtil.PI / 4F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
 
-        s = Barrier.place(Vector2.fromXY(0.75F, 0.5F), 3 * TrigUtil.PI / -4f);
-        for (int i = 0; i < iter; i++) {
-            s = s.extend();
+        s = place(Vector2.fromXY(0.75F, 0.5F), 3 * TrigUtil.PI / -4F)
+        for (i in 0..<iter) {
+            s = s.extend()
             if (i > 6) {
-                barriers.add(s);
+                barriers.add(s)
             }
         }
     }
 
-    @Override
-    public Iterator<Barrier> iterator() {
-        return barriers.iterator();
+    override fun iterator(): MutableIterator<Barrier> {
+        return barriers.iterator()
     }
 
-    public Iterable<Barrier> search(float x1, float y1, float x2, float y2, float distance) {
-        return BarrierSpatialIndexFactory
-                .factory()
-                .get()
-                .search(x1, y1, x2, y2, distance);
+    fun search(x1: Float, y1: Float, x2: Float, y2: Float, distance: Float): Iterable<Barrier> {
+        return factory()
+            .get()
+            .search(x1, y1, x2, y2, distance)
     }
+
 }

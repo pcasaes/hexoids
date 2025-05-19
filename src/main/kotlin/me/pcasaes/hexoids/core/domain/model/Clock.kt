@@ -1,44 +1,44 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
 /**
  * Used to get the current time in millis;
  */
-public interface Clock {
+interface Clock {
+    fun getTime(): Long
 
-    long getTime();
-
-    long getNanos();
-
-    static Clock create() {
-        return Implementation.holder;
-    }
+    fun getNanos(): Long
 
     /**
-     * This implementation uses {@link System#nanoTime()} to provide a
+     * This implementation uses [System.nanoTime] to provide a
      * monotonic clock.
      */
-    class Implementation implements Clock {
+    class Implementation private constructor() : Clock {
+        private val adjustment: Long
 
-        static Implementation holder = new Implementation();
-
-        private final long adjustment;
-
-        private Implementation() {
-            long cpuTimeMillis = System.nanoTime() / 1_000_000L;
-            long systemTimeMillis = System.currentTimeMillis();
-            this.adjustment = systemTimeMillis - cpuTimeMillis;
+        init {
+            val cpuTimeMillis = System.nanoTime() / 1000000L
+            val systemTimeMillis = System.currentTimeMillis()
+            this.adjustment = systemTimeMillis - cpuTimeMillis
         }
 
-        @Override
-        public long getTime() {
-            long currentCpuTimeMillis = System.nanoTime() / 1000000L;
-            return currentCpuTimeMillis + adjustment;
+        override fun getTime(): Long {
+            val currentCpuTimeMillis = System.nanoTime() / 1000000L
+            return currentCpuTimeMillis + adjustment
         }
 
-        @Override
-        public long getNanos() {
-            return System.nanoTime() % 1000000L;
+        override fun getNanos(): Long {
+            return System.nanoTime() % 1000000L
+        }
+
+        companion object {
+            var holder: Implementation = Implementation()
         }
     }
 
+    companion object {
+        @JvmStatic
+        fun create(): Clock {
+            return Implementation.Companion.holder
+        }
+    }
 }

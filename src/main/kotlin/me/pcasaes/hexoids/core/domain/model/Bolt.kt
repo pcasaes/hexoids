@@ -1,115 +1,46 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.vector.PositionVector;
-import pcasaes.hexoids.proto.BoltDivertedEventDto;
-import pcasaes.hexoids.proto.BoltExhaustedEventDto;
-import pcasaes.hexoids.proto.BoltFiredEventDto;
-import pcasaes.hexoids.proto.Event;
-import pcasaes.hexoids.proto.MoveReason;
-
-import java.util.ArrayDeque;
-import java.util.Optional;
-import java.util.Queue;
+import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.vector.PositionVector
+import pcasaes.hexoids.proto.BoltDivertedEventDto
+import pcasaes.hexoids.proto.BoltExhaustedEventDto
+import pcasaes.hexoids.proto.BoltFiredEventDto
+import pcasaes.hexoids.proto.Event
+import pcasaes.hexoids.proto.MoveReason
+import java.util.ArrayDeque
+import java.util.Optional
+import java.util.Queue
+import kotlin.math.max
 
 /**
  * A model representation of a bolt.
  */
-public class Bolt implements GameObject {
-
-    private static final Queue<Bolt> POOL = new ArrayDeque<>(1024);
-
-    private EntityId id;
-    private EntityId ownerPlayerId;
-    private PositionVector positionVector;
-
-    private long timestamp;
-    private long startTimestamp;
-    private boolean exhausted;
-    private int ttl;
-
-    private final Optional<Bolt> optionalThis; // NOSONAR: optional memo
-
-    private final Players players;
-
-    private BoltFiredEventDto firedEventDto;
-
-    private Bolt(Players players,
-                 EntityId boltId,
-                 EntityId ownerPlayerId,
-                 PositionVector positionVector,
-                 long startTimestamp,
-                 int ttl) {
-        this.players = players;
-        this.id = boltId;
-        this.ownerPlayerId = ownerPlayerId;
-        this.positionVector = positionVector;
-        this.timestamp = startTimestamp;
-        this.startTimestamp = this.timestamp;
-        this.ttl = ttl;
-        this.exhausted = false;
-
-        this.optionalThis = Optional.of(this);
-    }
+class Bolt private constructor(
+    private val players: Players,
+    @JvmField var id: EntityId,
+    private var ownerPlayerId: EntityId,
+    @JvmField val positionVector: PositionVector,
+    private var timestamp: Long,
+    private var ttl: Int
+) : GameObject {
+    private var startTimestamp: Long
 
     /**
-     * Creates a bolt
+     * Returns true if exhausted.
      *
-     * @param players
-     * @param boltId
-     * @param ownerPlayerId
-     * @param x
-     * @param y
-     * @param angle
-     * @param speed
-     * @param startTimestamp
-     * @param ttl
      * @return
      */
-    static Bolt create(Players players,
-                       EntityId boltId,
-                       EntityId ownerPlayerId,
-                       float x,
-                       float y,
-                       float angle,
-                       float speed,
-                       long startTimestamp,
-                       int ttl) {
-        Bolt bolt = POOL.poll();
-        if (bolt == null) {
-            return new Bolt(
-                    players,
-                    boltId,
-                    ownerPlayerId,
-                    PositionVector.of(
-                            x,
-                            y,
-                            angle,
-                            speed,
-                            startTimestamp),
-                    startTimestamp,
-                    ttl);
-        } else {
-            bolt.id = boltId;
-            bolt.ownerPlayerId = ownerPlayerId;
-            bolt.startTimestamp = startTimestamp;
-            bolt.ttl = ttl;
-            bolt.timestamp = startTimestamp;
-            bolt.exhausted = false;
-            bolt.positionVector.initialized(x, y, angle, speed, startTimestamp);
+    var isExhausted: Boolean = false
+        private set
 
-            return bolt;
-        }
-    }
+    private val optionalThis: Optional<Bolt> // NOSONAR: optional memo
 
-    static void destroyObject(Bolt bolt) {
-        bolt.id = null;
-        bolt.ownerPlayerId = null;
-        POOL.offer(bolt);
-    }
+    private var firedEventDto: BoltFiredEventDto? = null
 
-    EntityId getId() {
-        return id;
+    init {
+        this.startTimestamp = this.timestamp
+
+        this.optionalThis = Optional.of<Bolt>(this)
     }
 
     /**
@@ -118,65 +49,72 @@ public class Bolt implements GameObject {
      * @param id
      * @return
      */
-    boolean is(EntityId id) {
-        return this.id.equals(id);
+    fun `is`(id: EntityId?): Boolean {
+        return this.id == id
     }
 
-    public void fire(BoltFiredEventDto event) {
-        this.firedEventDto = event;
+    fun fire(event: BoltFiredEventDto) {
+        this.firedEventDto = event
         GameEvents.getDomainEvents()
-                .dispatch(
-                        DomainEvent
-                                .create(GameTopic.BOLT_ACTION_TOPIC.name(),
-                                        this.id.getId(),
-                                        Event.newBuilder()
-                                                .setBoltFired(event)
-                                                .build()
-                                )
-                );
+            .dispatch(
+                DomainEvent
+                    .create(
+                        GameTopic.BOLT_ACTION_TOPIC.name,
+                        this.id.getId(),
+                        Event.newBuilder()
+                            .setBoltFired(event)
+                            .build()
+                    )
+            )
     }
 
     /**
-     * Updates the this bolt's internal timestamp.
+     * Updates this bolt's internal timestamp.
      *
      * @param timestamp
      * @return return empty if the timestamp hasn't changed
      */
-    Optional<Bolt> updateTimestamp(long timestamp) {
-        long elapsed = Math.max(0L, timestamp - this.timestamp);
+    fun updateTimestamp(timestamp: Long): Optional<Bolt> {
+        val elapsed = max(0L, timestamp - this.timestamp)
         if (elapsed > 0L) {
-            this.timestamp = timestamp;
-            this.positionVector.update(timestamp);
-            tackleDiverted(timestamp);
+            this.timestamp = timestamp
+            this.positionVector.update(timestamp)
+            tackleDiverted(timestamp)
 
-            return optionalThis;
+            return optionalThis
         }
-        return Optional.empty();
+        return Optional.empty<Bolt>()
     }
 
-    private void tackleDiverted(long timestamp) {
+    private fun tackleDiverted(timestamp: Long) {
         if (!this.positionVector.movedByScheduledMove()) {
-            return;
+            return
         }
 
-        GameEvents.getDomainEvents()
+        val eventDto = this.firedEventDto
+        if (eventDto != null) {
+            GameEvents.getDomainEvents()
                 .dispatch(
-                        DomainEvent
-                                .create(GameTopic.BOLT_ACTION_TOPIC.name(),
-                                        this.id.getId(),
-                                        Event.newBuilder()
-                                                .setBoltDiverted(BoltDivertedEventDto
-                                                        .newBuilder()
-                                                        .setBoltId(firedEventDto.getBoltId())
-                                                        .setAngle(positionVector.getVelocity().getAngle())
-                                                        .setSpeed(positionVector.getVelocity().getMagnitude())
-                                                        .setX(positionVector.getX())
-                                                        .setY(positionVector.getY())
-                                                        .setDivertTimestamp(timestamp)
-                                                        .build())
-                                                .build()
+                    DomainEvent
+                        .create(
+                            GameTopic.BOLT_ACTION_TOPIC.name,
+                            this.id.getId(),
+                            Event.newBuilder()
+                                .setBoltDiverted(
+                                    BoltDivertedEventDto
+                                        .newBuilder()
+                                        .setBoltId(eventDto.boltId)
+                                        .setAngle(positionVector.getVelocity().getAngle())
+                                        .setSpeed(positionVector.getVelocity().getMagnitude())
+                                        .setX(positionVector.getX())
+                                        .setY(positionVector.getY())
+                                        .setDivertTimestamp(timestamp)
+                                        .build()
                                 )
-                );
+                                .build()
+                        )
+                )
+        }
     }
 
     /**
@@ -185,119 +123,172 @@ public class Bolt implements GameObject {
      * @param timestamp
      * @return
      */
-    Bolt tackleBoltExhaustion(long timestamp) {
-        if (positionVector.isOutOfBounds() || isExpired()) {
-            hazardDestroy(null, timestamp);
+    fun tackleBoltExhaustion(timestamp: Long): Bolt {
+        if (positionVector.isOutOfBounds() || this.isExpired) {
+            exhaust(timestamp)
         }
-        return this;
+        return this
     }
 
-    @Override
-    public void hazardDestroy(EntityId hazardId, long timestamp) {
-        this.exhausted = true;
-        GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp));
+    override fun hazardDestroy(hazardId: EntityId, timestamp: Long) {
+        exhaust(timestamp)
     }
 
-    @Override
-    public void move(float x, float y, MoveReason moveReason) {
-        if (this.exhausted || positionVector.isOutOfBounds() || isExpired()) {
-            return;
+    private fun exhaust(timestamp: Long) {
+        this.isExhausted = true
+        GameEvents.getDomainEvents().dispatch(generateExhaustedEvent(timestamp))
+    }
+
+    override fun move(moveX: Float, moveY: Float, moveReason: MoveReason?) {
+        if (this.isExhausted || positionVector.isOutOfBounds() || this.isExpired) {
+            return
         }
 
-        positionVector.scheduleMove(x, y);
-
+        positionVector.scheduleMove(moveX, moveY)
     }
 
-    /**
-     * Returns true if exhausted.
-     *
-     * @return
-     */
-    boolean isExhausted() {
-        return this.exhausted;
-    }
+    private val isExpired: Boolean
+        get() = isExpired(this.timestamp, this.startTimestamp, this.ttl)
 
-    PositionVector getPositionVector() {
-        return positionVector;
-    }
-
-    private boolean isExpired() {
-        return isExpired(this.timestamp, this.startTimestamp, this.ttl);
-    }
-
-    static boolean isExpired(long now, long startTimestamp, int ttl) {
-        return now - startTimestamp > ttl;
-    }
-
-    /**
-     * The inverse of isExhausted.
-     *
-     * @return
-     */
-    boolean isActive() {
-        return !isExhausted();
-    }
+    val isActive: Boolean
+        /**
+         * The inverse of isExhausted.
+         *
+         * @return
+         */
+        get() = !this.isExhausted
 
     /**
      * Checks if this bolt hit a player
      */
-    void checkHits(long timestamp) {
-        if (!this.exhausted) {
+    fun checkHits(timestamp: Long) {
+        if (!this.isExhausted) {
             this.players
-                    .getSpatialIndex()
-                    .search(this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
-                            this.positionVector.getX(), this.positionVector.getY(),
-                            Config.get().getBoltCollisionIndexSearchDistance())
-                    .forEach(p -> hit(p, timestamp));
+                .getSpatialIndex()
+                .search(
+                    this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
+                    this.positionVector.getX(), this.positionVector.getY(),
+                    get().getBoltCollisionIndexSearchDistance()
+                )
+                .forEach { p -> hit(p, timestamp) }
         }
     }
 
-    private void hit(Player player, long timestamp) {
-        boolean isHit = !player.is(ownerPlayerId) &&
-                player.collision(positionVector, Config.get().getBoltCollisionRadius());
+    private fun hit(player: Player, timestamp: Long) {
+        val isHit = !player.hasId(ownerPlayerId) &&
+                player.collision(positionVector, get().getBoltCollisionRadius())
 
         if (isHit) {
-            player.destroy(this.ownerPlayerId, timestamp);
-            if (!this.exhausted) {
-                this.exhausted = true;
+            player.destroy(this.ownerPlayerId, timestamp)
+            if (!this.isExhausted) {
+                this.isExhausted = true
 
                 GameEvents.getDomainEvents().dispatch(
-                        generateExhaustedEvent(timestamp)
-                );
+                    generateExhaustedEvent(timestamp)
+                )
             }
         }
     }
 
-    private DomainEvent generateExhaustedEvent(long timestamp) {
+    private fun generateExhaustedEvent(timestamp: Long): DomainEvent {
         return DomainEvent
-                .create(
-                        GameTopic.BOLT_ACTION_TOPIC.name(),
-                        this.id.getId(),
-                        Event.newBuilder()
-                                .setBoltExhausted(
-                                        BoltExhaustedEventDto.newBuilder()
-                                                .setBoltId(id.getGuid())
-                                                .setOwnerPlayerId(ownerPlayerId.getGuid())
-                                                .setTimestamp(timestamp)
-                                )
-                                .build()
-                );
+            .create(
+                GameTopic.BOLT_ACTION_TOPIC.name,
+                this.id.getId(),
+                Event.newBuilder()
+                    .setBoltExhausted(
+                        BoltExhaustedEventDto.newBuilder()
+                            .setBoltId(id.getGuid())
+                            .setOwnerPlayerId(ownerPlayerId.getGuid())
+                            .setTimestamp(timestamp)
+                    )
+                    .build()
+            )
     }
 
 
-    boolean isOwnedBy(EntityId playerId) {
-        return this.ownerPlayerId.equals(playerId);
+    fun isOwnedBy(playerId: EntityId?): Boolean {
+        return this.ownerPlayerId == playerId
     }
 
-    @Override
-    public float getX() {
-        return positionVector.getX();
+    override fun getX(): Float {
+        return positionVector.getX()
     }
 
-    @Override
-    public float getY() {
-        return positionVector.getY();
+    override fun getY(): Float {
+        return positionVector.getY()
     }
 
 
+    companion object {
+        private val POOL: Queue<Bolt> = ArrayDeque<Bolt>(1024)
+
+        /**
+         * Creates a bolt
+         *
+         * @param players
+         * @param boltId
+         * @param ownerPlayerId
+         * @param x
+         * @param y
+         * @param angle
+         * @param speed
+         * @param startTimestamp
+         * @param ttl
+         * @return
+         */
+        @JvmStatic
+        fun create(
+            players: Players,
+            boltId: EntityId,
+            ownerPlayerId: EntityId,
+            x: Float,
+            y: Float,
+            angle: Float,
+            speed: Float,
+            startTimestamp: Long,
+            ttl: Int
+        ): Bolt {
+            val bolt = POOL.poll()
+            return if (bolt == null) {
+                Bolt(
+                    players,
+                    boltId,
+                    ownerPlayerId,
+                    PositionVector.of(
+                        x,
+                        y,
+                        angle,
+                        speed,
+                        startTimestamp
+                    ),
+                    startTimestamp,
+                    ttl
+                )
+            } else {
+                bolt.id = boltId
+                bolt.ownerPlayerId = ownerPlayerId
+                bolt.startTimestamp = startTimestamp
+                bolt.ttl = ttl
+                bolt.timestamp = startTimestamp
+                bolt.isExhausted = false
+                bolt.positionVector.initialized(x, y, angle, speed, startTimestamp)
+
+                bolt
+            }
+        }
+
+        @JvmStatic
+        fun destroyObject(bolt: Bolt) {
+            // FIXME: we need to reset a bolt to not have ownership when returned to the pool
+            //bolt.id = null
+            //bolt.ownerPlayerId = null
+            POOL.offer(bolt)
+        }
+
+        @JvmStatic
+        fun isExpired(now: Long, startTimestamp: Long, ttl: Int): Boolean {
+            return now - startTimestamp > ttl
+        }
+    }
 }

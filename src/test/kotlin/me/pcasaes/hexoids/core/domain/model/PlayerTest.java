@@ -104,7 +104,7 @@ class PlayerTest {
         GameEvents.getClientEvents().registerEventDispatcher(event -> {
         });
         GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
-                GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
+                GameTopic.valueOf(domainEvent.topic).consume(domainEvent)
         );
 
 
@@ -127,8 +127,8 @@ class PlayerTest {
         assertTrue(this.players.stream()
                 .anyMatch(p -> p == player));
 
-        assertTrue(player.is(one));
-        assertFalse(player.is(two));
+        assertTrue(player.hasId(one));
+        assertFalse(player.hasId(two));
 
         assertSame(player, this.players.get(one).orElse(null));
 
@@ -476,14 +476,14 @@ class PlayerTest {
 
         DomainEvent event = eventReference.get();
         assertNotNull(event);
-        assertTrue(event.getEvent().hasPlayerFired());
+        assertTrue(event.event.hasPlayerFired());
 
-        player.fired(event.getEvent().getPlayerFired());
+        player.fired(event.event.getPlayerFired());
 
         event = eventReference.get();
         assertNotNull(event);
-        assertTrue(event.getEvent().hasBoltFired());
-        assertEquals((float) Math.PI, event.getEvent().getBoltFired().getAngle(), Float.MIN_VALUE);
+        assertTrue(event.event.hasBoltFired());
+        assertEquals((float) Math.PI, event.event.getBoltFired().getAngle(), Float.MIN_VALUE);
 
     }
 
@@ -517,14 +517,14 @@ class PlayerTest {
 
         DomainEvent event = eventReference.get();
         assertNotNull(event);
-        assertTrue(event.getEvent().hasPlayerFired());
+        assertTrue(event.event.hasPlayerFired());
 
-        player.fired(event.getEvent().getBoltFired());
+        player.fired(event.event.getBoltFired());
 
         event = eventReference.get();
         assertNotNull(event);
-        assertTrue(event.getEvent().hasBoltFired());
-        assertEquals((float) Math.PI / 4f, event.getEvent().getBoltFired().getAngle(), Float.MIN_VALUE);
+        assertTrue(event.event.hasBoltFired());
+        assertEquals((float) Math.PI / 4f, event.event.getBoltFired().getAngle(), Float.MIN_VALUE);
     }
 
     @Test
@@ -690,7 +690,7 @@ class PlayerTest {
 
         List<Event> events = domainEvents
                 .stream()
-                .map(DomainEvent::getEvent)
+                .map(d -> d.event)
                 .collect(Collectors.toList());
 
 

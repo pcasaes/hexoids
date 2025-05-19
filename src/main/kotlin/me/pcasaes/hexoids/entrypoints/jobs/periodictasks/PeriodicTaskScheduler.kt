@@ -1,89 +1,89 @@
-package me.pcasaes.hexoids.entrypoints.jobs.periodictasks;
+package me.pcasaes.hexoids.entrypoints.jobs.periodictasks
 
-import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Any;
-import jakarta.enterprise.inject.Instance;
-import jakarta.interceptor.Interceptor;
-import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.logging.Logger;
+import io.quarkus.runtime.StartupEvent
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
+import jakarta.annotation.Priority
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.enterprise.inject.Any
+import jakarta.enterprise.inject.Instance
+import jakarta.interceptor.Interceptor
+import me.pcasaes.hexoids.core.domain.periodictasks.GamePeriodicTask
+import java.util.Collections
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.function.Consumer
+import java.util.logging.Logger
+import kotlin.concurrent.Volatile
 
 @ApplicationScoped
-public class PeriodicTaskScheduler {
+class PeriodicTaskScheduler(
+    @param:Any private val gamePeriodicTasksFactory: Instance<GamePeriodicTask>
+) {
+    private val gamePeriodicTasks = Collections.synchronizedList(
+        ArrayList<GamePeriodicTask>()
+    )
 
-    private static final Logger LOGGER = Logger.getLogger(PeriodicTaskScheduler.class.getName());
+    @Volatile
+    private lateinit var lowFreqScheduledExecutorService: ScheduledExecutorService
 
-    private final Instance<GamePeriodicTask> gamePeriodicTasksFactory;
-    private final List<GamePeriodicTask> gamePeriodicTasks = Collections.synchronizedList(new ArrayList<>());
+    @Volatile
+    private lateinit var hiFreqScheduledExecutorService: ScheduledExecutorService
 
-    private volatile ScheduledExecutorService lowFreqScheduledExecutorService;
-    private volatile ScheduledExecutorService hiFreqScheduledExecutorService;
-
-    public PeriodicTaskScheduler(@Any Instance<GamePeriodicTask> gamePeriodicTasksFactory) {
-        this.gamePeriodicTasksFactory = gamePeriodicTasksFactory;
-    }
-
-    public void startup(@Observes @Priority(Interceptor.Priority.APPLICATION + 900) StartupEvent event) {
+    fun startup(@Observes @Priority(Interceptor.Priority.APPLICATION + 900) event: StartupEvent?) {
         // eager load
     }
 
     @PostConstruct
-    public void start() {
+    fun start() {
         gamePeriodicTasksFactory
-                .stream()
-                .forEach(gamePeriodicTasks::add);
+            .stream()
+            .forEach { e: GamePeriodicTask? -> gamePeriodicTasks.add(e) }
 
-        this.lowFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        this.hiFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        this.lowFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+        this.hiFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
         gamePeriodicTasks
-                .forEach(task -> {
-                    StringBuilder log = new StringBuilder("Starting periodic task ")
-                            .append(task.getClass().getSimpleName())
-                            .append(": type=");
-                    ScheduledExecutorService scheduledExecutorService;
-                    if (task.getTimeUnit().toMillis(task.getPeriod()) < 1000L) {
-                        scheduledExecutorService = hiFreqScheduledExecutorService;
-                        log.append("high freq");
-                    } else {
-                        scheduledExecutorService = lowFreqScheduledExecutorService;
-                        log.append("low freq");
-                    }
+            .forEach(Consumer { task ->
+                val log = StringBuilder("Starting periodic task ")
+                    .append(task.javaClass.getSimpleName())
+                    .append(": type=")
+                val scheduledExecutorService: ScheduledExecutorService
+                if (task.getTimeUnit().toMillis(task.getPeriod()) < 1000L) {
+                    scheduledExecutorService = hiFreqScheduledExecutorService
+                    log.append("high freq")
+                } else {
+                    scheduledExecutorService = lowFreqScheduledExecutorService
+                    log.append("low freq")
+                }
 
-                    log.append(", delay: ").append(task.getDelay())
-                            .append(", period: ").append(task.getPeriod())
-                            .append(", timeUnit: ").append(task.getTimeUnit());
+                log.append(", delay: ").append(task.getDelay())
+                    .append(", period: ").append(task.getPeriod())
+                    .append(", timeUnit: ").append(task.getTimeUnit())
 
-                    scheduledExecutorService.scheduleAtFixedRate(
-                            task,
-                            task.getDelay(),
-                            task.getPeriod(),
-                            task.getTimeUnit());
-
-                    LOGGER.info(log.toString());
-                });
-
+                scheduledExecutorService.scheduleAtFixedRate(
+                    task,
+                    task.getDelay(),
+                    task.getPeriod(),
+                    task.getTimeUnit()
+                )
+                LOGGER.info(log.toString())
+            })
     }
 
     @PreDestroy
-    public void stop() {
-
+    fun stop() {
         this.hiFreqScheduledExecutorService
-                .shutdown();
+            .shutdown()
         this.lowFreqScheduledExecutorService
-                .shutdown();
+            .shutdown()
 
         gamePeriodicTasks
-                .forEach(gamePeriodicTasksFactory::destroy);
+            .forEach { instance -> gamePeriodicTasksFactory.destroy(instance) }
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(PeriodicTaskScheduler::class.java.getName())
     }
 }

@@ -1,120 +1,81 @@
-package me.pcasaes.hexoids.core.domain.vector;
+package me.pcasaes.hexoids.core.domain.vector
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
+import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleBetweenTwoPoints
+import me.pcasaes.hexoids.core.domain.vector.PositionVector.Configuration.AtBoundsOptions
+import java.util.OptionalDouble
+import java.util.function.DoubleUnaryOperator
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.exp
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sin
 
-import java.util.OptionalDouble;
-import java.util.function.DoubleUnaryOperator;
-
-import static me.pcasaes.hexoids.core.domain.vector.Vector2.calculateMoveDelta;
-
-public class PositionVector {
-
-    private final Configuration configuration;
-    private final Float maxMagnitude;
+class PositionVector private constructor(
+    private val previousVelocity: Vector2,
+    startX: Float,
+    startY: Float,
+    startTime: Long,
+    configuration: Configuration
+) {
+    private val configuration: Configuration
+    private val maxMagnitude: Float?
 
     /*
     Velocity here is distance unit per second (not millis!)
 
     velocity is what got us from previous position to currentPosition
      */
-    private final Vector2 velocity;
-    private final Vector2 previousVelocity;
-    private final Vector2 scheduledMove = Vector2.fromXY(0, 0);
+    private val velocity: Vector2
+    private val scheduledMove: Vector2 = Vector2.fromXY(0F, 0F)
 
-    private long previousTimestamp;
-    private long currentTimestamp;
+    private var previousTimestamp: Long
+    private var currentTimestamp: Long
 
-    private Vector2 currentPosition;
-    private Vector2 previousPosition;
+    private val currentPosition: Vector2
+    private val previousPosition: Vector2
 
-    private boolean movedByScheduledMove = false;
+    private var movedByScheduledMove = false
 
-    private PositionVector(Vector2 velocity,
-                           float startX,
-                           float startY,
-                           long startTime,
-                           Configuration configuration) {
-        this.previousVelocity = velocity;
-        this.velocity = velocity;
-        this.currentPosition = Vector2.fromXY(startX, startY);
-        this.previousPosition = Vector2.fromXY(startX, startY);
-        this.currentTimestamp = this.previousTimestamp = startTime;
-        this.configuration = configuration;
-        if (configuration.maxMagnitude().isPresent()) {
-            this.maxMagnitude = (float) configuration.maxMagnitude().getAsDouble();
-        } else {
-            this.maxMagnitude = null;
-        }
+    fun initialized(x: Float, y: Float, angle: Float, magnitude: Float, timestamp: Long) {
+        initialized(x, y, timestamp)
+        this.velocity.setAngleMagnitude(angle, magnitude)
+        this.previousVelocity.setAngleMagnitude(angle, magnitude)
     }
 
-    public static PositionVector of(
-            float startX,
-            float startY,
-            float angle,
-            float magnitude,
-            long startTime,
-            Configuration configuration) {
-        return new PositionVector(
-                Vector2.fromAngleMagnitude(angle, magnitude),
-                startX,
-                startY,
-                startTime,
-                configuration
-        );
+    fun initialized(x: Float, y: Float, timestamp: Long) {
+        this.velocity.setAngleMagnitude(0F, 0F)
+        this.previousVelocity.setAngleMagnitude(0F, 0F)
+        this.previousPosition.setXY(x, y)
+        this.currentPosition.setXY(x, y)
+        this.previousTimestamp = timestamp
+        this.currentTimestamp = this.previousTimestamp
     }
 
-    public static PositionVector of(
-            float startX,
-            float startY,
-            float angle,
-            float magnitude,
-            long startTime) {
-        return new PositionVector(
-                Vector2.fromAngleMagnitude(angle, magnitude),
-                startX,
-                startY,
-                startTime,
-                DEFAULT_CONFIGURATION
-        );
+    fun teleport(x: Float, y: Float, timestamp: Long) {
+        this.previousPosition.setXY(x, y)
+        this.currentPosition.setXY(x, y)
+        this.previousTimestamp = timestamp
+        this.currentTimestamp = this.previousTimestamp
     }
 
-    public void initialized(float x, float y, float angle, float magnitude, long timestamp) {
-        initialized(x, y, timestamp);
-        this.velocity.setAngleMagnitude(angle, magnitude);
-        this.previousVelocity.setAngleMagnitude(angle, magnitude);
+    fun reflect(at: Vector2, normal: Vector2, bodySize: Float, dampen: Float) {
+        val bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize)
+        val atWithBody = at.minus(bodyVector)
+
+        this.velocity.set(velocity.reflect(normal).scale(dampen))
+
+
+        val reflectMag = currentPosition.minus(atWithBody).getMagnitude()
+
+        val reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.getAngle(), reflectMag).absMax(bodySize)
+
+        this.currentPosition.set(atWithBody.add(reflectMagWithVelAngle))
     }
 
-    public void initialized(float x, float y, long timestamp) {
-        this.velocity.setAngleMagnitude(0, 0);
-        this.previousVelocity.setAngleMagnitude(0, 0);
-        this.previousPosition.setXY(x, y);
-        this.currentPosition.setXY(x, y);
-        this.currentTimestamp = this.previousTimestamp = timestamp;
-    }
-
-    public void teleport(float x, float y, long timestamp) {
-        this.previousPosition.setXY(x, y);
-        this.currentPosition.setXY(x, y);
-        this.currentTimestamp = this.previousTimestamp = timestamp;
-    }
-
-    public void reflect(Vector2 at, Vector2 normal, float bodySize, float dampen) {
-        Vector2 bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize);
-        Vector2 atWithBody = at.minus(bodyVector);
-
-        this.velocity.set(velocity.reflect(normal).scale(dampen));
-
-
-        float reflectMag = currentPosition.minus(atWithBody).getMagnitude();
-
-        Vector2 reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.getAngle(), reflectMag).absMax(bodySize);
-
-        this.currentPosition.set(atWithBody.add(reflectMagWithVelAngle));
-    }
-
-    public boolean noMovement() {
-        return this.previousPosition.equals(this.currentPosition);
+    fun noMovement(): Boolean {
+        return this.previousPosition == this.currentPosition
     }
 
     /**
@@ -125,18 +86,18 @@ public class PositionVector {
      * @param angle     the velocity's angle
      * @param magnitude the velocity's magnitude
      * @param timestamp the time to base elapsed time against. Should be "now",
-     *                  or at least greater than the value used in the previous call.
+     * or at least greater than the value used in the previous call.
      */
-    public void moved(float x, float y, float angle, float magnitude, long timestamp) {
+    fun moved(x: Float, y: Float, angle: Float, magnitude: Float, timestamp: Long) {
         if (timestamp <= this.currentTimestamp) {
-            return;
+            return
         }
-        this.previousPosition.set(this.currentPosition);
-        this.currentPosition.setXY(x, y);
-        this.previousVelocity.set(this.velocity);
-        this.velocity.setAngleMagnitude(angle, magnitude);
-        this.previousTimestamp = this.currentTimestamp;
-        this.currentTimestamp = timestamp;
+        this.previousPosition.set(this.currentPosition)
+        this.currentPosition.setXY(x, y)
+        this.previousVelocity.set(this.velocity)
+        this.velocity.setAngleMagnitude(angle, magnitude)
+        this.previousTimestamp = this.currentTimestamp
+        this.currentTimestamp = timestamp
     }
 
     /**
@@ -145,12 +106,12 @@ public class PositionVector {
      * @param moveX     the x to move by
      * @param moveY     the y to move by
      * @param timestamp the time to base elapsed time against. Should be "now",
-     *                  or at least greater than the value used in the previous call.
+     * or at least greater than the value used in the previous call.
      * @return true if the position/velocity was changed
      */
-    public boolean moveBy(float moveX, float moveY, long timestamp) {
+    fun moveBy(moveX: Float, moveY: Float, timestamp: Long): Boolean {
         if (timestamp <= this.currentTimestamp) {
-            return false;
+            return false
         }
 
         /*
@@ -158,238 +119,202 @@ public class PositionVector {
         It's not a game play limitation like maxMove/maxMagnitude. We do it cheaply
         here by comparing horizontal and vertical movements independently.
          */
-        float minMove = Config.get().getMinMove();
-        if (Math.abs(moveX) <= minMove &&
-                Math.abs(moveY) <= minMove
+        val minMove = get().getMinMove()
+        if (abs(moveX) <= minMove &&
+            abs(moveY) <= minMove
         ) {
-            return false;
+            return false
         }
 
-        Vector2 moveVector = Vector2.fromXY(moveX, moveY).add(this.velocity);
+        var moveVector = Vector2.fromXY(moveX, moveY).add(this.velocity)
 
         if (maxMagnitude != null) {
-            moveVector = moveVector.absMax(maxMagnitude);
+            moveVector = moveVector.absMax(maxMagnitude)
         }
 
-        this.previousVelocity.set(this.velocity);
-        this.velocity.set(moveVector);
+        this.previousVelocity.set(this.velocity)
+        this.velocity.set(moveVector)
 
-        float x = getX();
-        float y = getY();
-        update(timestamp, 0);
+        val x = getX()
+        val y = getY()
+        update(timestamp, 0F)
 
-        return currentPosition.getX() != x || currentPosition.getY() != y;
+        return currentPosition.getX() != x || currentPosition.getY() != y
     }
 
-    public void scheduleMove(float moveX, float moveY) {
-        float minMove = Config.get().getMinMove();
-        if (Math.abs(moveX) <= minMove &&
-                Math.abs(moveY) <= minMove
+    fun scheduleMove(moveX: Float, moveY: Float) {
+        val minMove = get().getMinMove()
+        if (abs(moveX) <= minMove &&
+            abs(moveY) <= minMove
         ) {
-            return;
+            return
         }
 
-        this.scheduledMove.addXY(moveX, moveY);
+        this.scheduledMove.addXY(moveX, moveY)
     }
 
     /**
      * Updates this vector's position (x,y) based on it's velocity and elapsed time.
      *
      * @param timestamp the time to base elapsed time against. Should be "now",
-     *                  or at least greater than the value used in the previous call.
+     * or at least greater than the value used in the previous call.
      * @return
      */
-    public PositionVector update(long timestamp) {
-        return update(timestamp, configuration.dampenMagnitudeCoefficient());
+    fun update(timestamp: Long): PositionVector {
+        return update(timestamp, configuration.dampenMagnitudeCoefficient())
     }
 
-    private static Vector2 calculateDampenedVelocity(Vector2 velocity, float dampMagCoef, float minMove, long elapsed) {
-        if (dampMagCoef < 0f && velocity.getMagnitude() != 0f) {
-            float mag = calculateDampenedMagnitude(velocity, dampMagCoef, elapsed);
-            if (mag < minMove) {
-                mag = 0f;
-            }
-            return Vector2.fromAngleMagnitude(velocity.getAngle(), mag);
-        }
-        return velocity;
-    }
-
-    private PositionVector update(long timestamp, float dampMagCoef) {
+    private fun update(timestamp: Long, dampMagCoef: Float): PositionVector {
         if (timestamp <= this.currentTimestamp) {
-            return this;
+            return this
         }
 
-        this.previousVelocity.set(this.velocity);
+        this.previousVelocity.set(this.velocity)
 
-        long elapsed = (timestamp - this.currentTimestamp);
+        val elapsed = (timestamp - this.currentTimestamp)
 
-        float minMove = Config.get().getMinMove();
+        val minMove = get().getMinMove()
 
-        this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed));
+        this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed))
 
         if (hasScheduledMove()) {
-            Vector2 moveVector = scheduledMove.add(this.velocity);
+            var moveVector = scheduledMove.add(this.velocity)
 
             if (maxMagnitude != null) {
-                moveVector = moveVector.absMax(maxMagnitude);
+                moveVector = moveVector.absMax(maxMagnitude)
             }
 
-            this.velocity.set(moveVector);
-            scheduledMove.setXY(0, 0);
-            this.movedByScheduledMove  = true;
+            this.velocity.set(moveVector)
+            scheduledMove.setXY(0F, 0F)
+            this.movedByScheduledMove = true
         } else {
-            this.movedByScheduledMove = false;
+            this.movedByScheduledMove = false
         }
 
-        this.previousPosition.set(this.currentPosition);
-        Vector2 moveDelta = calculateMoveDelta(this.velocity, minMove, elapsed);
-        this.currentPosition.addXY(moveDelta.getX(), moveDelta.getY());
+        this.previousPosition.set(this.currentPosition)
+        val moveDelta = Vector2.calculateMoveDelta(this.velocity, minMove, elapsed)
+        this.currentPosition.addXY(moveDelta.getX(), moveDelta.getY())
 
-        if (configuration.atBounds() == Configuration.AtBoundsOptions.STOP) {
-            this.velocity.set(Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0f));
-        } else if (configuration.atBounds() == Configuration.AtBoundsOptions.BOUNCE) {
-            if (this.currentPosition.getX() <= 0f || this.currentPosition.getX() >= 1f) {
-                velocity.set(velocity.invertX());
+        if (configuration.atBounds() == AtBoundsOptions.STOP) {
+            this.velocity.set(Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0F))
+        } else if (configuration.atBounds() == AtBoundsOptions.BOUNCE) {
+            if (this.currentPosition.getX() <= 0F || this.currentPosition.getX() >= 1F) {
+                velocity.set(velocity.invertX())
             }
-            if (this.currentPosition.getY() <= 0f || this.currentPosition.getY() >= 1f) {
-                velocity.set(velocity.invertY());
+            if (this.currentPosition.getY() <= 0F || this.currentPosition.getY() >= 1F) {
+                velocity.set(velocity.invertY())
             }
         }
 
         this.currentPosition.setXY(
-                configuration.atBounds().bound(this.currentPosition.getX()),
-                configuration.atBounds().bound(this.currentPosition.getY())
-        );
+            configuration.atBounds().bound(this.currentPosition.getX()),
+            configuration.atBounds().bound(this.currentPosition.getY())
+        )
 
-        this.previousTimestamp = this.currentTimestamp;
-        this.currentTimestamp = timestamp;
+        this.previousTimestamp = this.currentTimestamp
+        this.currentTimestamp = timestamp
 
-        return this;
+        return this
     }
 
-    public float getXat(long timestamp) {
+    fun getXat(timestamp: Long): Float {
         if (timestamp <= this.currentTimestamp) {
-            return getX();
+            return getX()
         }
-        float r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000f;
-        float x = getX() + (float) Math.cos(velocity.getAngle()) * r;
-        return configuration.atBounds().bound(x);
+        val r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000F
+        val x = getX() + cos(velocity.getAngle().toDouble()).toFloat() * r
+        return configuration.atBounds().bound(x)
     }
 
-    public float getYat(long timestamp) {
+    fun getYat(timestamp: Long): Float {
         if (timestamp <= this.currentTimestamp) {
-            return getY();
+            return getY()
         }
-        float r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000f;
-        float y = this.getY() + (float) Math.sin(velocity.getAngle()) * r;
-        return configuration.atBounds().bound(y);
+        val r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000F
+        val y = this.getY() + sin(velocity.getAngle().toDouble()).toFloat() * r
+        return configuration.atBounds().bound(y)
     }
 
-    public float getX() {
-        return this.currentPosition.getX();
+    fun getX(): Float {
+        return this.currentPosition.getX()
     }
 
-    public float getY() {
-        return this.currentPosition.getY();
+    fun getY(): Float {
+        return this.currentPosition.getY()
     }
 
-    public float getPreviousX() {
-        return this.previousPosition.getX();
+    fun getPreviousX(): Float {
+        return this.previousPosition.getX()
     }
 
-    public float getPreviousY() {
-        return this.previousPosition.getY();
+    fun getPreviousY(): Float {
+        return this.previousPosition.getY()
     }
 
-    public long getTimestamp() {
-        return currentTimestamp;
+    fun getTimestamp(): Long {
+        return currentTimestamp
     }
 
-    public Vector2 getVelocity() {
-        return velocity;
+    fun getVelocity(): Vector2 {
+        return velocity
     }
 
-    public Vector2 getVectorAt(long timestamp) {
+    fun getVectorAt(timestamp: Long): Vector2 {
         if (timestamp <= this.currentTimestamp) {
-            return getVelocity();
+            return getVelocity()
         }
 
-        float dampMagCoef = Config.get().getInertiaDampenCoefficient();
-        if (dampMagCoef < 0f && velocity.getMagnitude() != 0f) {
-            long elapsed = (timestamp - this.currentTimestamp);
+        val dampMagCoef = get().getInertiaDampenCoefficient()
+        if (dampMagCoef < 0F && velocity.getMagnitude() != 0F) {
+            val elapsed = (timestamp - this.currentTimestamp)
 
-            float minMove = Config.get().getMinMove();
+            val minMove = get().getMinMove()
 
-            float mag = calculateDampenedMagnitude(this.velocity, dampMagCoef, elapsed);
+            var mag: Float = calculateDampenedMagnitude(this.velocity, dampMagCoef, elapsed)
             if (mag < minMove) {
-                mag = 0f;
+                mag = 0F
             }
             return Vector2.fromAngleMagnitude(
-                    velocity.getAngle(),
-                    mag
-            );
+                velocity.getAngle(),
+                mag
+            )
         }
-        return getVelocity();
+        return getVelocity()
     }
 
-    private static float calculateDampenedMagnitude(Vector2 velocity, float dampMagCoef, long elapsed) {
-        return 0.999994f * (float) Math.exp(dampMagCoef * elapsed) * velocity.getMagnitude();
-    }
+    fun isOutOfBounds(): Boolean =
+        currentPosition.getX() < 0F || currentPosition.getX() > 1F || currentPosition.getY() < 0F || currentPosition.getY() > 1F
 
-    public boolean isOutOfBounds() {
-        return currentPosition.getX() < 0f || currentPosition.getX() > 1f ||
-                currentPosition.getY() < 0f || currentPosition.getY() > 1f;
-    }
-
-    private static boolean detectCollision(Vector2 aPos, Vector2 aVel,
-                                           Vector2 bPos, Vector2 bVel,
-                                           float intersectionThreshold,
-                                           float collisionTimeInMillis) {
-        Vector2 relativePosition = bPos.minus(aPos);
-        Vector2 relativeVelocity = bVel.minus(aVel);
-
-        float timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
-                (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1f);
-
-        if (timeToCollisionInSeconds * 1000f > collisionTimeInMillis) {
-            return false;
-        }
-
-        float minSeparation = relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds;
-        return minSeparation <= intersectionThreshold;
-    }
-
-    private boolean intersectedWithSegment(PositionVector b, float intersectionThreshold) {
-        float minMove = Config.get().getMinMove();
+    private fun intersectedWithSegment(b: PositionVector, intersectionThreshold: Float): Boolean {
+        val minMove = get().getMinMove()
 
         // https://gamedev.stackexchange.com/questions/125011/given-the-position-and-velocity-of-an-object-how-can-i-detect-possible-collision
         if (b.currentTimestamp > previousTimestamp) {
-            Vector2 bAdjustedPreviousPosition;
-            float timeUntilCollision;
+            val bAdjustedPreviousPosition: Vector2
+            val timeUntilCollision: Float
             if (b.previousTimestamp != this.previousTimestamp) {
-                long timeDifference;
-                Vector2 vel;
+                val timeDifference: Long
+                val vel: Vector2
                 if (b.previousTimestamp < this.previousTimestamp) {
-                    timeDifference = this.previousTimestamp - b.previousTimestamp;
-                    vel = b.velocity;
+                    timeDifference = this.previousTimestamp - b.previousTimestamp
+                    vel = b.velocity
                 } else {
-                    timeDifference = b.previousTimestamp - this.previousTimestamp;
-                    vel = b.previousVelocity.invert();
+                    timeDifference = b.previousTimestamp - this.previousTimestamp
+                    vel = b.previousVelocity.invert()
                 }
 
-                Vector2 moveDelta = calculateMoveDelta(vel, minMove, timeDifference);
-                bAdjustedPreviousPosition = b.previousPosition.add(moveDelta);
+                val moveDelta = Vector2.calculateMoveDelta(vel, minMove, timeDifference)
+                bAdjustedPreviousPosition = b.previousPosition.add(moveDelta)
 
 
-                if (currentTimestamp > b.currentTimestamp) {
-                    timeUntilCollision = (b.currentTimestamp - previousTimestamp) + 10f;
+                timeUntilCollision = if (currentTimestamp > b.currentTimestamp) {
+                    (b.currentTimestamp - previousTimestamp) + 10F
                 } else {
-                    timeUntilCollision = Config.get().getUpdateFrequencyInMillisWithAdded20Percent();
+                    get().getUpdateFrequencyInMillisWithAdded20Percent()
                 }
-
             } else {
-                bAdjustedPreviousPosition = b.previousPosition;
-                timeUntilCollision = Config.get().getUpdateFrequencyInMillisWithAdded20Percent();
+                bAdjustedPreviousPosition = b.previousPosition
+                timeUntilCollision = get().getUpdateFrequencyInMillisWithAdded20Percent()
             }
 
             if (detectCollision(
@@ -398,121 +323,212 @@ public class PositionVector {
                     bAdjustedPreviousPosition,
                     b.velocity,
                     intersectionThreshold,
-                    timeUntilCollision)) {
-                return true;
+                    timeUntilCollision
+                )
+            ) {
+                return true
             }
         }
 
-        if (b.currentTimestamp < this.currentTimestamp) {
-            Vector2 bAdjustedCurrentPosition;
-            Vector2 bAdjustedVelocity;
-
-            long timeDifference;
-            timeDifference = this.currentTimestamp - b.currentTimestamp;
+        return if (b.currentTimestamp < this.currentTimestamp) {
+            val bAdjustedCurrentPosition: Vector2
+            val bAdjustedVelocity: Vector2
+            val timeDifference: Long = this.currentTimestamp - b.currentTimestamp
 
             bAdjustedVelocity = calculateDampenedVelocity(
-                    b.velocity,
-                    b.configuration.dampenMagnitudeCoefficient(),
-                    minMove,
-                    timeDifference);
+                b.velocity,
+                b.configuration.dampenMagnitudeCoefficient(),
+                minMove,
+                timeDifference
+            )
 
-            Vector2 moveDelta = calculateMoveDelta(bAdjustedVelocity, minMove, timeDifference);
-            bAdjustedCurrentPosition = b.currentPosition.add(moveDelta);
+            val moveDelta = Vector2.calculateMoveDelta(bAdjustedVelocity, minMove, timeDifference)
+            bAdjustedCurrentPosition = b.currentPosition.add(moveDelta)
 
-            return detectCollision(
-                    currentPosition,
-                    velocity,
-                    bAdjustedCurrentPosition,
-                    bAdjustedVelocity,
-                    intersectionThreshold,
-                    timeDifference + 10f);
-
+            detectCollision(
+                currentPosition,
+                velocity,
+                bAdjustedCurrentPosition,
+                bAdjustedVelocity,
+                intersectionThreshold,
+                timeDifference + 10F
+            )
         } else {
-            return false;
+            false
         }
     }
 
-    public boolean intersectedWith(PositionVector b, float intersectionThreshold) {
-        return intersectedWithSegment(b, intersectionThreshold);
+    fun intersectedWith(b: PositionVector, intersectionThreshold: Float): Boolean {
+        return intersectedWithSegment(b, intersectionThreshold)
     }
 
-    public Vector2 intersectedWith(Vector2 fixedFrom, Vector2 fixedTo, float intersectionThreshold) {
+    fun intersectedWith(fixedFrom: Vector2, fixedTo: Vector2, intersectionThreshold: Float): Vector2? {
+        val extendCurrentPosition = currentPosition.add(
+            Vector2.fromAngleMagnitude(
+                calculateAngleBetweenTwoPoints(
+                    previousPosition.getX(), previousPosition.getY(),
+                    currentPosition.getX(), currentPosition.getY()
+                ),
+                intersectionThreshold
+            )
+        )
 
-        Vector2 extendCurrentPosition = currentPosition.add(
-                Vector2.fromAngleMagnitude(TrigUtil
-                                .calculateAngleBetweenTwoPoints(previousPosition.getX(), previousPosition.getY(),
-                                        currentPosition.getX(), currentPosition.getY()),
-                        intersectionThreshold)
-        );
-
-        return Vector2.intersectedWith(previousPosition, extendCurrentPosition, fixedFrom, fixedTo);
+        return Vector2.intersectedWith(previousPosition, extendCurrentPosition, fixedFrom, fixedTo)
     }
 
-    private boolean hasScheduledMove() {
-        return !Vector2.ZERO.equals(scheduledMove);
+    private fun hasScheduledMove(): Boolean {
+        return Vector2.ZERO != scheduledMove
     }
 
     /**
      * Will return true if the last call to update consumed moves from scheduleMove
      * @return
      */
-    public boolean movedByScheduledMove() {
-        return this.movedByScheduledMove;
+    fun movedByScheduledMove(): Boolean {
+        return this.movedByScheduledMove
     }
 
 
-    public interface Configuration {
-
-        enum AtBoundsOptions {
-            IGNORE(v -> v),
-            STOP(v -> Math.min(1f, Math.max(0f, v))),
-            BOUNCE(v -> {
-                if (v < 0f) {
-                    return -v;
-                } else if (v > 1f) {
-                    return 1f - (v - 1f);
+    interface Configuration {
+        enum class AtBoundsOptions(val operator: DoubleUnaryOperator) {
+            IGNORE(DoubleUnaryOperator { v: Double -> v }),
+            STOP(DoubleUnaryOperator { v: Double -> min(1.0, max(0.0, v)) }),
+            BOUNCE(DoubleUnaryOperator { v: Double ->
+                if (v < 0F) {
+                    return@DoubleUnaryOperator -v
+                } else if (v > 1F) {
+                    return@DoubleUnaryOperator 1F - (v - 1F)
                 }
-                return v;
+                v
             });
 
-            final DoubleUnaryOperator operator;
-
-            AtBoundsOptions(DoubleUnaryOperator operator) {
-                this.operator = operator;
-            }
-
-            float bound(float v) {
-                return (float) operator.applyAsDouble(v);
+            fun bound(v: Float): Float {
+                return operator.applyAsDouble(v.toDouble()).toFloat()
             }
         }
 
-        default AtBoundsOptions atBounds() {
-            return AtBoundsOptions.IGNORE;
+        fun atBounds(): AtBoundsOptions {
+            return AtBoundsOptions.IGNORE
         }
 
-        default OptionalDouble maxMagnitude() {
-            return OptionalDouble.empty();
+        fun maxMagnitude(): OptionalDouble {
+            return OptionalDouble.empty()
         }
 
         /**
          * Muse be a negative value. Values below -0.2 are equivalent to immediate dampening (no inertia).
          * Values above negative will disable dampening (infinite inertia).
-         * <p>
+         *
+         *
          * Dampening is the current magnitude scaled by following function:
-         * <p>
+         *
+         *
          * f(t) = 0.999994 * e ^ (c * t)
-         * <p>
+         *
+         *
          * t => time in millis
          * c => dampening magnitude coefficient
          *
          * @return
          */
-        default float dampenMagnitudeCoefficient() {
-            return 0f;
+        fun dampenMagnitudeCoefficient(): Float {
+            return 0F
         }
     }
 
-    public static final Configuration DEFAULT_CONFIGURATION = new Configuration() {
-    };
+    init {
+        this.velocity = previousVelocity
+        this.currentPosition = Vector2.fromXY(startX, startY)
+        this.previousPosition = Vector2.fromXY(startX, startY)
+        this.previousTimestamp = startTime
+        this.currentTimestamp = this.previousTimestamp
+        this.configuration = configuration
+        if (configuration.maxMagnitude().isPresent()) {
+            this.maxMagnitude = configuration.maxMagnitude().getAsDouble().toFloat()
+        } else {
+            this.maxMagnitude = null
+        }
+    }
 
+    companion object {
+        @JvmStatic
+        fun of(
+            startX: Float,
+            startY: Float,
+            angle: Float,
+            magnitude: Float,
+            startTime: Long,
+            configuration: Configuration
+        ): PositionVector {
+            return PositionVector(
+                Vector2.fromAngleMagnitude(angle, magnitude),
+                startX,
+                startY,
+                startTime,
+                configuration
+            )
+        }
+
+        @JvmStatic
+        fun of(
+            startX: Float,
+            startY: Float,
+            angle: Float,
+            magnitude: Float,
+            startTime: Long
+        ): PositionVector {
+            return PositionVector(
+                Vector2.fromAngleMagnitude(angle, magnitude),
+                startX,
+                startY,
+                startTime,
+                DEFAULT_CONFIGURATION
+            )
+        }
+
+        private fun calculateDampenedVelocity(
+            velocity: Vector2,
+            dampMagCoef: Float,
+            minMove: Float,
+            elapsed: Long
+        ): Vector2 {
+            if (dampMagCoef < 0F && velocity.getMagnitude() != 0F) {
+                var mag: Float = calculateDampenedMagnitude(velocity, dampMagCoef, elapsed)
+                if (mag < minMove) {
+                    mag = 0F
+                }
+                return Vector2.fromAngleMagnitude(velocity.getAngle(), mag)
+            }
+            return velocity
+        }
+
+        private fun calculateDampenedMagnitude(velocity: Vector2, dampMagCoef: Float, elapsed: Long): Float {
+            return 0.999994F * exp((dampMagCoef * elapsed).toDouble()).toFloat() * velocity.getMagnitude()
+        }
+
+        private fun detectCollision(
+            aPos: Vector2, aVel: Vector2,
+            bPos: Vector2, bVel: Vector2,
+            intersectionThreshold: Float,
+            collisionTimeInMillis: Float
+        ): Boolean {
+            val relativePosition = bPos.minus(aPos)
+            val relativeVelocity = bVel.minus(aVel)
+
+            val timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
+                    (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1F)
+
+            if (timeToCollisionInSeconds * 1000F > collisionTimeInMillis) {
+                return false
+            }
+
+            val minSeparation =
+                relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds
+            return minSeparation <= intersectionThreshold
+        }
+
+        @JvmField
+        val DEFAULT_CONFIGURATION: Configuration = object : Configuration {
+        }
+    }
 }

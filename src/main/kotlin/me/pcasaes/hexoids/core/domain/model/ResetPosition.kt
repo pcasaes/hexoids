@@ -1,75 +1,47 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import java.util.Random;
+import java.util.Random
 
 /**
  * Whenever a player is spawned the class provides the player's X,Y position.
  *
  */
-public interface ResetPosition {
+interface ResetPosition {
 
-    float getNextX();
+    fun getNextX(): Float
 
-    float getNextY();
+    fun getNextY(): Float
 
-    /**
-     * Return a ResetPosition.
-     *
-     * If config is rng will return {@link RngResetPosition}
-     * Otherwise presumes a comma separated float list and return {@link FixedResetPosition}
-     *
-     * @param config used to configure an appropriate implementation
-     * @return a ResetPosition
-     */
-    static ResetPosition create(String config) {
-        if (Holder.instance == null) {
-            if ("rng".equalsIgnoreCase(config)) {
-                Holder.instance = new RngResetPosition();
-            } else {
-                Holder.instance = new FixedResetPosition(config);
-            }
-        }
-        return Holder.instance;
-    }
-
-    class Holder {
-        private Holder() {
-        }
-
-        private static ResetPosition instance;
+    object Holder {
+        var instance: ResetPosition? = null
     }
 
     /**
-     * {@link ResetPosition} implementaiton that spawns players in a random
+     * [ResetPosition] implementaiton that spawns players in a random
      * location.
      */
-    class RngResetPosition implements ResetPosition {
-
-        private static final Random RNG = new Random();
-
-        private RngResetPosition() {
+    private class RngResetPosition() : ResetPosition {
+        override fun getNextX(): Float {
+            return RNG.nextFloat()
         }
 
-        @Override
-        public float getNextX() {
-            return RNG.nextFloat();
+        override fun getNextY(): Float {
+            return RNG.nextFloat()
         }
 
-        @Override
-        public float getNextY() {
-            return RNG.nextFloat();
+        companion object {
+            private val RNG = Random()
         }
     }
 
     /**
-     * {@link ResetPosition} implementation that spawns all player in the
+     * [ResetPosition] implementation that spawns all player in the
      * same X,Y position.
      */
-    class FixedResetPosition implements ResetPosition {
+    private class FixedResetPosition(config: String?) : ResetPosition {
+        private val x: Float
 
-        private final float x;
-
-        private final float y;
+        private val y: Float
 
         /**
          * The fixed position is defined in a comma separated list.
@@ -79,29 +51,51 @@ public interface ResetPosition {
          *
          * @param config comma separated X,Y position.
          */
-        private FixedResetPosition(String config) {
-            if (config == null || config.length() == 0) {
-                this.x = 0f;
-                this.y = 0f;
+        init {
+            if (config.isNullOrEmpty()) {
+                this.x = 0f
+                this.y = 0f
             } else {
-                String[] parts = config.split(",");
-                this.x = Float.parseFloat(parts[0]);
-                if (parts.length == 1) {
-                    this.y = Float.parseFloat(parts[0]);
+                val parts: Array<String> = config.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                this.x = parts[0].toFloat()
+                if (parts.size == 1) {
+                    this.y = parts[0].toFloat()
                 } else {
-                    this.y = Float.parseFloat(parts[1]);
+                    this.y = parts[1].toFloat()
                 }
             }
         }
 
-        @Override
-        public float getNextX() {
-            return x;
+        override fun getNextX(): Float {
+            return x
         }
 
-        @Override
-        public float getNextY() {
-            return y;
+        override fun getNextY(): Float {
+            return y
+        }
+    }
+
+    companion object {
+        /**
+         * Return a ResetPosition.
+         *
+         * If config is rng will return [RngResetPosition]
+         * Otherwise presumes a comma separated float list and return [FixedResetPosition]
+         *
+         * @param config used to configure an appropriate implementation
+         * @return a ResetPosition
+         */
+        fun create(config: String): ResetPosition {
+            var instance: ResetPosition? = Holder.instance
+            if (instance == null) {
+                instance = if ("rng".equals(config, ignoreCase = true)) {
+                    RngResetPosition()
+                } else {
+                    FixedResetPosition(config)
+                }
+                Holder.instance = instance
+            }
+            return instance
         }
     }
 }

@@ -1,23 +1,23 @@
-package me.pcasaes.hexoids.core.domain.index;
+package me.pcasaes.hexoids.core.domain.index
 
-public class BarrierSpatialIndexFactory {
+class BarrierSpatialIndexFactory private constructor() {
 
-    private static final BarrierSpatialIndexFactory FACTORY = new BarrierSpatialIndexFactory();
+    private lateinit var barrierSpatialIndex: BarrierSpatialIndex
 
-    private BarrierSpatialIndexFactory() {
+    fun get(): BarrierSpatialIndex {
+        return barrierSpatialIndex
     }
 
-    public static BarrierSpatialIndexFactory factory() {
-        return FACTORY;
+    fun setBarrierSpatialIndex(barrierSpatialIndex: BarrierSpatialIndex) {
+        this.barrierSpatialIndex = barrierSpatialIndex
     }
 
-    private BarrierSpatialIndex barrierSpatialIndex;
+    companion object {
+        private val FACTORY = BarrierSpatialIndexFactory()
 
-    public BarrierSpatialIndex get() {
-        return barrierSpatialIndex;
-    }
-
-    public void setBarrierSpatialIndex(BarrierSpatialIndex barrierSpatialIndex) {
-        this.barrierSpatialIndex = barrierSpatialIndex;
+        @JvmStatic
+        fun factory(): BarrierSpatialIndexFactory {
+            return FACTORY
+        }
     }
 }

@@ -1,11 +1,8 @@
-package me.pcasaes.hexoids.infrastructure.clock;
+package me.pcasaes.hexoids.infrastructure.clock
 
-public final class HRClock {
-
-    public static long nanoTime() {
-        return System.nanoTime();
-    }
-
-    private HRClock() {
+object HRClock {
+    @JvmStatic
+    fun nanoTime(): Long {
+        return System.nanoTime()
     }
 }

@@ -1,45 +1,39 @@
-package me.pcasaes.hexoids.entrypoints.web;
+package me.pcasaes.hexoids.entrypoints.web
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import pcasaes.hexoids.proto.JoinCommandDto;
-import pcasaes.hexoids.proto.MoveCommandDto;
-import pcasaes.hexoids.proto.SetFixedInertialDampenFactorCommandDto;
-
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.application.commands.ApplicationCommands
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import pcasaes.hexoids.proto.JoinCommandDto
+import pcasaes.hexoids.proto.MoveCommandDto
+import pcasaes.hexoids.proto.SetFixedInertialDampenFactorCommandDto
 
 @ApplicationScoped
-class CommandDelegate {
+class CommandDelegate @Inject constructor(
+    private val applicationCommands: ApplicationCommands
+) {
 
-    private final ApplicationCommands applicationCommands;
-
-    @Inject
-    CommandDelegate(ApplicationCommands applicationCommands) {
-        this.applicationCommands = applicationCommands;
+    fun fire(userId: EntityId) {
+        this.applicationCommands.getFireCommand().fire(userId)
     }
 
-    void fire(EntityId userId) {
-        this.applicationCommands.getFireCommand().fire(userId);
+    fun leave(userId: EntityId) {
+        this.applicationCommands.getLeaveGameCommand().leave(userId)
     }
 
-    void leave(EntityId userId) {
-        this.applicationCommands.getLeaveGameCommand().leave(userId);
+    fun spawn(userId: EntityId) {
+        this.applicationCommands.getSpawn().spawn(userId)
     }
 
-    void spawn(EntityId userId) {
-        this.applicationCommands.getSpawn().spawn(userId);
+    fun join(userId: EntityId, command: JoinCommandDto) {
+        this.applicationCommands.getJoinGameCommand().join(userId, command)
     }
 
-    void join(EntityId userId, JoinCommandDto command) {
-        this.applicationCommands.getJoinGameCommand().join(userId, command);
+    fun move(userId: EntityId, command: MoveCommandDto) {
+        this.applicationCommands.getMoveCommand().move(userId, command)
     }
 
-    void move(EntityId userId, MoveCommandDto command) {
-        this.applicationCommands.getMoveCommand().move(userId, command);
-    }
-
-    void setFixedInertialDampenFactor(EntityId userId, SetFixedInertialDampenFactorCommandDto command) {
-        this.applicationCommands.getSetInertialDampenFactorCommand().setFactor(userId, command);
+    fun setFixedInertialDampenFactor(userId: EntityId, command: SetFixedInertialDampenFactorCommandDto) {
+        this.applicationCommands.getSetInertialDampenFactorCommand().setFactor(userId, command)
     }
 }

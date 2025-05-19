@@ -1,102 +1,100 @@
-package me.pcasaes.hexoids.infrastructure.kafka;
+package me.pcasaes.hexoids.infrastructure.kafka
 
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.subscription.UniEmitter;
-import io.smallrye.mutiny.tuples.Tuple3;
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
-import org.apache.kafka.common.TopicPartition;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
+import io.smallrye.mutiny.Uni
+import io.smallrye.mutiny.subscription.UniEmitter
+import io.smallrye.mutiny.tuples.Tuple3
+import jakarta.annotation.PreDestroy
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.inject.Produces
+import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers.HaveStarted
+import org.apache.kafka.common.TopicPartition
+import org.eclipse.microprofile.reactive.messaging.Incoming
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Logger
 
 @ApplicationScoped
-public class DelayedStartConsumerHandler {
+class DelayedStartConsumerHandler {
 
-    private static final Logger LOGGER = Logger.getLogger(DelayedStartConsumerHandler.class.getName());
+    private val emitters = ConcurrentHashMap.newKeySet<UniEmitter<in Unit>>()
 
-    private final Set<UniEmitter<? super Void>> emitters = ConcurrentHashMap.newKeySet();
+    private val lastOffsets = ConcurrentHashMap<TopicPartition, Long>()
 
-    private final Map<TopicPartition, Long> lastOffsets = new ConcurrentHashMap<>();
-
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean caughtUp = new AtomicBoolean(false);
+    private val started = AtomicBoolean(false)
+    private val caughtUp = AtomicBoolean(false)
 
 
     @PreDestroy
-    public void stop() {
-        this.lastOffsets.clear();
-        this.tryStartup();
+    fun stop() {
+        this.lastOffsets.clear()
+        this.tryStartup()
     }
 
-    public void start() {
+    fun start() {
         if (this.started.compareAndSet(false, true)) {
             this.emitters
-                    .forEach(ue -> ue.complete(null));
-            LOGGER.info("Started up delayed consumers");
+                .forEach { ue -> ue.complete(Unit) }
+            LOGGER.info("Started up delayed consumers")
         }
     }
 
-    void register(Map<TopicPartition, Long> nextOffsets) {
+    fun register(nextOffsets: MutableMap<TopicPartition, Long?>) {
         nextOffsets
-                .entrySet()
-                .stream()
-                .filter(entry -> entry.getValue() != null)
-                .filter(entry -> entry.getValue() > 0)
-                .forEach(entry -> {
-                    LOGGER.info(() -> "Last offset: " + entry);
-                    this.lastOffsets.put(entry.getKey(), entry.getValue() - 1);
-                });
+            .entries
+            .stream()
+            .forEach { entry ->
+                val v = entry.value
+                if (v != null && v > 0) {
+                    LOGGER.info { "Last offset: $entry" }
+                    this.lastOffsets.put(entry.key, v - 1)
+                }
+            }
 
-        this.tryStartup();
+        this.tryStartup()
     }
 
     @Incoming("join-game-metadata")
-    public void joinGameTime(Tuple3<String, Integer, Long> metadata) {
-        if (!caughtUp.getPlain() && !caughtUp.get()) {
-            TopicPartition topicPartition = new TopicPartition(metadata.getItem1(), metadata.getItem2());
-            long last = this.lastOffsets.get(topicPartition);
-            if (last <= metadata.getItem3()) {
-                LOGGER.info(() -> "Reach offset " + last + " for " + topicPartition);
-                this.lastOffsets.remove(topicPartition);
+    fun joinGameTime(metadata: Tuple3<String, Int, Long>) {
+        if (!caughtUp.plain && !caughtUp.get()) {
+            val topicPartition = TopicPartition(metadata.getItem1(), metadata.getItem2())
+            val last = this.lastOffsets[topicPartition]
+            if (last != null && last <= metadata.getItem3()) {
+                LOGGER.info { "Reach offset $last for $topicPartition" }
+                this.lastOffsets.remove(topicPartition)
             }
-            this.tryStartup();
+            this.tryStartup()
         }
     }
 
-    private void tryStartup() {
+    private fun tryStartup() {
         if (this.lastOffsets.isEmpty() && this.caughtUp.compareAndSet(false, true)) {
-            LOGGER.info("Starting up delayed consumers");
-            this.start();
+            LOGGER.info("Starting up delayed consumers")
+            this.start()
         }
     }
 
-    public Uni<Void> onStarted() {
+    fun onStarted(): Uni<Unit> {
         return Uni
-                .createFrom()
-                .emitter(uniEmitter -> {
-                    if (this.started.get()) {
-                        uniEmitter.complete(null);
-                    } else {
-                        emitters.add(uniEmitter);
-                    }
-                });
+            .createFrom()
+            .emitter { uniEmitter ->
+                if (this.started.get()) {
+                    uniEmitter.complete(Unit)
+                } else {
+                    emitters.add(uniEmitter)
+                }
+            }
     }
 
 
-    private boolean hasStarted() {
-        return this.caughtUp.getPlain() || this.caughtUp.get();
+    private fun hasStarted(): Boolean {
+        return this.caughtUp.plain || this.caughtUp.get()
     }
 
 
     @Produces
-    public ApplicationConsumers.HaveStarted getHaveStarted() {
-        return this::hasStarted;
+    fun getHaveStarted(): HaveStarted = HaveStarted { this.hasStarted() }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(DelayedStartConsumerHandler::class.java.getName())
     }
 }

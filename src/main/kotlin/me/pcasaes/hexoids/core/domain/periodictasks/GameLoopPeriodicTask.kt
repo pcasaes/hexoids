@@ -1,48 +1,39 @@
-package me.pcasaes.hexoids.core.domain.periodictasks;
+package me.pcasaes.hexoids.core.domain.periodictasks
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.service.GameLoopService;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.service.GameLoopService
 
-public class GameLoopPeriodicTask implements GamePeriodicTask {
+class GameLoopPeriodicTask private constructor(
+    private val gameQueue: GameQueue,
+    private val gameLoopService: GameLoopService,
+    private val period: Long
+) : GamePeriodicTask {
 
-    private final GameQueue gameQueue;
-
-    private final GameLoopService gameLoopService;
-
-    private final long period;
-
-    private GameLoopPeriodicTask(GameQueue gameQueue,
-                                 GameLoopService gameLoopService,
-                                 long period) {
-        this.gameQueue = gameQueue;
-        this.gameLoopService = gameLoopService;
-        this.period = period;
-    }
-
-    public static GameLoopPeriodicTask create(GameQueue gameQueue,
-                                              GameLoopService gameLoopService,
-                                              long period) {
-        return new GameLoopPeriodicTask(gameQueue, gameLoopService, period);
-    }
-
-    private void gameLoopPeriodicTask() {
+    private fun gameLoopPeriodicTask() {
         gameLoopService
-                .getFixedUpdateRunnable()
-                .ifPresent(this::publish);
+            .getFixedUpdateRunnable()
+            .ifPresent { event -> this.publish(event) }
     }
 
-    private void publish(Runnable event) {
-        this.gameQueue.enqueue(event);
+    private fun publish(event: Runnable) {
+        this.gameQueue.enqueue(event)
     }
 
-    @Override
-    public long getPeriod() {
-        return period;
+    override fun getPeriod(): Long {
+        return period
     }
 
-    @Override
-    public void run() {
-        this.gameLoopPeriodicTask();
+    override fun run() {
+        this.gameLoopPeriodicTask()
     }
 
+    companion object {
+        fun create(
+            gameQueue: GameQueue,
+            gameLoopService: GameLoopService,
+            period: Long
+        ): GameLoopPeriodicTask {
+            return GameLoopPeriodicTask(gameQueue, gameLoopService, period)
+        }
+    }
 }

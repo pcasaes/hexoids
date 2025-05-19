@@ -1,209 +1,220 @@
-package me.pcasaes.hexoids.infrastructure.disruptor;
+package me.pcasaes.hexoids.infrastructure.disruptor
 
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.EventTranslatorOneArg;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.ProducerType;
-import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.domain.model.DomainEvent;
-import me.pcasaes.hexoids.core.domain.model.GameEvents;
-import me.pcasaes.hexoids.infrastructure.clock.HRClock;
-import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer;
-import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import pcasaes.hexoids.proto.Dto;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import com.lmax.disruptor.BlockingWaitStrategy
+import com.lmax.disruptor.EventHandler
+import com.lmax.disruptor.EventTranslatorOneArg
+import com.lmax.disruptor.RingBuffer
+import com.lmax.disruptor.dsl.Disruptor
+import com.lmax.disruptor.dsl.ProducerType
+import io.quarkus.runtime.StartupEvent
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.domain.model.DomainEvent
+import me.pcasaes.hexoids.core.domain.model.GameEvents
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
+import me.pcasaes.hexoids.infrastructure.clock.HRClock.nanoTime
+import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer
+import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import pcasaes.hexoids.proto.Dto
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
+import kotlin.math.pow
 
 @ApplicationScoped
-public class DisruptorOut {
+class DisruptorOut @Inject constructor(
+    private val domainEventProducer: DomainEventProducer,
+    private val clientEventProducer: ClientEventProducer,
+    @param:ConfigProperty(
+        name = "hexoids.config.service.disruptor.buffer-size-exponent",
+        defaultValue = "17"
+    ) private val bufferSizeExponent: Int
+) {
+    private val metrics: MutableList<QueueMetric>
 
-    public static final String METRIC_DOMAIN_EVENT_OUT = "domain-event-out";
-    public static final String METRIC_CLIENT_EVENT_OUT = "client-event-out";
+    private val dtoTranslator = EventTranslatorOneArg { event: DisruptorOutEvent, _, dto: Dto ->
+        this.translate(
+            event, dto
+        )
+    }
+    private val domainEventTranslator =
+        EventTranslatorOneArg { event: DisruptorOutEvent, _, domainEvent: DomainEvent ->
+            this.translate(
+                event, domainEvent
+            )
+        }
 
+    private lateinit var ringBuffer: RingBuffer<DisruptorOutEvent>
+    private lateinit var disruptor: Disruptor<DisruptorOutEvent>
 
-    private static final Consumer<Dto> CLIENT_EVENT_NOOP = v -> {
-    };
-
-    private final DomainEventProducer domainEventProducer;
-    private final ClientEventProducer clientEventProducer;
-    private final int bufferSizeExponent;
-    private final List<QueueMetric> metrics;
-
-    private final EventTranslatorOneArg<DisruptorOutEvent, Dto> dtoTranslator = this::translate;
-    private final EventTranslatorOneArg<DisruptorOutEvent, DomainEvent> domainEventTranslator = this::translate;
-
-    private RingBuffer<DisruptorOutEvent> ringBuffer;
-    private Disruptor<DisruptorOutEvent> disruptor;
-
-    @Inject
-    public DisruptorOut(
-            DomainEventProducer domainEventProducer,
-            ClientEventProducer clientEventProducer,
-            @ConfigProperty(
-                    name = "hexoids.config.service.disruptor.buffer-size-exponent",
-                    defaultValue = "17"
-            ) int bufferSizeExponent) {
-        this.domainEventProducer = domainEventProducer;
-        this.clientEventProducer = clientEventProducer;
-        this.bufferSizeExponent = bufferSizeExponent;
-        this.metrics = new ArrayList<>(2);
-        this.metrics.add(QueueMetric.of(METRIC_DOMAIN_EVENT_OUT));
-        this.metrics.add(QueueMetric.of(METRIC_CLIENT_EVENT_OUT));
+    init {
+        val m = ArrayList<QueueMetric>(2)
+        m.add(QueueMetric.of(METRIC_DOMAIN_EVENT_OUT))
+        m.add(QueueMetric.of(METRIC_CLIENT_EVENT_OUT))
+        this.metrics = m
     }
 
-    public void startup(@Observes StartupEvent event) {
+    fun startup(@Observes event: StartupEvent) {
         // eager load
     }
 
     @PostConstruct
-    public void start() {
+    fun start() {
         // Specify the size of the ring buffer, must be power of 2.
-        int bufferSize = (int) Math.pow(2, this.bufferSizeExponent);
+        val bufferSize = 2.0.pow(this.bufferSizeExponent.toDouble()).toInt()
 
         // Construct the Disruptor
-        final AtomicInteger threadCount = new AtomicInteger(0);
-        this.disruptor = new Disruptor<>(DisruptorOutEvent::new,
-                bufferSize,
-                runnable -> {
-                    Thread thread = Executors
-                            .defaultThreadFactory()
-                            .newThread(runnable);
-                    thread.setName("disruptor-out-thread-" + threadCount.incrementAndGet());
-                    return thread;
-                },
-                ProducerType.SINGLE,
-                new BlockingWaitStrategy());
+        val threadCount = AtomicInteger(0)
+        this.disruptor = Disruptor<DisruptorOutEvent>(
+            { DisruptorOutEvent() },
+            bufferSize,
+            { runnable ->
+                val thread = Executors
+                    .defaultThreadFactory()
+                    .newThread(runnable)
+                thread.setName("disruptor-out-thread-" + threadCount.incrementAndGet())
+                thread
+            },
+            ProducerType.SINGLE,
+            BlockingWaitStrategy()
+        )
 
 
-        wireDomainEventsInterfaces();
+        wireDomainEventsInterfaces()
 
         // Start the Disruptor, starts all threads running
-        disruptor.start();
+        disruptor.start()
 
         // Get the ring buffer from the Disruptor to be used for publishing.
-        this.ringBuffer = disruptor.getRingBuffer();
+        this.ringBuffer = disruptor.getRingBuffer()
     }
 
     /**
-     * @see GameEvents#registerEventDispatcher(Consumer)
+     * @see GameEvents.registerEventDispatcher
      */
-    private void wireDomainEventsInterfaces() {
+    private fun wireDomainEventsInterfaces() {
         // Connect the handler
         if (this.clientEventProducer.isEnabled()) {
-            disruptor.handleEventsWith(this::handleDomainEventHandler, this::handleClientEventHandler);
-            GameEvents.getDomainEvents().registerEventDispatcher(this::enqueueDomainEvent);
-            GameEvents.getClientEvents().registerEventDispatcher(this::enqueueClient);
+            disruptor.handleEventsWith(EventHandler { event: DisruptorOutEvent, _, _ ->
+                this.handleDomainEventHandler(
+                    event
+                )
+            }, EventHandler { event: DisruptorOutEvent, _, _ ->
+                this.handleClientEventHandler(
+                    event
+                )
+            })
+            getDomainEvents().registerEventDispatcher { domainEvent ->
+                this.enqueueDomainEvent(
+                    domainEvent
+                )
+            }
+            getClientEvents().registerEventDispatcher { dto -> this.enqueueClient(dto) }
         } else {
-            disruptor.handleEventsWith(this::handleDomainEventHandler);
-            GameEvents.getDomainEvents().registerEventDispatcher(this::enqueueDomainEvent);
-            GameEvents.getClientEvents().registerEventDispatcher(CLIENT_EVENT_NOOP);
+            disruptor.handleEventsWith(EventHandler { event: DisruptorOutEvent, _, _ ->
+                this.handleDomainEventHandler(
+                    event
+                )
+            })
+            getDomainEvents().registerEventDispatcher { domainEvent ->
+                this.enqueueDomainEvent(
+                    domainEvent
+                )
+            }
+            getClientEvents().registerEventDispatcher(CLIENT_EVENT_NOOP)
         }
     }
 
 
     @PreDestroy
-    public void destroy() {
-        this.ringBuffer = null;
-        disruptor.halt();
-        disruptor.shutdown();
+    fun destroy() {
+        disruptor.halt()
+        disruptor.shutdown()
     }
 
-    private void handleDomainEventHandler(DisruptorOutEvent event, long sequence, boolean endOfBatch) {
-        DomainEvent domainEvent = event.getDomainEvent();
+    private fun handleDomainEventHandler(event: DisruptorOutEvent) {
+        val domainEvent = event.domainEvent
         if (domainEvent != null) {
-            QueueMetric queueMetric = this.metrics.get(0);
-            queueMetric.startClock();
+            val queueMetric = this.metrics[0]
+            queueMetric.startClock()
             try {
-                this.domainEventProducer.accept(domainEvent);
+                this.domainEventProducer.accept(domainEvent)
             } finally {
-                queueMetric.stopClock(event.getCreateTime());
-                event.setDomainEvent(null);
+                queueMetric.stopClock(event.createTime)
+                event.domainEvent = null
             }
         }
     }
 
-    private void handleClientEventHandler(DisruptorOutEvent event, long sequence, boolean endOfBatch) {
-        Dto clientEvent = event.getClientEvent();
+    private fun handleClientEventHandler(event: DisruptorOutEvent) {
+        val clientEvent = event.clientEvent
         if (clientEvent != null) {
-            QueueMetric queueMetric = this.metrics.get(1);
-            queueMetric.startClock();
+            val queueMetric = this.metrics[1]
+            queueMetric.startClock()
             try {
-                this.clientEventProducer.accept(clientEvent);
+                this.clientEventProducer.accept(clientEvent)
             } finally {
-                queueMetric.stopClock(event.getCreateTime());
-                event.setClientEvent(null);
+                queueMetric.stopClock(event.createTime)
+                event.clientEvent = null
             }
         }
     }
 
-    void enqueueClient(Dto dto) {
-        this.ringBuffer.publishEvent(dtoTranslator, dto);
+    fun enqueueClient(dto: Dto) {
+        this.ringBuffer.publishEvent(dtoTranslator, dto)
     }
 
-    void enqueueDomainEvent(DomainEvent domainEvent) {
-        this.ringBuffer.publishEvent(domainEventTranslator, domainEvent);
+    fun enqueueDomainEvent(domainEvent: DomainEvent) {
+        this.ringBuffer.publishEvent(domainEventTranslator, domainEvent)
     }
 
-    private void translate(DisruptorOutEvent event, long sequence, DomainEvent domainEvent) {
+    private fun translate(event: DisruptorOutEvent, domainEvent: DomainEvent) {
         event.clear()
-                .setDomainEvent(domainEvent);
+            .domainEvent = domainEvent
     }
 
-    private void translate(DisruptorOutEvent event, long sequence, Dto dto) {
+    private fun translate(event: DisruptorOutEvent, dto: Dto) {
         event.clear()
-                .setClientEvent(dto);
+            .clientEvent = dto
     }
 
-    public static class DisruptorOutEvent {
+    class DisruptorOutEvent {
+        var domainEvent: DomainEvent? = null
+            set(domainEvent) {
+                markCreateTime()
+                field = domainEvent
+            }
 
-        private DomainEvent domainEvent;
-        private Dto clientEvent;
-        private long createTime;
+        var clientEvent: Dto? = null
+            set(clientEvent) {
+                markCreateTime()
+                field = clientEvent
+            }
 
-        public DomainEvent getDomainEvent() {
-            return domainEvent;
+        var createTime: Long = 0
+            private set
+
+        fun clear(): DisruptorOutEvent {
+            this.domainEvent = null
+            this.clientEvent = null
+            return this
         }
 
-        public DisruptorOutEvent setDomainEvent(DomainEvent domainEvent) {
-            markCreateTime();
-            this.domainEvent = domainEvent;
-            return this;
-        }
-
-        public Dto getClientEvent() {
-            return clientEvent;
-        }
-
-        public long getCreateTime() {
-            return createTime;
-        }
-
-        public DisruptorOutEvent setClientEvent(Dto clientEvent) {
-            markCreateTime();
-            this.clientEvent = clientEvent;
-            return this;
-        }
-
-        public DisruptorOutEvent clear() {
-            this.domainEvent = null;
-            this.clientEvent = null;
-            return this;
-        }
-
-        private void markCreateTime() {
-            this.createTime = HRClock.nanoTime();
+        private fun markCreateTime() {
+            this.createTime = nanoTime()
         }
     }
 
+    companion object {
+        const val METRIC_DOMAIN_EVENT_OUT: String = "domain-event-out"
+        const val METRIC_CLIENT_EVENT_OUT: String = "client-event-out"
+
+
+        private val CLIENT_EVENT_NOOP = Consumer { _: Dto -> }
+    }
 }

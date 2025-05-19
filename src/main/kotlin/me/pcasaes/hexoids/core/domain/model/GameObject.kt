@@ -1,39 +1,38 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import pcasaes.hexoids.proto.ClientPlatforms;
-import pcasaes.hexoids.proto.MoveReason;
+import pcasaes.hexoids.proto.ClientPlatforms
+import pcasaes.hexoids.proto.MoveReason
 
-public interface GameObject {
+interface GameObject {
+    fun hazardDestroy(hazardId: EntityId, timestamp: Long)
 
-    void hazardDestroy(EntityId hazardId, long timestamp);
+    fun move(moveX: Float, moveY: Float, moveReason: MoveReason?)
 
-    void move(float moveX, float moveY, MoveReason moveReason);
+    fun getX(): Float
 
-    float getX();
+    fun getY(): Float
 
-    float getY();
-
-    default boolean teleport(float x, float y, long timestamp, MoveReason moveReason) {
-        return false;
+    fun teleport(x: Float, y: Float, timestamp: Long, moveReason: MoveReason): Boolean {
+        return false
     }
 
-    default ClientPlatforms getClientPlatform() {
-        return ClientPlatforms.UNKNOWN;
+    fun getClientPlatform(): ClientPlatforms {
+        return ClientPlatforms.UNKNOWN
     }
 
-    default boolean supportsInertialDampener() {
-        return false;
+    fun supportsInertialDampener(): Boolean {
+        return false
     }
 
     /**
      * Can be used to increase or decrease inertial dampener.
      * At end of next fixed update will reset to 1.
-     * <p>
+     *
+     *
      * Not all game objects support inertial dampener
      *
      * @param factor
      */
-    default void setDampenMovementFactorUntilNextFixedUpdate(float factor) {
-
+    fun setDampenMovementFactorUntilNextFixedUpdate(factor: Float) {
     }
 }

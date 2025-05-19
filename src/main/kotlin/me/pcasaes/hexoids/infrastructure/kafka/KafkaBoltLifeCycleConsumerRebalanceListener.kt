@@ -1,59 +1,55 @@
-package me.pcasaes.hexoids.infrastructure.kafka;
+package me.pcasaes.hexoids.infrastructure.kafka
 
-import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import java.util.Collection;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import jakarta.inject.Named
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.common.TopicPartition
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import java.util.function.Function
+import java.util.logging.Logger
+import java.util.stream.Collectors
 
 @ApplicationScoped
 @Named("hexoids-server-bolt-life-cycle")
-public class KafkaBoltLifeCycleConsumerRebalanceListener implements KafkaConsumerRebalanceListener {
+class KafkaBoltLifeCycleConsumerRebalanceListener @Inject constructor(
+    private val handler: DelayedStartConsumerHandler,
+    @param:ConfigProperty(
+        name = "hexoids.config.bolt.max.duration",
+        defaultValue = "10000"
+    ) private val boltMaxDuration: Int
+) : KafkaConsumerRebalanceListener {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaBoltLifeCycleConsumerRebalanceListener.class.getName());
+    override fun onPartitionsAssigned(consumer: Consumer<*, *>, partitions: MutableCollection<TopicPartition>) {
+        val now = System.currentTimeMillis()
+        val shouldStartAt = now - (this.boltMaxDuration + 10000L)
 
-    private final DelayedStartConsumerHandler handler;
-    private final int boltMaxDuration;
-
-    @Inject
-    public KafkaBoltLifeCycleConsumerRebalanceListener(
-            DelayedStartConsumerHandler handler,
-            @ConfigProperty(
-                    name = "hexoids.config.bolt.max.duration",
-                    defaultValue = "10000"
-            ) int boltMaxDuration) {
-        this.handler = handler;
-        this.boltMaxDuration = boltMaxDuration;
-    }
-
-    @Override
-    public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<org.apache.kafka.common.TopicPartition> partitions) {
-        long now = System.currentTimeMillis();
-        long shouldStartAt = now - (this.boltMaxDuration + 10_000L);
-
-        consumer.offsetsForTimes(partitions
+        consumer.offsetsForTimes(
+            partitions
                 .stream()
-                .collect(Collectors.toMap(k -> k, v -> shouldStartAt))
+                .collect(
+                    Collectors.toMap(
+                        Function { k -> k },
+                        Function { _ -> shouldStartAt })
+                )
         )
-                .forEach((k, v) -> {
-                            if (v != null) {
-                                LOGGER.info("Seeking to " + v);
-                                consumer.seek(k, v.offset());
-                                LOGGER.info("Seeked to " + v);
-                            }
-                        }
-                );
+            .forEach { (k, v) ->
+                if (v != null) {
+                    LOGGER.info("Seeking to $v")
+                    consumer.seek(k, v.offset())
+                    LOGGER.info("Seeked to $v")
+                }
+            }
 
         handler
-                .onStarted()
-                .await()
-                .indefinitely();
+            .onStarted()
+            .await()
+            .indefinitely()
     }
 
 
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(KafkaBoltLifeCycleConsumerRebalanceListener::class.java.getName())
+    }
 }

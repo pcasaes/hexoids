@@ -1,123 +1,125 @@
-package me.pcasaes.hexoids.infrastructure.disruptor;
+package me.pcasaes.hexoids.infrastructure.disruptor
 
-import me.pcasaes.hexoids.infrastructure.clock.HRClock;
+import me.pcasaes.hexoids.infrastructure.clock.HRClock.nanoTime
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.concurrent.Volatile
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+class QueueMetric private constructor(private val name: String) {
+    private var runningTime: Long = 0
+    private var lastReportTime: Long = 0
+    private var lastStartClock: Long = 0
 
-public class QueueMetric {
+    private var nextAccumulate: Long = 0
 
-    public static final long NANO_PER_SECONDS = 1_000_000_000L;
-    public static final long LOAD_FACTOR_CALC_WINDOW_MILLIS = 1_000L;
-    public static final long LOAD_FACTOR_CALC_WINDOW_NANO = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1_000_000L;
-    public static final long STALLED_TIME_NANO = LOAD_FACTOR_CALC_WINDOW_NANO * 5L;
+    private var latencyTotal: Long = 0
+    private var eventCount: Long = 0
 
-    private static final List<QueueMetric> LIST = new CopyOnWriteArrayList<>();
+    @Volatile
+    private var latency = 0.0
 
-    private long runningTime;
-    private long lastReportTime;
-    private long lastStartClock;
+    @Volatile
+    private var avgProcessingTime = 0.0
 
-    private long nextAccumulate;
+    @Volatile
+    private var loadFactor = 0.0
 
-    private long latencyTotal;
-    private long eventCount;
-    private volatile double latency = 0.;
-    private volatile double avgProcessingTime = 0.;
-    private volatile double loadFactor = 0.;
-    private volatile double throughput = 0.;
-    private volatile long lastAccumulationTime = 0;
+    @Volatile
+    private var throughput = 0.0
 
-    private final String name;
+    @Volatile
+    private var lastAccumulationTime: Long = 0
 
-    private QueueMetric(String name) {
-        this.name = name;
+    fun startClock() {
+        this.lastStartClock = nanoTime()
     }
 
-    static QueueMetric of(String name) {
-        QueueMetric metric = new QueueMetric(name);
-        LIST.add(metric);
-        return metric;
-    }
-
-    public static List<QueueMetric> getAllMetrics() {
-        return Collections.unmodifiableList(LIST);
-    }
-
-    void startClock() {
-        this.lastStartClock = HRClock.nanoTime();
-    }
-
-    void stopClock(long eventCreatedTime) {
-        long now = HRClock.nanoTime();
-        this.runningTime += now - this.lastStartClock;
-        this.latencyTotal += now - eventCreatedTime;
-        this.eventCount++;
+    fun stopClock(eventCreatedTime: Long) {
+        val now = nanoTime()
+        this.runningTime += now - this.lastStartClock
+        this.latencyTotal += now - eventCreatedTime
+        this.eventCount++
 
         if (now >= this.nextAccumulate) {
-            double count = this.eventCount;
-            double elapsedTime = (double) (now - this.lastReportTime);
-            this.throughput = count / (elapsedTime / NANO_PER_SECONDS);
-            this.avgProcessingTime = runningTime / count;
-            this.loadFactor = runningTime / elapsedTime;
-            this.lastReportTime = now;
-            this.runningTime = 0L;
+            val count = this.eventCount.toDouble()
+            val elapsedTime = (now - this.lastReportTime).toDouble()
+            this.throughput = count / (elapsedTime / NANO_PER_SECONDS)
+            this.avgProcessingTime = runningTime / count
+            this.loadFactor = runningTime / elapsedTime
+            this.lastReportTime = now
+            this.runningTime = 0L
 
-            this.latency = this.latencyTotal / count;
-            this.latencyTotal = 0L;
-            this.eventCount = 0;
+            this.latency = this.latencyTotal / count
+            this.latencyTotal = 0L
+            this.eventCount = 0
 
-            this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_NANO;
-            this.lastAccumulationTime = now;
+            this.nextAccumulate = now + LOAD_FACTOR_CALC_WINDOW_NANO
+            this.lastAccumulationTime = now
         }
     }
 
-    public boolean isOverCapacity() {
-        long t = this.lastAccumulationTime;
-        if (t == 0) {
-            return false;
+    fun isOverCapacity(): Boolean {
+        val t = this.lastAccumulationTime
+        if (t == 0L) {
+            return false
         }
 
-        double l = this.loadFactor;
-        return l >= 0.8;
+        val l = this.loadFactor
+        return l >= 0.8
     }
 
-    public boolean isStalled() {
-        long t = this.lastAccumulationTime;
-        if (t == 0) {
-            return false;
+    fun isStalled(): Boolean {
+        val t = this.lastAccumulationTime
+        if (t == 0L) {
+            return false
         }
-        return HRClock.nanoTime() - t > STALLED_TIME_NANO;
+        return nanoTime() - t > STALLED_TIME_NANO
     }
 
-    public double getLoadFactor() {
-        return loadFactor;
+    fun getLoadFactor(): Double {
+        return loadFactor
     }
 
-    public double getLatencyInNano() {
-        return latency;
+    fun getLatencyInNano(): Double {
+        return latency
     }
 
-    public double getAvgProcessingTimeInNano() {
-        return avgProcessingTime;
+    fun getAvgProcessingTimeInNano(): Double {
+        return avgProcessingTime
     }
 
-    public double getThroughput() {
-        return throughput;
+    fun getThroughput(): Double {
+        return throughput
     }
 
-    public long getLastCheckTimeAgoNano() {
-        return HRClock.nanoTime() - this.lastAccumulationTime;
+    fun getLastCheckTimeAgoNano(): Long {
+        return nanoTime() - this.lastAccumulationTime
     }
 
-    public String getName() {
-        return name;
+    fun getName(): String? {
+        return name
     }
 
-    public static int compare(QueueMetric a, QueueMetric b) {
-        return Double.compare(b.loadFactor, a.loadFactor);
+    companion object {
+        const val NANO_PER_SECONDS: Long = 1000000000L
+        const val LOAD_FACTOR_CALC_WINDOW_MILLIS: Long = 1000L
+        const val LOAD_FACTOR_CALC_WINDOW_NANO: Long = LOAD_FACTOR_CALC_WINDOW_MILLIS * 1000000L
+        const val STALLED_TIME_NANO: Long = LOAD_FACTOR_CALC_WINDOW_NANO * 5L
+
+        private val LIST = CopyOnWriteArrayList<QueueMetric>()
+
+        fun of(name: String): QueueMetric {
+            val metric = QueueMetric(name)
+            LIST.add(metric)
+            return metric
+        }
+
+        fun getAllMetrics(): List<QueueMetric> {
+            return LIST
+        }
+
+        @JvmStatic
+        fun compare(a: QueueMetric, b: QueueMetric): Int {
+            return b.loadFactor.compareTo(a.loadFactor)
+        }
     }
-
-
 }

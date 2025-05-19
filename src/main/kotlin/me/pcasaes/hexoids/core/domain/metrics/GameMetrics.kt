@@ -1,112 +1,113 @@
-package me.pcasaes.hexoids.core.domain.metrics;
+package me.pcasaes.hexoids.core.domain.metrics
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import me.pcasaes.hexoids.core.domain.metrics.GameMetric.Companion.of
 
-public class GameMetrics {
+class GameMetrics private constructor() {
 
-    private static final GameMetrics INSTANCE = new GameMetrics();
+    companion object {
+        private val INSTANCE = GameMetrics()
 
-    public static GameMetrics get() {
-        return INSTANCE;
+        @JvmStatic
+        fun get(): GameMetrics {
+            return INSTANCE
+        }
     }
 
-    private final GameMetric playerDestroyed;
-    private final GameMetric playerSpawned;
-    private final GameMetric playerJoined;
-    private final GameMetric playerLeft;
-    private final GameMetric playerStalled;
-    private final GameMetric boltFired;
-    private final GameMetric boltExhausted;
-    private final GameMetric movedByShockwave;
-    private final GameMetric massCollapsedIntoBlackhole;
-    private final GameMetric blackholeEvaporated;
-    private final GameMetric movedByBlackhole;
-    private final GameMetric destroyedByBlackhole;
+    private val playerDestroyed: GameMetric
+    private val playerSpawned: GameMetric
+    private val playerJoined: GameMetric
+    private val playerLeft: GameMetric
+    private val playerStalled: GameMetric
+    private val boltFired: GameMetric
+    private val boltExhausted: GameMetric
+    private val movedByShockwave: GameMetric
+    private val massCollapsedIntoBlackhole: GameMetric
+    private val blackholeEvaporated: GameMetric
+    private val movedByBlackhole: GameMetric
+    private val destroyedByBlackhole: GameMetric
 
-    private final List<GameMetric> metrics;
+    private val metrics: List<GameMetric>
 
-    private GameMetrics() {
-        this.playerDestroyed = GameMetric.of("player-destroyed-total");
-        this.playerSpawned = GameMetric.of("player-spawned-total");
-        this.playerJoined = GameMetric.of("player-joined-total");
-        this.playerLeft = GameMetric.of("player-left-total");
-        this.playerStalled = GameMetric.of("player-stalled-total");
-        this.boltFired = GameMetric.of("bolt-fired-total");
-        this.boltExhausted = GameMetric.of("bolt-exhausted-total");
-        this.movedByShockwave = GameMetric.of("moved-by-shockwave-total");
-        this.massCollapsedIntoBlackhole = GameMetric.of("mass-collapsed-into-blackhole-total");
-        this.blackholeEvaporated = GameMetric.of("blackhole-evaporated-total");
-        this.movedByBlackhole = GameMetric.of("moved-by-blackhole-total");
-        this.destroyedByBlackhole = GameMetric.of("destroyed-by-blackhole-total");
+    init {
+        this.playerDestroyed = of("player-destroyed-total")
+        this.playerSpawned = of("player-spawned-total")
+        this.playerJoined = of("player-joined-total")
+        this.playerLeft = of("player-left-total")
+        this.playerStalled = of("player-stalled-total")
+        this.boltFired = of("bolt-fired-total")
+        this.boltExhausted = of("bolt-exhausted-total")
+        this.movedByShockwave = of("moved-by-shockwave-total")
+        this.massCollapsedIntoBlackhole = of("mass-collapsed-into-blackhole-total")
+        this.blackholeEvaporated = of("blackhole-evaporated-total")
+        this.movedByBlackhole = of("moved-by-blackhole-total")
+        this.destroyedByBlackhole = of("destroyed-by-blackhole-total")
 
-        List<GameMetric> list = new ArrayList<>(12);
-        list.add(playerDestroyed);
-        list.add(playerSpawned);
-        list.add(playerJoined);
-        list.add(playerLeft);
-        list.add(playerStalled);
-        list.add(boltFired);
-        list.add(boltExhausted);
-        list.add(movedByShockwave);
-        list.add(massCollapsedIntoBlackhole);
-        list.add(blackholeEvaporated);
-        list.add(movedByBlackhole);
-        list.add(destroyedByBlackhole);
+        val list: MutableList<GameMetric> = ArrayList<GameMetric>(12)
+        list.add(playerDestroyed)
+        list.add(playerSpawned)
+        list.add(playerJoined)
+        list.add(playerLeft)
+        list.add(playerStalled)
+        list.add(boltFired)
+        list.add(boltExhausted)
+        list.add(movedByShockwave)
+        list.add(massCollapsedIntoBlackhole)
+        list.add(blackholeEvaporated)
+        list.add(movedByBlackhole)
+        list.add(destroyedByBlackhole)
 
-        this.metrics = new CopyOnWriteArrayList<>(list);
+        this.metrics = list
     }
 
-    public List<GameMetric> getMetrics() {
-        return metrics;
+    fun getMetrics(): List<GameMetric> {
+        return metrics
     }
 
-    public GameMetric getPlayerDestroyed() {
-        return playerDestroyed;
+    fun getPlayerDestroyed(): GameMetric {
+        return playerDestroyed
     }
 
-    public GameMetric getBoltFired() {
-        return boltFired;
+    fun getBoltFired(): GameMetric {
+        return boltFired
     }
 
-    public GameMetric getBoltExhausted() {
-        return boltExhausted;
+    fun getBoltExhausted(): GameMetric {
+        return boltExhausted
     }
 
-    public GameMetric getPlayerSpawned() {
-        return playerSpawned;
+    fun getPlayerSpawned(): GameMetric {
+        return playerSpawned
     }
 
-    public GameMetric getPlayerJoined() {
-        return playerJoined;
+    fun getPlayerJoined(): GameMetric {
+        return playerJoined
     }
 
-    public GameMetric getPlayerLeft() {
-        return playerLeft;
+    fun getPlayerLeft(): GameMetric {
+        return playerLeft
     }
 
-    public GameMetric getPlayerStalled() {
-        return playerStalled;
+    fun getPlayerStalled(): GameMetric {
+        return playerStalled
     }
 
-    public GameMetric getMovedByShockwave() {
-        return movedByShockwave;
+    fun getMovedByShockwave(): GameMetric {
+        return movedByShockwave
     }
 
-    public GameMetric getMassCollapsedIntoBlackhole() {
-        return massCollapsedIntoBlackhole;
+    fun getMassCollapsedIntoBlackhole(): GameMetric {
+        return massCollapsedIntoBlackhole
     }
 
-    public GameMetric getBlackholeEvaporated() {
-        return blackholeEvaporated;
+    fun getBlackholeEvaporated(): GameMetric {
+        return blackholeEvaporated
     }
 
-    public GameMetric getMovedByBlackhole() {
-        return movedByBlackhole;
+    fun getMovedByBlackhole(): GameMetric {
+        return movedByBlackhole
     }
 
-    public GameMetric getDestroyedByBlackhole() {
-        return destroyedByBlackhole;
+    fun getDestroyedByBlackhole(): GameMetric {
+        return destroyedByBlackhole
     }
 }

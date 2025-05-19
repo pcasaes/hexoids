@@ -1,18 +1,16 @@
-package me.pcasaes.hexoids.core.domain.periodictasks;
+package me.pcasaes.hexoids.core.domain.periodictasks
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeUnit
 
-public interface GamePeriodicTask extends Runnable {
+interface GamePeriodicTask : Runnable {
 
-    long getPeriod();
+    fun getPeriod(): Long
 
-    default long getDelay() {
-        return 1000;
+    fun getDelay(): Long {
+        return 1000
     }
 
-    default TimeUnit getTimeUnit() {
-        return TimeUnit.MILLISECONDS;
+    fun getTimeUnit(): TimeUnit {
+        return TimeUnit.MILLISECONDS
     }
-
-
 }

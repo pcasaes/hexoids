@@ -1,4 +1,4 @@
-package me.pcasaes.hexoids.core.domain.eventqueue;
+package me.pcasaes.hexoids.core.domain.eventqueue
 
 /**
  * This interface is used to run events in the game loop.
@@ -6,6 +6,6 @@ package me.pcasaes.hexoids.core.domain.eventqueue;
  * infrastructure is expected to be provided for this and there this interface will
  * be implemented.
  */
-public interface GameQueue {
-    void enqueue(Runnable event);
+fun interface GameQueue {
+    fun enqueue(event: Runnable)
 }

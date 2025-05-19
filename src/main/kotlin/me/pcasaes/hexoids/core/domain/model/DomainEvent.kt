@@ -1,50 +1,36 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import pcasaes.hexoids.proto.Event;
+import com.fasterxml.jackson.annotation.JsonIgnore
+import pcasaes.hexoids.proto.Event
+import java.util.UUID
 
-import java.util.UUID;
+class DomainEvent private constructor(
+    @JvmField @get:JsonIgnore val topic: String?,
+    @JvmField val key: UUID,
+    @JvmField val event: Event?) {
 
-public class DomainEvent {
-    private final UUID key;
-    private final Event event;
-    private final String topic;
+    companion object {
+        @JvmStatic
+        fun of(
+            key: UUID,
+            event: Event?
+        ): DomainEvent {
+            return DomainEvent(null, key, event)
+        }
 
-    private DomainEvent(String topic, UUID key, Event event) {
-        this.topic = topic;
-        this.key = key;
-        this.event = event;
-    }
+        @JvmStatic
+        fun create(topic: String, key: UUID, event: Event): DomainEvent {
+            return DomainEvent(topic, key, event)
+        }
 
+        @JvmStatic
+        fun delete(topic: String, key: UUID): DomainEvent {
+            return DomainEvent(topic, key, null)
+        }
 
-    public static DomainEvent of(
-            UUID key,
-            Event event) {
-        return new DomainEvent(null, key, event);
-    }
-
-    public static DomainEvent create(String topic, UUID key, Event event) {
-        return new DomainEvent(topic, key, event);
-    }
-
-    public static DomainEvent delete(String topic, UUID key) {
-        return new DomainEvent(topic, key, null);
-    }
-
-    public static DomainEvent deleted(UUID key) {
-        return new DomainEvent(null, key, null);
-    }
-
-    public UUID getKey() {
-        return key;
-    }
-
-    public Event getEvent() {
-        return event;
-    }
-
-    @JsonIgnore
-    public String getTopic() {
-        return topic;
+        @JvmStatic
+        fun deleted(key: UUID): DomainEvent {
+            return DomainEvent(null, key, null)
+        }
     }
 }

@@ -1,23 +1,23 @@
-package me.pcasaes.hexoids.core.domain.index;
+package me.pcasaes.hexoids.core.domain.index
 
-public class PlayerSpatialIndexFactory {
+class PlayerSpatialIndexFactory private constructor() {
 
-    private static final PlayerSpatialIndexFactory FACTORY = new PlayerSpatialIndexFactory();
+    private lateinit var playerSpatialIndex: PlayerSpatialIndex
 
-    private PlayerSpatialIndexFactory() {
+    fun get(): PlayerSpatialIndex {
+        return playerSpatialIndex
     }
 
-    public static PlayerSpatialIndexFactory factory() {
-        return FACTORY;
+    fun setPlayerSpatialIndex(playerSpatialIndex: PlayerSpatialIndex) {
+        this.playerSpatialIndex = playerSpatialIndex
     }
 
-    private PlayerSpatialIndex playerSpatialIndex;
+    companion object {
+        private val FACTORY = PlayerSpatialIndexFactory()
 
-    public PlayerSpatialIndex get() {
-        return playerSpatialIndex;
-    }
-
-    public void setPlayerSpatialIndex(PlayerSpatialIndex playerSpatialIndex) {
-        this.playerSpatialIndex = playerSpatialIndex;
+        @JvmStatic
+        fun factory(): PlayerSpatialIndexFactory {
+            return FACTORY
+        }
     }
 }

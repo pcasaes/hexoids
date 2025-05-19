@@ -1,76 +1,68 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
-import me.pcasaes.hexoids.core.domain.vector.Vector2;
-import pcasaes.hexoids.proto.BarrierDto;
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil
+import me.pcasaes.hexoids.core.domain.vector.Vector2
+import pcasaes.hexoids.proto.BarrierDto
+import kotlin.math.hypot
 
-public class Barrier {
-    public static final float WIDTH = 0.0006F;
-    public static final float HALF_WIDTH = WIDTH / 2F;
-    public static final float LENGTH = 0.0032F;
-    public static final float HALF_LENGTH = LENGTH / 2F;
-    public static final float HALF_HYPOTENUS = (float) Math.hypot(HALF_LENGTH, HALF_WIDTH);
+class Barrier private constructor(
+    val centerPosition: Vector2,
+    private val rotationAngle: Float,
+) {
 
-    private final Vector2 from;
-    private final Vector2 to;
-    private final Vector2 centerPosition;
-    private final Vector2 vector;
-    private final Vector2 normal;
-    private final float rotationAngle;
+    companion object {
+        const val WIDTH: Float = 0.0006F
+        const val HALF_WIDTH: Float = WIDTH / 2F
+        const val LENGTH: Float = 0.0032F
+        const val HALF_LENGTH: Float = LENGTH / 2F
+        val HALF_HYPOTENUSE: Float = hypot(HALF_LENGTH.toDouble(), HALF_WIDTH.toDouble()).toFloat()
 
-    private final BarrierDto dto;
+        @JvmStatic
+        fun place(centerPosition: Vector2, rotationAngle: Float): Barrier {
+            return Barrier(centerPosition, rotationAngle)
+        }
+    }
 
-    private Barrier(Vector2 centerPosition, float rotationAngle) {
-        this.centerPosition = centerPosition;
-        this.rotationAngle = rotationAngle;
+    val from: Vector2
 
-        Vector2 fromCenterToCorner = Vector2.fromAngleMagnitude(rotationAngle, HALF_HYPOTENUS);
+    val to: Vector2
+
+    private val vector: Vector2
+
+    val normal: Vector2
+
+    private val dto: BarrierDto
+
+    init {
+        val fromCenterToCorner = Vector2.fromAngleMagnitude(rotationAngle, HALF_HYPOTENUSE)
 
         this.from = centerPosition
-                .minus(fromCenterToCorner);
+            .minus(fromCenterToCorner)
 
         this.to = centerPosition
-                .add(fromCenterToCorner);
+            .add(fromCenterToCorner)
 
         this.vector = Vector2.fromAngleMagnitude(
-                rotationAngle,
-                LENGTH
-        );
+            rotationAngle,
+            LENGTH
+        )
 
-        this.normal = Vector2.fromAngleMagnitude(rotationAngle + TrigUtil.QUARTER_CIRCLE_IN_RADIANS, 1f);
+        this.normal = Vector2.fromAngleMagnitude(rotationAngle + TrigUtil.QUARTER_CIRCLE_IN_RADIANS, 1F)
 
         this.dto = BarrierDto.newBuilder()
-                .setX(centerPosition.getX())
-                .setY(centerPosition.getY())
-                .setAngle(rotationAngle)
-                .build();
+            .setX(centerPosition.getX())
+            .setY(centerPosition.getY())
+            .setAngle(rotationAngle)
+            .build()
     }
 
-    public static Barrier place(Vector2 centerPosition, float rotationAngle) {
-        return new Barrier(centerPosition, rotationAngle);
+    fun extend(): Barrier {
+        return place(centerPosition.add(vector), rotationAngle)
     }
 
-    public Barrier extend() {
-        return place(centerPosition.add(vector), rotationAngle);
+    fun toDto(): BarrierDto {
+        return dto
     }
 
-    public BarrierDto toDto() {
-        return dto;
-    }
 
-    public Vector2 getCenterPosition() {
-        return centerPosition;
-    }
-
-    public Vector2 getFrom() {
-        return from;
-    }
-
-    public Vector2 getTo() {
-        return to;
-    }
-
-    public Vector2 getNormal() {
-        return normal;
-    }
 }

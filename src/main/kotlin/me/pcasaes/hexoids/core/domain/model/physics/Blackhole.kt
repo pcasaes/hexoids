@@ -1,222 +1,215 @@
-package me.pcasaes.hexoids.core.domain.model.physics;
+package me.pcasaes.hexoids.core.domain.model.physics
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
-import me.pcasaes.hexoids.core.domain.model.Bolts;
-import me.pcasaes.hexoids.core.domain.model.Clock;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.model.GameEvents;
-import me.pcasaes.hexoids.core.domain.model.GameObject;
-import me.pcasaes.hexoids.core.domain.model.Players;
-import me.pcasaes.hexoids.core.domain.utils.MathUtil;
-import me.pcasaes.hexoids.core.domain.vector.Vector2;
-import pcasaes.hexoids.proto.ClientPlatforms;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.Event;
-import pcasaes.hexoids.proto.MassCollapsedIntoBlackHoleEventDto;
-import pcasaes.hexoids.proto.MoveReason;
+import me.pcasaes.hexoids.core.domain.config.Config
+import me.pcasaes.hexoids.core.domain.metrics.GameMetrics
+import me.pcasaes.hexoids.core.domain.model.Bolts
+import me.pcasaes.hexoids.core.domain.model.Clock
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import me.pcasaes.hexoids.core.domain.model.GameEvents
+import me.pcasaes.hexoids.core.domain.model.GameObject
+import me.pcasaes.hexoids.core.domain.model.Players
+import me.pcasaes.hexoids.core.domain.utils.MathUtil
+import me.pcasaes.hexoids.core.domain.vector.Vector2
+import pcasaes.hexoids.proto.ClientPlatforms
+import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.proto.Event
+import pcasaes.hexoids.proto.MassCollapsedIntoBlackHoleEventDto
+import pcasaes.hexoids.proto.MoveReason
+import java.util.Locale
+import java.util.Optional
+import java.util.Random
+import java.util.function.Consumer
+import java.util.function.LongPredicate
+import java.util.logging.Logger
+import kotlin.math.abs
 
-import java.util.Optional;
-import java.util.Random;
-import java.util.function.LongPredicate;
-import java.util.logging.Logger;
+class Blackhole private constructor(
+    private val entityId: EntityId,
+    private val center: Vector2,
+    private val startTimestamp: Long, private val endTimestamp: Long,
+    private val clock: Clock,
+    private val players: Players,
+    private val bolts: Bolts
+) : LongPredicate {
+    private val name: String
+    private val eventHorizonRadius: Float
+    private val gravityRadius: Float
+    private val gravityImpulse: Float
+    private val dampenFactor: Float
+    private val rng: Random
+    private val destroyProbability: Float
 
-public class Blackhole implements LongPredicate {
+    init {
+        this.eventHorizonRadius = Config.get().getBlackhole().getEventHorizonRadius()
+        this.gravityRadius = Config.get().getBlackhole().getGravityRadius()
+        this.gravityImpulse = Config.get().getBlackhole().getGravityImpulse()
+        this.dampenFactor = Config.get().getBlackhole().getDampenFactor()
+        this.rng = Random()
+        this.destroyProbability = 1F - Config.get().getBlackhole().getTeleportProbability()
 
-    private static final Logger LOGGER = Logger.getLogger(Blackhole.class.getName());
-
-    private final EntityId entityId;
-    private final String name;
-    private final Clock clock;
-    private final float eventHorizonRadius;
-    private final float gravityRadius;
-    private final float gravityImpulse;
-    private final float dampenFactor;
-    private final Vector2 center;
-    private final Players players;
-    private final Bolts bolts;
-    private final long startTimestamp;
-    private final long endTimestamp;
-    private final Random rng;
-    private final float destroyProbability;
-
-    private Blackhole(EntityId entityId,
-                      Vector2 center,
-                      long startTimestamp, long endTimestamp,
-                      Clock clock,
-                      Players players,
-                      Bolts bolts) {
-        this.entityId = entityId;
-        this.center = center;
-        this.eventHorizonRadius = Config.get().getBlackhole().getEventHorizonRadius();
-        this.gravityRadius = Config.get().getBlackhole().getGravityRadius();
-        this.gravityImpulse = Config.get().getBlackhole().getGravityImpulse();
-        this.dampenFactor = Config.get().getBlackhole().getDampenFactor();
-        this.players = players;
-        this.bolts = bolts;
-        this.startTimestamp = startTimestamp;
-        this.endTimestamp = endTimestamp;
-        this.clock = clock;
-        this.rng = new Random();
-        this.destroyProbability = 1F - Config.get().getBlackhole().getTeleportProbability();
-
-        String idStr = entityId.toString();
-        StringBuilder sbName = new StringBuilder();
-        for (char c : idStr.toUpperCase().toCharArray()) {
-            boolean firstChar = sbName.isEmpty();
+        val idStr = entityId.toString()
+        val sbName = StringBuilder()
+        for (c in idStr.uppercase(Locale.getDefault()).toCharArray()) {
+            val firstChar = sbName.isEmpty()
             if (firstChar && c >= 'A' && c <= 'Z') {
-                sbName.append((char) (c + 6));
+                sbName.append((c.code + 6).toChar())
             } else if (!firstChar && c >= '0' && c <= '9') {
-                sbName.append(c);
+                sbName.append(c)
             }
-            if (sbName.length() > 3) {
-                break;
+            if (sbName.length > 3) {
+                break
             }
         }
-        sbName.append("*");
-        this.name = sbName.toString();
+        sbName.append("*")
+        this.name = sbName.toString()
     }
 
-    public static Optional<LongPredicate> massCollapsed(Random rng,
-                                                        long startTimestamp, long endTimestamp,
-                                                        Clock clock,
-                                                        Players players,
-                                                        Bolts bolts) {
+    private fun start(): Blackhole {
+        val eventBuilder = Event.newBuilder()
 
-        if (rng.nextInt(Config.get().getBlackhole().getGenesisProbabilityFactor()) > 0) {
-            return Optional.empty();
-        }
+        val massCollapsedIntoBlackHoleEventDto =
+            MassCollapsedIntoBlackHoleEventDto.newBuilder()
+                .setId(entityId.getGuid())
+                .setX(center.getX())
+                .setY(center.getY())
+                .setStartTimestamp(startTimestamp)
+                .setEndTimestamp(endTimestamp)
+                .setName(name)
+                .build()
 
-        EntityId entityId = EntityId.newId(rng);
-        float xp = rng.nextFloat();
-        float yp = rng.nextFloat();
+        eventBuilder.setMassCollapsedIntoBlackHole(massCollapsedIntoBlackHoleEventDto)
 
-        // we must do this check AFTER consuming the RNG otherwise we introduce non-deterministic behavior
-        if (endTimestamp < clock.getTime()) {
-            return Optional.empty();
-        }
-
-        Blackhole blackhole = new Blackhole(
-                entityId,
-                Vector2.fromXY(xp, yp),
-                startTimestamp, endTimestamp - 10_000L,
-                clock,
-                players,
-                bolts).start();
-
-        GameMetrics.get().getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN);
-        LOGGER.info(() -> "Mass collapsed. id = " + blackhole.entityId + ", name = " + blackhole.name + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp);
-
-        return Optional.of(blackhole);
-    }
-
-    private Blackhole start() {
-        Event.Builder eventBuilder = Event.newBuilder();
-
-        final MassCollapsedIntoBlackHoleEventDto massCollapsedIntoBlackHoleEventDto =
-                MassCollapsedIntoBlackHoleEventDto.newBuilder()
-                        .setId(entityId.getGuid())
-                        .setX(center.getX())
-                        .setY(center.getY())
-                        .setStartTimestamp(startTimestamp)
-                        .setEndTimestamp(endTimestamp)
-                        .setName(name)
-                        .build();
-
-        eventBuilder.setMassCollapsedIntoBlackHole(massCollapsedIntoBlackHoleEventDto);
-
-        players.registerCurrentViewModifier(entityId, currentViewBuilder -> {
+        players.registerCurrentViewModifier(entityId) { currentViewBuilder ->
             if (clock.getTime() < endTimestamp) {
-                currentViewBuilder.setBlackhole(massCollapsedIntoBlackHoleEventDto);
+                currentViewBuilder.setBlackhole(massCollapsedIntoBlackHoleEventDto)
             }
-        });
+        }
 
         GameEvents
-                .getClientEvents()
-                .dispatch(
-                        Dto.newBuilder()
-                                .setEvent(eventBuilder)
-                                .build()
-                );
-        return this;
+            .getClientEvents()
+            .dispatch(
+                Dto.newBuilder()
+                    .setEvent(eventBuilder)
+                    .build()
+            )
+        return this
     }
 
-    @Override
-    public boolean test(long timestamp) {
+    override fun test(timestamp: Long): Boolean {
         if (this.players.hasConnectedPlayers()) {
             players.getSpatialIndex()
-                    .search(center.getX(), center.getY(), center.getX(), center.getY(), gravityRadius)
-                    .forEach(p -> {
-                        if (players.isConnected(p.id())) {
-                            handleMove(p, timestamp);
-                        }
-                    });
+                .search(center.getX(), center.getY(), center.getX(), center.getY(), gravityRadius)
+                .forEach(Consumer { p ->
+                    if (players.isConnected(p.id())) {
+                        handleMove(p, timestamp)
+                    }
+                })
         }
 
-        bolts.forEach(bolt -> handleMove(bolt, timestamp));
+        bolts.forEach { bolt -> handleMove(bolt, timestamp) }
 
 
-        boolean exists = clock.getTime() < endTimestamp;
+        val exists = clock.getTime() < endTimestamp
 
         if (!exists) {
-            GameMetrics.get().getBlackholeEvaporated().increment(ClientPlatforms.UNKNOWN);
-            LOGGER.info(() -> "Blackhole evaporated: " + entityId);
-            players.unregisterCurrentViewModifier(entityId);
+            GameMetrics.get().getBlackholeEvaporated().increment(ClientPlatforms.UNKNOWN)
+            LOGGER.info { "Blackhole evaporated: $entityId" }
+            players.unregisterCurrentViewModifier(entityId)
         }
-        return exists;
+        return exists
     }
 
-    private float accel(float absMagnitude) {
-        float relDistance = absMagnitude / this.gravityRadius;
-        float invDistance = 1.0F - relDistance;
-        return MathUtil.cube(invDistance);
+    private fun accel(absMagnitude: Float): Float {
+        val relDistance = absMagnitude / this.gravityRadius
+        val invDistance = 1.0F - relDistance
+        return MathUtil.cube(invDistance)
     }
 
-    private void handleMove(GameObject nearByGameObject, long timestamp) {
-        Vector2 distanceFromSingularity = center.minus(Vector2
-                .fromXY(nearByGameObject.getX(), nearByGameObject.getY()));
+    private fun handleMove(nearByGameObject: GameObject, timestamp: Long) {
+        val distanceFromSingularity = center.minus(
+            Vector2
+                .fromXY(nearByGameObject.getX(), nearByGameObject.getY())
+        )
 
-        float absMagnitude = Math.abs(distanceFromSingularity.getMagnitude());
+        val absMagnitude = abs(distanceFromSingularity.getMagnitude())
 
-        boolean isNotCenteredNorOutOfRange = absMagnitude < gravityRadius && absMagnitude > 0F;
+        val isNotCenteredNorOutOfRange = absMagnitude < gravityRadius && absMagnitude > 0F
         if (isNotCenteredNorOutOfRange) {
+            val sign = if (distanceFromSingularity.getMagnitude() < 0F) -1 else 1
 
-            int sign = distanceFromSingularity.getMagnitude() < 0F ? -1 : 1;
-
-            boolean hitEventHorizon = absMagnitude <= this.eventHorizonRadius;
+            val hitEventHorizon = absMagnitude <= this.eventHorizonRadius
 
             if (hitEventHorizon) {
-                boolean destroyed = rng.nextFloat() <= this.destroyProbability;
+                var destroyed = rng.nextFloat() <= this.destroyProbability
                 if (!destroyed) {
-                    float jumpX = rng.nextFloat();
-                    float jumpY = rng.nextFloat();
-                    destroyed = !nearByGameObject.teleport(jumpX, jumpY, timestamp, MoveReason.BLACKHOLE_TELEPORT);
+                    val jumpX = rng.nextFloat()
+                    val jumpY = rng.nextFloat()
+                    destroyed = !nearByGameObject.teleport(jumpX, jumpY, timestamp, MoveReason.BLACKHOLE_TELEPORT)
                 }
 
                 if (destroyed) {
-                    nearByGameObject.hazardDestroy(entityId, timestamp);
-                    GameMetrics.get().getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform());
+                    nearByGameObject.hazardDestroy(entityId, timestamp)
+                    GameMetrics.get().getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform())
                 } else {
-                    GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform());
+                    GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
                 }
             } else {
+                val acceleration = accel(absMagnitude)
 
-                float acceleration = accel(absMagnitude);
-
-                Vector2 move = Vector2
-                        .fromAngleMagnitude(
-                                distanceFromSingularity.getAngle(),
-                                sign * this.gravityImpulse * acceleration
-                        );
+                val move = Vector2
+                    .fromAngleMagnitude(
+                        distanceFromSingularity.getAngle(),
+                        sign * this.gravityImpulse * acceleration
+                    )
 
                 if (nearByGameObject.supportsInertialDampener()) {
                     nearByGameObject
-                            .setDampenMovementFactorUntilNextFixedUpdate(1F / (acceleration * this.dampenFactor + 1F));
+                        .setDampenMovementFactorUntilNextFixedUpdate(1F / (acceleration * this.dampenFactor + 1F))
                 }
 
-                nearByGameObject.move(move.getX(), move.getY(), MoveReason.BLACKHOLE_PULL);
-                GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform());
+                nearByGameObject.move(move.getX(), move.getY(), MoveReason.BLACKHOLE_PULL)
+                GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
             }
+        }
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(Blackhole::class.java.getName())
+
+        @JvmStatic
+        fun massCollapsed(
+            rng: Random,
+            startTimestamp: Long, endTimestamp: Long,
+            clock: Clock,
+            players: Players,
+            bolts: Bolts
+        ): Optional<LongPredicate> {
+            if (rng.nextInt(Config.get().getBlackhole().getGenesisProbabilityFactor()) > 0) {
+                return Optional.empty<LongPredicate>()
+            }
+
+            val entityId = EntityId.newId(rng)
+            val xp = rng.nextFloat()
+            val yp = rng.nextFloat()
+
+            // we must do this check AFTER consuming the RNG otherwise we introduce non-deterministic behavior
+            if (endTimestamp < clock.getTime()) {
+                return Optional.empty<LongPredicate>()
+            }
+
+            val blackhole = Blackhole(
+                entityId,
+                Vector2.fromXY(xp, yp),
+                startTimestamp, endTimestamp - 10000L,
+                clock,
+                players,
+                bolts
+            ).start()
+
+            GameMetrics.get().getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN)
+            LOGGER.info { "Mass collapsed. id = " + blackhole.entityId + ", name = " + blackhole.name + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp }
+
+            return Optional.of<LongPredicate>(blackhole)
         }
     }
 }

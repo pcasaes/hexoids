@@ -1,103 +1,93 @@
-package me.pcasaes.hexoids.configuration.metrics;
+package me.pcasaes.hexoids.configuration.metrics
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import io.quarkus.runtime.Startup;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.metrics.PhysicsMetrics;
-import me.pcasaes.hexoids.core.domain.model.Game;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
+import io.quarkus.runtime.Startup
+import io.vertx.core.AbstractVerticle
+import io.vertx.core.Promise
+import io.vertx.core.Vertx
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.metrics.PhysicsMetrics
+import me.pcasaes.hexoids.core.domain.model.Game
+import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 @Startup
 @Singleton
-public class PhysicsMetricsConfiguration {
-
-    private final Vertx vertx;
-
-    private final Fetch fetch;
-
-    @Inject
-    public PhysicsMetricsConfiguration(
-            GameQueue gameQueue,
-            Vertx vertx,
-            MeterRegistry meterRegistry) {
-        this.vertx = vertx;
-        this.fetch = new Fetch(gameQueue, Game.get().getPhysicsMetrics(), meterRegistry);
-    }
+class PhysicsMetricsConfiguration @Inject constructor(
+    gameQueue: GameQueue,
+    private val vertx: Vertx,
+    meterRegistry: MeterRegistry
+) {
+    private val fetch: Fetch = Fetch(gameQueue, Game.get().getPhysicsMetrics(), meterRegistry)
 
     @PostConstruct
-    void start() {
-        this.vertx.deployVerticle(fetch);
+    fun start() {
+        this.vertx.deployVerticle(fetch)
     }
 
     @PreDestroy
-    void stop() {
-        this.vertx.undeploy(fetch.deploymentID());
+    fun stop() {
+        this.vertx.undeploy(fetch.deploymentID())
     }
 
 
-    private static class Fetch extends AbstractVerticle {
+    private class Fetch(
+        private val gameQueue: GameQueue,
+        private val physicsMetrics: PhysicsMetrics,
+        private val meterRegistry: MeterRegistry
+    ) : AbstractVerticle() {
+        private val timers = HashMap<String, Timer>()
 
-        private final GameQueue gameQueue;
+        private var timerId = 0L
 
-        private final PhysicsMetrics physicsMetrics;
-
-        private final MeterRegistry meterRegistry;
-
-        private final Map<String, Timer> timers = new HashMap<>();
-
-        private long timerId = 0L;
-
-        private Fetch(GameQueue gameQueue, PhysicsMetrics physicsMetrics, MeterRegistry meterRegistry) {
-            this.gameQueue = gameQueue;
-            this.physicsMetrics = physicsMetrics;
-            this.meterRegistry = meterRegistry;
+        @Throws(Exception::class)
+        override fun start(startPromise: Promise<Void>) {
+            context.runOnContext { h ->
+                timerId = getVertx().setPeriodic(1000L) { _ -> fetch() }
+            }
+            super.start(startPromise)
         }
 
-        @Override
-        public void start(Promise<Void> startPromise) throws Exception {
-            context.runOnContext(h -> timerId = getVertx().setPeriodic(1000L, h2 -> fetch()));
-            super.start(startPromise);
-        }
-
-        @Override
-        public void stop(Promise<Void> stopPromise) throws Exception {
+        @Throws(Exception::class)
+        override fun stop(stopPromise: Promise<Void>) {
             context
-                    .runOnContext(h -> {
-                        if (timerId != 0L) {
-                            getVertx().cancelTimer(timerId);
-                        }
-                    });
-            super.stop(stopPromise);
+                .runOnContext { _ ->
+                    if (timerId != 0L) {
+                        getVertx().cancelTimer(timerId)
+                    }
+                }
+            super.stop(stopPromise)
         }
 
-        private void fetch() {
+        fun fetch() {
             this.gameQueue
-                    .enqueue(() -> this.physicsMetrics.flush(this::measure));
+                .enqueue {
+                    this.physicsMetrics.flush { name: String, measurements: List<Long> ->
+                        this.measure(
+                            name,
+                            measurements
+                        )
+                    }
+                }
         }
 
-        private void measure(String name, List<Long> measurements) {
+        fun measure(name: String, measurements: List<Long>) {
             context
-                    .runOnContext(h -> {
-                        Timer timer = timers.computeIfAbsent(name, k -> Timer.builder("physics_fixed_update")
-                                .tag("name", k)
-                                .publishPercentiles(0.5, 0.75, 0.90, 0.95)
-                                .register(meterRegistry)
-                        );
-                        measurements
-                                .forEach(t -> timer.record(t, TimeUnit.NANOSECONDS));
-                    });
+                .runOnContext { _ ->
+                    val timer = timers.computeIfAbsent(name) { k ->
+                        Timer.builder("physics_fixed_update")
+                            .tag("name", k)
+                            .publishPercentiles(0.5, 0.75, 0.90, 0.95)
+                            .register(meterRegistry)
+                    }
+                    measurements
+                        .forEach(Consumer { t -> timer.record(t, TimeUnit.NANOSECONDS) })
+                }
         }
     }
 }

@@ -1,26 +1,22 @@
-package me.pcasaes.hexoids.core.application.commands;
+package me.pcasaes.hexoids.core.application.commands
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.model.Game;
-import pcasaes.hexoids.proto.MoveCommandDto;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import me.pcasaes.hexoids.core.domain.model.Game
+import pcasaes.hexoids.proto.MoveCommandDto
 
-public class Move {
+class Move internal constructor(private val gameQueue: GameQueue) {
 
-    private final GameQueue gameQueue;
-
-    Move(GameQueue gameQueue) {
-        this.gameQueue = gameQueue;
-    }
-
-    public void move(EntityId userId, MoveCommandDto moveCommandDto) {
-        this.gameQueue.enqueue(() -> Game.get().getPlayers()
+    fun move(userId: EntityId, moveCommandDto: MoveCommandDto) {
+        this.gameQueue.enqueue {
+            Game.get()
+                .getPlayers()
                 .createOrGet(userId)
-                .move(moveCommandDto.getMoveX(),
-                        moveCommandDto.getMoveY(),
-                        moveCommandDto.hasAngle() ? moveCommandDto.getAngle().getValue() : null
+                .move(
+                    moveCommandDto.moveX,
+                    moveCommandDto.moveY,
+                    if (moveCommandDto.hasAngle()) moveCommandDto.angle.value else null
                 )
-        );
+        }
     }
-
 }

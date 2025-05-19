@@ -1,15 +1,12 @@
-package me.pcasaes.hexoids.infrastructure.producer;
+package me.pcasaes.hexoids.infrastructure.producer
 
-import pcasaes.hexoids.proto.Dto;
+import pcasaes.hexoids.proto.Dto
 
 /**
  * Produces events for clients
  */
-public interface ClientEventProducer {
+interface ClientEventProducer {
+    fun isEnabled(): Boolean
 
-    boolean isEnabled();
-    
-    void accept(Dto dto);
-
-    String getName();
+    fun accept(dto: Dto?)
 }

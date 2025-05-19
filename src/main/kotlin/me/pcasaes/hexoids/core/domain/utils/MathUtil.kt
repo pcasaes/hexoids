@@ -1,19 +1,15 @@
-package me.pcasaes.hexoids.core.domain.utils;
+package me.pcasaes.hexoids.core.domain.utils
 
-public final class MathUtil {
-
-    private MathUtil() {
+object MathUtil {
+    fun square(value: Float): Float {
+        return value * value
     }
 
-    public static float square(float val) {
-        return val * val;
+    fun cube(value: Float): Float {
+        return value * value * value
     }
 
-    public static float cube(float val) {
-        return val * val * val;
-    }
-
-    public static float quad(float val) {
-        return square(square(val));
+    fun quad(value: Float): Float {
+        return square(square(value))
     }
 }

@@ -1,43 +1,40 @@
-package me.pcasaes.hexoids.infrastructure.kafka.converter;
+package me.pcasaes.hexoids.infrastructure.kafka.converter
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import pcasaes.hexoids.proto.Event;
+import com.google.protobuf.InvalidProtocolBufferException
+import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.StringDeserializer
+import pcasaes.hexoids.proto.Event
+import java.util.logging.Level
+import java.util.logging.Logger
 
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-public class EventDtoDeserializer implements Deserializer<Event> {
-
-    private static final Logger LOGGER = Logger.getLogger(EventDtoDeserializer.class.getName());
-    private final StringDeserializer stringDeserializer = new StringDeserializer();
+class EventDtoDeserializer : Deserializer<Event?> {
+    private val stringDeserializer = StringDeserializer()
 
 
-    @Override
-    public void configure(Map<String, ?> configs, boolean isKey) {
-        stringDeserializer.configure(configs, isKey);
+    override fun configure(configs: MutableMap<String, *>, isKey: Boolean) {
+        stringDeserializer.configure(configs, isKey)
     }
 
-    @Override
-    public Event deserialize(String topic, byte[] data) {
+    override fun deserialize(topic: String, data: ByteArray?): Event? {
         if (data == null) {
-            return null;
+            return null
         }
         try {
             return Event.newBuilder()
-                    .mergeFrom(data)
-                    .build();
-        } catch (InvalidProtocolBufferException ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+                .mergeFrom(data)
+                .build()
+        } catch (ex: InvalidProtocolBufferException) {
+            LOGGER.log(Level.SEVERE, ex.message, ex)
         }
-        return null;
-
+        return null
     }
 
-    @Override
-    public void close() {
-        stringDeserializer.close();
+    override fun close() {
+        stringDeserializer.close()
+        super.close()
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(EventDtoDeserializer::class.java.getName())
     }
 }

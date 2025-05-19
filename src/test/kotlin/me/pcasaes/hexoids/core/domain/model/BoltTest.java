@@ -1,8 +1,10 @@
 package me.pcasaes.hexoids.core.domain.model;
 
 import me.pcasaes.hexoids.core.domain.config.Config;
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -67,7 +69,17 @@ class BoltTest {
 
         BarrierSpatialIndexFactory
                 .factory()
-                .setBarrierSpatialIndex((float x1, float y1, float x2, float y2, float distance) -> Collections.emptyList());
+                .setBarrierSpatialIndex(new BarrierSpatialIndex() {
+                    @Override
+                    public @NotNull Iterable<@NotNull Barrier> search(float x1, float y1, float x2, float y2, float distance) {
+                        return Collections.emptyList();
+                    }
+
+                    @Override
+                    public void update(@NotNull Iterable<Barrier> barriers) {
+
+                    }
+                });
 
         doAnswer(ctx -> PlayerSpatialIndexFactory.factory().get())
                 .when(players)
@@ -90,7 +102,7 @@ class BoltTest {
                 Config.get().getBoltSpeed(),
                 clock.getTime(),
                 Config.get().getBoltMaxDuration()).orElse(null);
-        EntityId boltId = bolt.getId();
+        EntityId boltId = bolt.id;
         assertNotNull(bolt);
 
         assertTrue(bolt.isOwnedBy(one));
@@ -125,8 +137,8 @@ class BoltTest {
         DomainEvent domainEvent = events.get(0);
         assertNotNull(domainEvent);
 
-        assertTrue(domainEvent.getEvent().hasBoltExhausted());
-        BoltExhaustedEventDto exhaustedEvent = domainEvent.getEvent().getBoltExhausted();
+        assertTrue(domainEvent.event.hasBoltExhausted());
+        BoltExhaustedEventDto exhaustedEvent = domainEvent.event.getBoltExhausted();
 
         assertNotNull(exhaustedEvent);
         assertArrayEquals(boltId.getGuid().getGuid().toByteArray(), exhaustedEvent.getBoltId().getGuid().toByteArray());
@@ -167,8 +179,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(0.01f, bolt.getPositionVector().getX());
-        assertEquals(0f, bolt.getPositionVector().getY());
+        assertEquals(0.01f, bolt.positionVector.getX());
+        assertEquals(0f, bolt.positionVector.getY());
 
     }
 
@@ -195,8 +207,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(0.0070710676f, bolt.getPositionVector().getX());
-        assertEquals(0.0070710676f, bolt.getPositionVector().getY());
+        assertEquals(0.0070710676f, bolt.positionVector.getX());
+        assertEquals(0.0070710676f, bolt.positionVector.getY());
     }
 
     @Test
@@ -222,8 +234,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(0f, bolt.getPositionVector().getX());
-        assertEquals(0.01f, bolt.getPositionVector().getY());
+        assertEquals(0f, bolt.positionVector.getX());
+        assertEquals(0.01f, bolt.positionVector.getY());
     }
 
     @Test
@@ -249,8 +261,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getX());
-        assertEquals(0.0070710676f, bolt.getPositionVector().getY());
+        assertEquals(1f - 0.0070710676f, bolt.positionVector.getX());
+        assertEquals(0.0070710676f, bolt.positionVector.getY());
     }
 
     @Test
@@ -276,8 +288,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(0.99f, bolt.getPositionVector().getX());
-        assertEquals(0f, bolt.getPositionVector().getY());
+        assertEquals(0.99f, bolt.positionVector.getX());
+        assertEquals(0f, bolt.positionVector.getY());
     }
 
     @Test
@@ -303,8 +315,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getX());
-        assertEquals(1f - 0.0070710676f, bolt.getPositionVector().getY());
+        assertEquals(1f - 0.0070710676f, bolt.positionVector.getX());
+        assertEquals(1f - 0.0070710676f, bolt.positionVector.getY());
     }
 
     @Test
@@ -329,8 +341,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime());
 
-        assertEquals(1f, bolt.getPositionVector().getX());
-        assertEquals(0.99f, bolt.getPositionVector().getY());
+        assertEquals(1f, bolt.positionVector.getX());
+        assertEquals(0.99f, bolt.positionVector.getY());
     }
 
     @Test
@@ -360,13 +372,13 @@ class BoltTest {
                 clock.getTime(),
                 Config.get().getBoltMaxDuration()).orElse(null);
         assertNotNull(bolt);
-        EntityId boltId = bolt.getId();
+        EntityId boltId = bolt.id;
 
         doReturn(1_000L).when(clock).getTime();
 
         doReturn(true)
                 .when(player)
-                .collision(bolt.getPositionVector(), Config.get().getBoltCollisionRadius());
+                .collision(bolt.positionVector, Config.get().getBoltCollisionRadius());
 
 
         List<DomainEvent> domainEvents = new ArrayList<>();
@@ -376,7 +388,7 @@ class BoltTest {
 
         List<Event> events = domainEvents
                 .stream()
-                .map(DomainEvent::getEvent)
+                .map(d -> d.event)
                 .collect(Collectors.toList());
 
 
@@ -418,7 +430,7 @@ class BoltTest {
         doReturn(1_000L).when(clock).getTime();
         doReturn(false)
                 .when(player)
-                .collision(bolt.getPositionVector(), Config.get().getBoltCollisionRadius());
+                .collision(bolt.positionVector, Config.get().getBoltCollisionRadius());
 
         List<DomainEvent> events = new ArrayList<>();
         GameEvents.getDomainEvents().registerEventDispatcher(events::add);
@@ -428,7 +440,7 @@ class BoltTest {
 
         assertEquals(0, events
                 .stream()
-                .map(DomainEvent::getEvent)
+                .map(d -> d.event)
                 .filter(Event::hasBoltExhausted)
                 .count());
 

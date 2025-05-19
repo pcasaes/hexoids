@@ -1,152 +1,153 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import com.google.protobuf.ByteString;
-import pcasaes.hexoids.proto.GUID;
-
-import java.nio.ByteBuffer;
-import java.util.Objects;
-import java.util.Random;
-import java.util.UUID;
-import java.util.logging.Logger;
+import com.google.protobuf.ByteString
+import pcasaes.hexoids.proto.GUID
+import java.nio.ByteBuffer
+import java.util.Objects
+import java.util.Random
+import java.util.UUID
+import java.util.function.Supplier
+import java.util.logging.Logger
 
 /**
  * Identifier immutable.
- * <p>
- * The identifier uses a {@link UUID} and holds its DTO {@link GUID} analog.
+ *
+ *
+ * The identifier uses a [UUID] and holds its DTO [GUID] analog.
  */
-public class EntityId {
+class EntityId private constructor(
+    private val id: UUID,
+    private val guid: GUID
+) {
 
-    private static final Logger LOGGER = Logger.getLogger(EntityId.class.getName());
-
-    private static final ThreadLocal<GUID.Builder> GUID_THREAD_SAFE_BUILDER = ThreadLocal.withInitial(GUID::newBuilder);
-
-    private final UUID id;
-    private final GUID guid;
-
-    private EntityId(UUID id, GUID guid) {
-        this.id = id;
-        this.guid = guid;
+    fun getId(): UUID {
+        return id
     }
 
-    /**
-     * Constructs an EntityId from a {@link UUID}
-     *
-     * @param id a uuid
-     * @return
-     */
-    public static EntityId of(UUID id) {
-        return new EntityId(id, uuidToGuid(id));
+    fun getGuid(): GUID {
+        return guid
     }
 
-    /**
-     * Constructs an EntityId from a DTO {@link GUID}
-     *
-     * @param guid a dto guid
-     * @return
-     */
-    public static EntityId of(GUID guid) {
-        return new EntityId(guidToUuid(guid), guid);
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        val entityId = other as EntityId
+        return id == entityId.id
     }
 
-    /**
-     * Constructs an entity from a string representation of a UUID.
-     *
-     * @param uuid a string representation of a UUID
-     * @return
-     * @see UUID#fromString(String)
-     */
-    public static EntityId of(String uuid) {
-        return of(stringToUuid(uuid));
+    override fun hashCode(): Int {
+        return Objects.hash(id)
     }
 
-    /**
-     * Generates a new identifier based on UUIDv4
-     *
-     * @return
-     */
-    public static EntityId newId() {
-        return of(UUID.randomUUID());
+    override fun toString(): String {
+        return this.id.toString()
     }
 
-    public static EntityId newId(Random ng) {
-        // this code is copied and adapted from UUID
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(EntityId::class.java.getName())
 
-        byte[] randomBytes = new byte[16];
-        ng.nextBytes(randomBytes);
-        randomBytes[6] = (byte) (randomBytes[6] & 15);
-        randomBytes[6] = (byte) (randomBytes[6] | 64);
-        randomBytes[8] = (byte) (randomBytes[8] & 63);
-        randomBytes[8] = (byte) (randomBytes[8] | 128);
+        private val GUID_THREAD_SAFE_BUILDER: ThreadLocal<GUID.Builder> = ThreadLocal.withInitial<GUID.Builder>(
+            Supplier { GUID.newBuilder() })
 
-        long msb = 0L;
-        long lsb = 0L;
-
-        int i;
-        for (i = 0; i < 8; ++i) {
-            msb = msb << 8 | (long) (randomBytes[i] & 255);
+        /**
+         * Constructs an EntityId from a [UUID]
+         *
+         * @param id a uuid
+         * @return
+         */
+        @JvmStatic
+        fun of(id: UUID): EntityId {
+            return EntityId(id, uuidToGuid(id))
         }
 
-        for (i = 8; i < 16; ++i) {
-            lsb = lsb << 8 | (long) (randomBytes[i] & 255);
+        /**
+         * Constructs an EntityId from a DTO [GUID]
+         *
+         * @param guid a dto guid
+         * @return
+         */
+        @JvmStatic
+        fun of(guid: GUID): EntityId {
+            return EntityId(guidToUuid(guid), guid)
         }
 
-        return of(new UUID(msb, lsb));
-    }
-
-
-    public UUID getId() {
-        return id;
-    }
-
-    public GUID getGuid() {
-        return guid;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        EntityId entityId = (EntityId) o;
-        return Objects.equals(id, entityId.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return this.id.toString();
-    }
-
-    private static UUID stringToUuid(String uuid) {
-        try {
-            return UUID.fromString(uuid);
-        } catch (IllegalArgumentException ex) {
-            LOGGER.severe(() -> "Could not deserialize uuid: '" + uuid + "'");
-            throw ex;
+        /**
+         * Constructs an entity from a string representation of a UUID.
+         *
+         * @param uuid a string representation of a UUID
+         * @return
+         * @see UUID.fromString
+         */
+        @JvmStatic
+        fun of(uuid: String): EntityId {
+            return of(stringToUuid(uuid))
         }
-    }
 
-    private static UUID guidToUuid(GUID guid) {
-        ByteBuffer bb = ByteBuffer.wrap(guid.getGuid().toByteArray());
-        long high = bb.getLong();
-        long low = bb.getLong();
-        return new UUID(high, low);
-    }
+        /**
+         * Generates a new identifier based on UUIDv4
+         *
+         * @return
+         */
+        @JvmStatic
+        fun newId(): EntityId {
+            return of(UUID.randomUUID())
+        }
 
-    private static GUID uuidToGuid(UUID uuid) {
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
+        fun newId(ng: Random): EntityId {
+            // this code is copied and adapted from UUID
+
+            val randomBytes = ByteArray(16)
+            ng.nextBytes(randomBytes)
+            randomBytes[6] = (randomBytes[6].toInt() and 15).toByte()
+            randomBytes[6] = (randomBytes[6].toInt() or 64).toByte()
+            randomBytes[8] = (randomBytes[8].toInt() and 63).toByte()
+            randomBytes[8] = (randomBytes[8].toInt() or 128).toByte()
+
+            var msb = 0L
+            var lsb = 0L
+            var i: Int = 0
+            while (i < 8) {
+                msb = msb shl 8 or (randomBytes[i].toInt() and 255).toLong()
+                ++i
+            }
+
+            i = 8
+            while (i < 16) {
+                lsb = lsb shl 8 or (randomBytes[i].toInt() and 255).toLong()
+                ++i
+            }
+
+            return of(UUID(msb, lsb))
+        }
 
 
-        return GUID_THREAD_SAFE_BUILDER
+        private fun stringToUuid(uuid: String): UUID {
+            try {
+                return UUID.fromString(uuid)
+            } catch (ex: IllegalArgumentException) {
+                LOGGER.severe { "Could not deserialize uuid: '$uuid'" }
+                throw ex
+            }
+        }
+
+        private fun guidToUuid(guid: GUID): UUID {
+            val bb = ByteBuffer.wrap(guid.guid.toByteArray())
+            val high = bb.getLong()
+            val low = bb.getLong()
+            return UUID(high, low)
+        }
+
+        private fun uuidToGuid(uuid: UUID): GUID {
+            val bb = ByteBuffer.wrap(ByteArray(16))
+            bb.putLong(uuid.mostSignificantBits)
+            bb.putLong(uuid.leastSignificantBits)
+
+
+            return GUID_THREAD_SAFE_BUILDER
                 .get()
                 .clear()
                 .setGuid(ByteString.copyFrom(bb.array()))
-                .build();
+                .build()
+        }
     }
-
 }

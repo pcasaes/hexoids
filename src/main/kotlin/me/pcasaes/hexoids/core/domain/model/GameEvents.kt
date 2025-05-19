@@ -1,62 +1,59 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import pcasaes.hexoids.proto.Dto;
+import pcasaes.hexoids.proto.Dto
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
+import java.util.logging.Logger
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.logging.Logger;
-
-public class GameEvents<T> {
-
-    private static final Logger LOGGER = Logger.getLogger(GameEvents.class.getName());
-
-    private static final GameEvents<Dto> CLIENT_INSTANCE = new GameEvents<>("client");
-
-    private static final GameEvents<DomainEvent> DOMAIN_EVENT_INSTANCE = new GameEvents<>("domain-event");
-
-    private final AtomicReference<Consumer<T>> dispatcher = new AtomicReference<>();
-
-    private final String name;
-
-    private GameEvents(String name) {
-        this.name = name;
-    }
-
-    public static GameEvents<Dto> getClientEvents() {
-        return CLIENT_INSTANCE;
-    }
-
-    public static GameEvents<DomainEvent> getDomainEvents() {
-        return DOMAIN_EVENT_INSTANCE;
-    }
+class GameEvents<T> private constructor(private val name: String) {
+    private val dispatcher = AtomicReference<Consumer<T>?>()
 
     /**
      * The game model generates events that must be delivered to other instances
      * of the game model (horizontal scaling) or broadcast to clients.
-     * <p>
+     *
+     *
      * The domain model does not concern itself with how this is done, only that it is done.
      * This method is used to register infrastructure code to dispatch event.
      *
      * @param dispatcher
      */
-    public void registerEventDispatcher(Consumer<T> dispatcher) {
-        this.dispatcher.set(dispatcher);
+    fun registerEventDispatcher(dispatcher: Consumer<T>?) {
+        this.dispatcher.set(dispatcher)
     }
 
-    private Consumer<T> getDispatcher() {
-        Consumer<T> currentDispatcher = this.dispatcher.getPlain();
+    private fun getDispatcher(): Consumer<T> {
+        var currentDispatcher = this.dispatcher.getPlain()
         if (currentDispatcher != null) {
-            return currentDispatcher;
+            return currentDispatcher
         }
-        currentDispatcher = this.dispatcher.get();
+        currentDispatcher = this.dispatcher.get()
         if (currentDispatcher == null) {
             // this is a noop dispatcher and should never actually be used
-            return event -> LOGGER.severe("NO DISPATCHER REGISTERED FOR ".concat(this.name));
+            return Consumer { _ -> LOGGER.severe("NO DISPATCHER REGISTERED FOR " + this.name) }
         }
-        return currentDispatcher;
+        return currentDispatcher
     }
 
-    public void dispatch(T event) {
-        getDispatcher().accept(event);
+    fun dispatch(event: T) {
+        getDispatcher().accept(event)
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(GameEvents::class.java.getName())
+
+        private val CLIENT_INSTANCE = GameEvents<Dto>("client")
+
+        private val DOMAIN_EVENT_INSTANCE = GameEvents<DomainEvent>("domain-event")
+
+        @JvmStatic
+        fun getClientEvents(): GameEvents<Dto> {
+            return CLIENT_INSTANCE
+        }
+
+        @JvmStatic
+        fun getDomainEvents(): GameEvents<DomainEvent> {
+            return DOMAIN_EVENT_INSTANCE
+        }
     }
 }

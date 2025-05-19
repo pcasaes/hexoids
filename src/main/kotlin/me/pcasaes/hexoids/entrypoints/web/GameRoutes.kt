@@ -1,137 +1,139 @@
-package me.pcasaes.hexoids.entrypoints.web;
+package me.pcasaes.hexoids.entrypoints.web
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.ext.web.Router;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.service.GameTimeService;
-import pcasaes.hexoids.proto.ClockSync;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.RequestCommand;
-
-import java.io.IOException;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import io.vertx.core.buffer.Buffer
+import io.vertx.core.http.ServerWebSocket
+import io.vertx.ext.web.Router
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.application.eventhandlers.ApplicationConsumers.HaveStarted
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
+import me.pcasaes.hexoids.core.domain.service.GameTimeService
+import pcasaes.hexoids.proto.ClockSync
+import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.proto.RequestCommand
+import java.io.IOException
+import java.util.Optional
+import java.util.function.Consumer
+import java.util.function.Supplier
+import java.util.logging.Level
+import java.util.logging.Logger
 
 @ApplicationScoped
-public class GameRoutes {
+class GameRoutes @Inject constructor(
+    private val clientSessions: ClientSessions,
+    private val gameTime: GameTimeService,
+    private val commandDelegate: CommandDelegate,
+    private val consumersHaveStarted: HaveStarted
+) {
+    fun startup(@Observes router: Router) {
+        router.route("/game/:id").handler { rc ->
+            val userId = of(rc.pathParam("id"))
+            val request = rc.request()
+            request.toWebSocket { asyncResult ->
+                if (asyncResult.succeeded()) {
+                    val ctx = asyncResult.result()
+                    onOpen(ctx, userId)
 
-    private static final Logger LOGGER = Logger.getLogger(GameRoutes.class.getName());
+                    ctx.closeHandler { this.onClose(userId) }
+                    ctx.exceptionHandler { this.onClose(userId) }
 
-    private final ClientSessions clientSessions;
+                    ctx.handler { buff -> onMessage(ctx, buff.bytes, userId) }
 
-    private final GameTimeService gameTime;
-
-    private final CommandDelegate commandDelegate;
-
-    private final ApplicationConsumers.HaveStarted consumersHaveStarted;
-
-    @Inject
-    public GameRoutes(ClientSessions clientSessions,
-                      GameTimeService gameTime,
-                      CommandDelegate commandDelegate,
-                      ApplicationConsumers.HaveStarted consumersHaveStarted) {
-        this.clientSessions = clientSessions;
-        this.commandDelegate = commandDelegate;
-        this.gameTime = gameTime;
-        this.consumersHaveStarted = consumersHaveStarted;
-    }
-
-    public void startup(@Observes Router router) {
-        router.route("/game/:id").handler(rc -> {
-            var userId = EntityId.of(rc.pathParam("id"));
-            HttpServerRequest request = rc.request();
-
-            request.toWebSocket(as -> {
-                if (as.succeeded()) {
-                    ServerWebSocket ctx = as.result();
-                    onOpen(ctx, userId);
-
-                    ctx.closeHandler(n -> this.onClose(userId));
-                    ctx.exceptionHandler(n -> this.onClose(userId));
-
-                    ctx.handler(buff -> onMessage(ctx, buff.getBytes(), userId));
-
-                    ctx.accept();
+                    ctx.accept()
                 } else {
-                    LOGGER.warning(() -> "Failed to open websocket: " + as.cause());
+                    LOGGER.warning(Supplier { "Failed to open websocket: " + asyncResult.cause() })
                 }
-            });
-        });
-    }
-
-
-    public void onOpen(ServerWebSocket session, EntityId userId) {
-        if (!this.consumersHaveStarted.getAsBoolean()) {
-            LOGGER.warning("Not ready for new connections");
-            try {
-                session.close();
-            } catch (RuntimeException ex) {
-                LOGGER.log(Level.SEVERE, "could not reject connection", ex);
             }
-            return;
         }
-
-        this.clientSessions.add(userId, session);
     }
 
-    public void onClose(EntityId userId) {
+
+    fun onOpen(session: ServerWebSocket, userId: EntityId) {
+        if (!this.consumersHaveStarted.asBoolean) {
+            LOGGER.warning("Not ready for new connections")
+            try {
+                session.close()
+            } catch (ex: RuntimeException) {
+                LOGGER.log(Level.SEVERE, "could not reject connection", ex)
+            }
+            return
+        }
+
+        this.clientSessions.add(userId, session)
+    }
+
+    fun onClose(userId: EntityId) {
         if (clientSessions.remove(userId)) {
-            this.commandDelegate.leave(userId);
+            this.commandDelegate.leave(userId)
         }
     }
 
-    public void onMessage(ServerWebSocket ctx, byte[] message, EntityId userId) {
+    fun onMessage(ctx: ServerWebSocket, message: ByteArray, userId: EntityId) {
         try {
             getCommand(message)
-                    .ifPresent(command -> onCommand(ctx, userId, command));
-
-        } catch (RuntimeException ex) {
-            LOGGER.warning(ex.getMessage());
+                .ifPresent { command -> onCommand(ctx, userId, command) }
+        } catch (ex: RuntimeException) {
+            LOGGER.warning(ex.message)
         }
     }
 
-    private void onCommand(ServerWebSocket ctx, EntityId userId, RequestCommand command) {
-        if (command.hasMove()) {
-            this.commandDelegate.move(
+    private fun onCommand(ctx: ServerWebSocket, userId: EntityId, command: RequestCommand) {
+        when {
+            command.hasMove() -> {
+                this.commandDelegate.move(
                     userId,
                     command.getMove()
-            );
-        } else if (command.hasFire()) {
-            this.commandDelegate.fire(userId);
-        } else if (command.hasSpawn()) {
-            this.commandDelegate.spawn(userId);
-        } else if (command.hasSetFixedIntertialDampenFactor()) {
-            this.commandDelegate.setFixedInertialDampenFactor(userId, command.getSetFixedIntertialDampenFactor());
-        } else if (command.hasJoin()) {
-            syncClock(ctx);
-            this.commandDelegate.join(userId, command.getJoin());
+                )
+            }
+
+            command.hasFire() -> {
+                this.commandDelegate.fire(userId)
+            }
+
+            command.hasSpawn() -> {
+                this.commandDelegate.spawn(userId)
+            }
+
+            command.hasSetFixedIntertialDampenFactor() -> {
+                this.commandDelegate.setFixedInertialDampenFactor(userId, command.getSetFixedIntertialDampenFactor())
+            }
+
+            command.hasJoin() -> {
+                syncClock(ctx)
+                this.commandDelegate.join(userId, command.getJoin())
+            }
         }
     }
 
-    private Optional<RequestCommand> getCommand(byte[] value) {
+    private fun getCommand(value: ByteArray): Optional<RequestCommand> {
         try {
-            var builder = RequestCommand.newBuilder();
-            builder.mergeFrom(value);
-            return Optional.of(builder.build());
-        } catch (IOException | RuntimeException ex) {
-            LOGGER.warning(ex.getMessage());
-            return Optional.empty();
+            val builder = RequestCommand.newBuilder()
+            builder.mergeFrom(value)
+            return Optional.of(builder.build())
+        } catch (ex: IOException) {
+            LOGGER.warning(ex.message)
+            return Optional.empty()
+        } catch (ex: RuntimeException) {
+            LOGGER.warning(ex.message)
+            return Optional.empty()
         }
     }
 
-    private void syncClock(ServerWebSocket ctx) {
-        var buffer = Buffer.buffer(Dto.newBuilder()
-                .setClock(ClockSync.newBuilder()
+    private fun syncClock(ctx: ServerWebSocket) {
+        val buffer = Buffer.buffer(
+            Dto.newBuilder()
+                .setClock(
+                    ClockSync.newBuilder()
                         .setTime(this.gameTime.getTime())
                 ).build()
-                .toByteArray());
-        ctx.write(buffer);
+                .toByteArray()
+        )
+        ctx.write(buffer)
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(GameRoutes::class.java.getName())
     }
 }

@@ -1,63 +1,51 @@
-package me.pcasaes.hexoids.core.application.eventhandlers;
+package me.pcasaes.hexoids.core.application.eventhandlers
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.model.DomainEvent;
-import me.pcasaes.hexoids.core.domain.model.GameTopic;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.model.DomainEvent
+import me.pcasaes.hexoids.core.domain.model.GameTopic
+import java.util.logging.Level
+import java.util.logging.Logger
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+class ApplicationConsumersImpl private constructor(private val gameQueue: GameQueue) : ApplicationConsumers {
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(ApplicationConsumersImpl::class.java.getName())
 
-public class ApplicationConsumersImpl implements ApplicationConsumers {
-
-
-    private static final Logger LOGGER = Logger.getLogger(ApplicationConsumersImpl.class.getName());
-
-    private final GameQueue gameQueue;
-
-    private ApplicationConsumersImpl(GameQueue gameQueue) {
-        this.gameQueue = gameQueue;
-    }
-
-    public static ApplicationConsumers create(GameQueue gameQueue) {
-        return new ApplicationConsumersImpl(gameQueue);
-    }
-
-
-    private void process(DomainEvent domainEvent, GameTopic consumer) {
-        try {
-            gameQueue.enqueue(() -> consumer.consume(domainEvent));
-        } catch (RuntimeException ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+        fun create(gameQueue: GameQueue): ApplicationConsumers {
+            return ApplicationConsumersImpl(gameQueue)
         }
     }
 
-    @Override
-    public void onJoinGame(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.JOIN_GAME_TOPIC);
+    private fun process(domainEvent: DomainEvent, consumer: GameTopic) {
+        try {
+            gameQueue.enqueue(Runnable { consumer.consume(domainEvent) })
+        } catch (ex: RuntimeException) {
+            LOGGER.log(Level.SEVERE, ex.message, ex)
+        }
     }
 
-    @Override
-    public void onPlayerAction(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.PLAYER_ACTION_TOPIC);
+    override fun onJoinGame(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.JOIN_GAME_TOPIC)
     }
 
-    @Override
-    public void onBoltLifeCycle(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.BOLT_LIFECYCLE_TOPIC);
+    override fun onPlayerAction(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.PLAYER_ACTION_TOPIC)
     }
 
-    @Override
-    public void onBoltAction(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.BOLT_ACTION_TOPIC);
+    override fun onBoltLifeCycle(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.BOLT_LIFECYCLE_TOPIC)
     }
 
-    @Override
-    public void onScoreBoardControl(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.SCORE_BOARD_CONTROL_TOPIC);
+    override fun onBoltAction(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.BOLT_ACTION_TOPIC)
     }
 
-    @Override
-    public void onScoreBoardUpdate(DomainEvent domainEvent) {
-        process(domainEvent, GameTopic.SCORE_BOARD_UPDATE_TOPIC);
+    override fun onScoreBoardControl(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.SCORE_BOARD_CONTROL_TOPIC)
     }
+
+    override fun onScoreBoardUpdate(domainEvent: DomainEvent) {
+        process(domainEvent, GameTopic.SCORE_BOARD_UPDATE_TOPIC)
+    }
+
+
 }

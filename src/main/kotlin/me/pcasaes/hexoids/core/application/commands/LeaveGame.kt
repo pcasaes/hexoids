@@ -1,19 +1,14 @@
-package me.pcasaes.hexoids.core.application.commands;
+package me.pcasaes.hexoids.core.application.commands
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.model.Game;
-import me.pcasaes.hexoids.core.domain.model.Player;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import me.pcasaes.hexoids.core.domain.model.Game
 
-public class LeaveGame {
+class LeaveGame internal constructor(private val gameQueue: GameQueue) {
 
-    private final GameQueue gameQueue;
-
-    LeaveGame(GameQueue gameQueue) {
-        this.gameQueue = gameQueue;
-    }
-
-    public void leave(EntityId userId) {
-        this.gameQueue.enqueue(() -> Game.get().getPlayers().get(userId).ifPresent(Player::leave));
+    fun leave(userId: EntityId) {
+        this.gameQueue.enqueue {
+            Game.get().getPlayers().get(userId).ifPresent { player -> player.leave() }
+        }
     }
 }

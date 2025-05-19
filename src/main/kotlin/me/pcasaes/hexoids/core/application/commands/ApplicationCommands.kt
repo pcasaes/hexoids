@@ -1,50 +1,45 @@
-package me.pcasaes.hexoids.core.application.commands;
+package me.pcasaes.hexoids.core.application.commands
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
 
-public class ApplicationCommands {
+class ApplicationCommands private constructor(gameQueue: GameQueue) {
 
-    private final Fire fireCommand;
-    private final JoinGame joinGameCommand;
-    private final LeaveGame leaveGameCommand;
-    private final Move moveCommand;
-    private final Spawn spawn;
-    private final SetInertialDampenFactor setInertialDampenFactorCommand;
-
-    private ApplicationCommands(GameQueue gameQueue) {
-        this.fireCommand = new Fire(gameQueue);
-        this.joinGameCommand = new JoinGame(gameQueue);
-        this.leaveGameCommand = new LeaveGame(gameQueue);
-        this.moveCommand = new Move(gameQueue);
-        this.spawn = new Spawn(gameQueue);
-        this.setInertialDampenFactorCommand = new SetInertialDampenFactor(gameQueue);
+    companion object {
+        fun create(gameQueue: GameQueue): ApplicationCommands {
+            return ApplicationCommands(gameQueue)
+        }
     }
 
-    public static ApplicationCommands create(GameQueue gameQueue) {
-        return new ApplicationCommands(gameQueue);
+    private val fireCommand: Fire = Fire(gameQueue)
+    private val joinGameCommand: JoinGame = JoinGame(gameQueue)
+    private val leaveGameCommand: LeaveGame = LeaveGame(gameQueue)
+    private val moveCommand: Move = Move(gameQueue)
+    private val spawn: Spawn = Spawn(gameQueue)
+    private val setInertialDampenFactorCommand: SetInertialDampenFactor = SetInertialDampenFactor(gameQueue)
+
+    fun getFireCommand(): Fire {
+        return fireCommand
     }
 
-    public Fire getFireCommand() {
-        return fireCommand;
+    fun getJoinGameCommand(): JoinGame {
+        return joinGameCommand
     }
 
-    public JoinGame getJoinGameCommand() {
-        return joinGameCommand;
+    fun getLeaveGameCommand(): LeaveGame {
+        return leaveGameCommand
     }
 
-    public LeaveGame getLeaveGameCommand() {
-        return leaveGameCommand;
+    fun getMoveCommand(): Move {
+        return moveCommand
     }
 
-    public Move getMoveCommand() {
-        return moveCommand;
+    fun getSpawn(): Spawn {
+        return spawn
     }
 
-    public Spawn getSpawn() {
-        return spawn;
+    fun getSetInertialDampenFactorCommand(): SetInertialDampenFactor {
+        return setInertialDampenFactorCommand
     }
 
-    public SetInertialDampenFactor getSetInertialDampenFactorCommand() {
-        return setInertialDampenFactorCommand;
-    }
+
 }

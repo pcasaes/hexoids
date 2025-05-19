@@ -1,30 +1,22 @@
-package me.pcasaes.hexoids.infrastructure.kafka;
+package me.pcasaes.hexoids.infrastructure.kafka
 
-import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import org.apache.kafka.clients.consumer.Consumer;
-
-import java.util.Collection;
+import io.smallrye.reactive.messaging.kafka.KafkaConsumerRebalanceListener
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import jakarta.inject.Named
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.common.TopicPartition
 
 @ApplicationScoped
 @Named("DelayedStartConsumerRebalanceListener")
-public class DelayedStartConsumerRebalanceListener implements KafkaConsumerRebalanceListener {
+class DelayedStartConsumerRebalanceListener @Inject constructor(
+    private val handler: DelayedStartConsumerHandler
+) : KafkaConsumerRebalanceListener {
 
-    private final DelayedStartConsumerHandler handler;
-
-    @Inject
-    public DelayedStartConsumerRebalanceListener(DelayedStartConsumerHandler handler) {
-        this.handler = handler;
-    }
-
-    @Override
-    public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<org.apache.kafka.common.TopicPartition> partitions) {
+    override fun onPartitionsAssigned(consumer: Consumer<*, *>, partitions: MutableCollection<TopicPartition>) {
         this.handler
-                .onStarted()
-                .await()
-                .indefinitely();
+            .onStarted()
+            .await()
+            .indefinitely()
     }
-
 }

@@ -1,47 +1,45 @@
-package me.pcasaes.hexoids.core.domain.metrics;
+package me.pcasaes.hexoids.core.domain.metrics
 
-import pcasaes.hexoids.proto.ClientPlatforms;
+import pcasaes.hexoids.proto.ClientPlatforms
 
-import java.util.Arrays;
+class GameMetric private constructor(
+    private val name: String
+) {
 
-public class GameMetric {
 
-    private final String name;
-
-    private long total = 0L;
-
-    private final long[] totalByClientPlatform;
-
-    private GameMetric(String name) {
-        this.name = name;
-        totalByClientPlatform = Arrays
-                .stream(ClientPlatforms.values())
-                .mapToLong(a -> 0L)
-                .toArray();
-    }
-
-    static GameMetric of(String name) {
-        return new GameMetric(name);
-    }
-
-    public void increment(ClientPlatforms clientPlatform) {
-        total++;
-        if (clientPlatform == null) {
-            totalByClientPlatform[ClientPlatforms.UNKNOWN.ordinal()]++;
-        } else {
-            totalByClientPlatform[clientPlatform.ordinal()]++;
+    companion object {
+        @JvmStatic
+        fun of(name: String): GameMetric {
+            return GameMetric(name)
         }
     }
 
-    public long getTotal() {
-        return total;
+    private var total = 0L
+
+    private val totalByClientPlatform: LongArray = ClientPlatforms
+        .entries
+        .map { 0L }
+        .toLongArray()
+
+    fun increment(clientPlatform: ClientPlatforms?) {
+        total++
+        if (clientPlatform == null) {
+            totalByClientPlatform[ClientPlatforms.UNKNOWN.ordinal]++
+        } else {
+            totalByClientPlatform[clientPlatform.ordinal]++
+        }
     }
 
-    public long getTotalByClientPlatform(ClientPlatforms clientPlatform) {
-        return totalByClientPlatform[clientPlatform.ordinal()];
+    fun getTotal(): Long {
+        return total
     }
 
-    public String getName() {
-        return name;
+    fun getTotalByClientPlatform(clientPlatform: ClientPlatforms): Long {
+        return totalByClientPlatform[clientPlatform.ordinal]
     }
+
+    fun getName(): String {
+        return name
+    }
+
 }

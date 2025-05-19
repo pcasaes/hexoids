@@ -1,63 +1,74 @@
-package me.pcasaes.hexoids.core.domain.model;
-
-import java.util.function.Consumer;
+package me.pcasaes.hexoids.core.domain.model
 
 /**
  * Enum of game topics use to publish and consume domain events.
  */
-public enum GameTopic {
-
+enum class GameTopic(private val consumer: (DomainEvent) -> Unit) {
     /**
      * Topic used to track joined and left game
      */
-    JOIN_GAME_TOPIC(d -> getGame().getPlayers().consumeFromJoinTopic(d)),
+    JOIN_GAME_TOPIC({ d ->
+        GameTopic.Companion.getGame()
+            .getPlayers().consumeFromJoinTopic(d)
+    }),
 
     /**
      * Topic used to track player actions: moved, spawned, destroyed
      */
-    PLAYER_ACTION_TOPIC(d -> getGame().getPlayers().consumeFromPlayerActionTopic(d)),
+    PLAYER_ACTION_TOPIC({ d ->
+        GameTopic.Companion.getGame()
+            .getPlayers().consumeFromPlayerActionTopic(d)
+    }),
 
     /**
      * Topic used to track a bolts being fired (created)
      */
-    BOLT_LIFECYCLE_TOPIC(d -> getGame().getPlayers().consumeFromPlayerFiredTopic(d)),
+    BOLT_LIFECYCLE_TOPIC({ d ->
+        GameTopic.Companion.getGame()
+            .getPlayers().consumeFromPlayerFiredTopic(d)
+    }),
 
     /**
      * Topic used to track bolt action: moved, exhausted
      */
-    BOLT_ACTION_TOPIC(((Consumer<DomainEvent>) d -> getGame().getBolts().consumeFromBoltActionTopic(d)) //NOSONAR: false positive
-            .andThen(d -> getGame().getPlayers().consumeFromBoltActionTopic(d))),
+    BOLT_ACTION_TOPIC({ d: DomainEvent ->
+        GameTopic.Companion.getGame().getBolts().consumeFromBoltActionTopic(d)
+        GameTopic.Companion.getGame()
+            .getPlayers().consumeFromBoltActionTopic(d)
+    }),
 
     /**
      * Topic used to track points being gained by a player
      */
-    SCORE_BOARD_CONTROL_TOPIC(d -> getGame().getScoreBoard().consumeFromScoreBoardControlTopic(d)),
+    SCORE_BOARD_CONTROL_TOPIC({ d ->
+        GameTopic.Companion.getGame()
+            .getScoreBoard().consumeFromScoreBoardControlTopic(d)
+    }),
 
     /**
      * Topic used to track points score board being updated
      */
-    SCORE_BOARD_UPDATE_TOPIC(d -> getGame().getScoreBoard().consumeFromScoreBoardUpdateTopic(d)),
+    SCORE_BOARD_UPDATE_TOPIC({ d ->
+        GameTopic.Companion.getGame()
+            .getScoreBoard().consumeFromScoreBoardUpdateTopic(d)
+    }),
     ;
 
-    private static Game game;
 
-    static void setGame(Game game) {
-        GameTopic.game = game;
+    fun consume(domainEvent: DomainEvent) {
+        consumer.invoke(domainEvent)
     }
 
-    static Game getGame() {
-        return game;
+    companion object {
+        private lateinit var game: Game
+
+        @JvmStatic
+        fun setGame(game: Game) {
+            GameTopic.Companion.game = game
+        }
+
+        fun getGame(): Game {
+            return game
+        }
     }
-
-    private final Consumer<DomainEvent> consumer;
-
-
-    GameTopic(Consumer<DomainEvent> consumer) {
-        this.consumer = consumer;
-    }
-
-    public void consume(DomainEvent domainEvent) {
-        consumer.accept(domainEvent);
-    }
-
 }

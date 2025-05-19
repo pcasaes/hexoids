@@ -1,80 +1,67 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.metrics.GameMetrics;
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil;
-import me.pcasaes.hexoids.core.domain.vector.PositionVector;
-import me.pcasaes.hexoids.core.domain.vector.Vector2;
-import pcasaes.hexoids.proto.BoltFiredEventDto;
-import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
-import pcasaes.hexoids.proto.ClientPlatforms;
-import pcasaes.hexoids.proto.DirectedCommand;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.Event;
-import pcasaes.hexoids.proto.JoinCommandDto;
-import pcasaes.hexoids.proto.MoveReason;
-import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
-import pcasaes.hexoids.proto.PlayerDto;
-import pcasaes.hexoids.proto.PlayerJoinedEventDto;
-import pcasaes.hexoids.proto.PlayerLeftEventDto;
-import pcasaes.hexoids.proto.PlayerMovedEventDto;
-import pcasaes.hexoids.proto.PlayerSpawnedEventDto;
-
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.Random;
-import java.util.Set;
+import me.pcasaes.hexoids.core.domain.config.Config
+import me.pcasaes.hexoids.core.domain.metrics.GameMetrics
+import me.pcasaes.hexoids.core.domain.model.Bolt.Companion.isExpired
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil
+import me.pcasaes.hexoids.core.domain.vector.PositionVector
+import me.pcasaes.hexoids.core.domain.vector.PositionVector.Configuration.AtBoundsOptions
+import me.pcasaes.hexoids.core.domain.vector.Vector2
+import pcasaes.hexoids.proto.BoltFiredEventDto
+import pcasaes.hexoids.proto.BoltsAvailableCommandDto
+import pcasaes.hexoids.proto.ClientPlatforms
+import pcasaes.hexoids.proto.DirectedCommand
+import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.proto.Event
+import pcasaes.hexoids.proto.JoinCommandDto
+import pcasaes.hexoids.proto.MoveReason
+import pcasaes.hexoids.proto.PlayerDestroyedEventDto
+import pcasaes.hexoids.proto.PlayerDto
+import pcasaes.hexoids.proto.PlayerJoinedEventDto
+import pcasaes.hexoids.proto.PlayerLeftEventDto
+import pcasaes.hexoids.proto.PlayerMovedEventDto
+import pcasaes.hexoids.proto.PlayerSpawnedEventDto
+import java.util.Objects
+import java.util.Optional
+import java.util.OptionalDouble
+import java.util.Random
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * A model representation of the player. This model conflates player and ship information.
  * As this model becomes richer it might be a good idea to split the two.
- * <p>
+ *
+ *
  * Most action methods have a corresponding process method in the past tense, ex:
  * fire
  * fired
- * <p>
+ *
+ *
  * The action method will generate a domain event which will be distributed to all nodes and processed in
  * the corresponding process method.
  */
-public interface Player extends GameObject {
+interface Player : GameObject {
+    fun id(): EntityId
 
     /**
-     * Creates an instanceof a player
-     *
-     * @param id         the player's id
-     * @param players    the collection of all players
-     * @param bolts      the collection of all bolts
-     * @param barriers   the collection of all barriers
-     * @param clock      the game clock.
-     * @param scoreBoard scoreboard
-     * @return an new instance of player
+     * Fires a bolt. Will generate a [BoltFiredEventDto] domain event
      */
-    static Player create(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
-        return new Implementation(id, players, bolts, barriers, clock, scoreBoard);
-    }
-
-    EntityId id();
-
-    /**
-     * Fires a bolt. Will generate a {@link BoltFiredEventDto} domain event
-     */
-    void fire();
+    fun fire()
 
     /**
      * Processes a bolt fired by this player.
      *
      * @param event
      */
-    void fired(BoltFiredEventDto event);
+    fun fired(event: BoltFiredEventDto)
 
     /**
      * Returns the number of still active bolts fired by this player
      *
      * @return
      */
-    int getActiveBoltCount();
+    fun getActiveBoltCount(): Int
 
     /**
      * Returns true if this player's id matches the paramer
@@ -82,28 +69,28 @@ public interface Player extends GameObject {
      * @param playerId
      * @return
      */
-    boolean is(EntityId playerId);
+    fun hasId(playerId: EntityId): Boolean
 
     /**
-     * Generates a {@link PlayerDto} from the player's current states
+     * Generates a [PlayerDto] from the player's current states
      *
      * @return
      */
-    Optional<PlayerDto> toDtoIfJoined();
+    fun toDtoIfJoined(): Optional<PlayerDto>
 
     /**
      * The player will join the game
      *
      * @param command
      */
-    void join(JoinCommandDto command);
+    fun join(command: JoinCommandDto)
 
     /**
      * Processes a player joined game event
      *
      * @param event
      */
-    void joined(PlayerJoinedEventDto event);
+    fun joined(event: PlayerJoinedEventDto)
 
     /**
      * Move the player by a vector
@@ -112,713 +99,733 @@ public interface Player extends GameObject {
      * @param moveY vector y component
      * @param angle fire direction
      */
-    void move(float moveX, float moveY, Float angle);
+    fun move(moveX: Float, moveY: Float, angle: Float?)
 
     /**
      * Processes a player moved event
      *
      * @param event
      */
-    void moved(PlayerMovedEventDto event);
+    fun moved(event: PlayerMovedEventDto)
 
     /**
      * Leaves the game
      */
-    void leave();
+    fun leave()
 
     /**
      * Processes a player left game event.
      */
-    void left();
+    fun left()
 
     /**
      * Set's the dampen fa
      *
      * @param value
      */
-    void setFixedInertialDampenFactor(float value);
+    fun setFixedInertialDampenFactor(value: Float)
 
     /**
-     * Will return true if the player's ship collides with the supplied {@link PositionVector}
+     * Will return true if the player's ship collides with the supplied [PositionVector]
      *
      * @param velocityVector
      * @param collisionRadius
      * @return
      */
-    boolean collision(PositionVector velocityVector, float collisionRadius);
+    fun collision(velocityVector: PositionVector, collisionRadius: Float): Boolean
 
     /**
      * This informed player destroys this player
      *
-     * @param playerId
+     * @param byPlayerId
      * @param timestamp
      */
-    void destroy(EntityId playerId, long timestamp);
+    fun destroy(byPlayerId: EntityId, timestamp: Long)
 
     /**
      * Processes the destroyed player domain event
      *
      * @param event
      */
-    void destroyed(PlayerDestroyedEventDto event);
+    fun destroyed(event: PlayerDestroyedEventDto)
 
     /**
      * Called whenever this player's bolts are exhausted
      */
-    void boltExhausted();
+    fun boltExhausted()
 
     /**
      * Spawns the player
      */
-    void spawn();
+    fun spawn()
 
     /**
      * Processes the player spawned domain event
      *
      * @param event
      */
-    void spawned(PlayerSpawnedEventDto event);
+    fun spawned(event: PlayerSpawnedEventDto)
 
     /**
      * Periodically called if the player has not spawned for a certain amount of time.
      * This will cause the player to leave the game.
      */
-    void expungeIfStalled();
+    fun expungeIfStalled()
 
     /**
      * Updates the player's vector position up tot he supplied timestamp.
      *
      * @param timestamp
      */
-    void fixedUpdate(long timestamp);
+    fun fixedUpdate(timestamp: Long)
 
-    class Implementation implements Player {
+    private class Implementation(
+        private val id: EntityId,
+        private val players: Players,
+        private val bolts: Bolts,
+        private val barriers: Barriers,
+        private val clock: Clock,
+        private val scoreBoard: ScoreBoard
+    ) : Player {
+        private var name: String? = null
 
-        private static final float SHIP_LENGTH = 0.003F;
+        private var clientPlatform: ClientPlatforms = ClientPlatforms.UNKNOWN
 
-        private static final float SHIP_HALF_LENGTH = SHIP_LENGTH / 2F;
+        private var ship: Int
 
-        private static final float SHIP_LENGTH_TIMES_10 = SHIP_LENGTH * 10F;
+        private var spawned = false
 
-        private static final Random RNG = new Random();
+        private var lastSpawnOrUnspawnTimestamp: Long
 
-        private final EntityId id;
+        private var previousAngle = 0F
 
-        private String name;
+        private var angle = 0F
 
-        private ClientPlatforms clientPlatform;
+        private var movedTimestamp: Long = 0
 
-        private int ship;
+        private var spawnedTimestamp: Long = 0
 
-        private boolean spawned;
+        private var liveBolts = 0
 
-        private long lastSpawnOrUnspawnTimestamp;
+        private val resetPosition: ResetPosition
 
-        private float previousAngle = 0F;
+        private val position: PositionVector
 
-        private float angle = 0F;
+        private val playerPositionConfiguration: PlayerPositionConfiguration
 
-        private long movedTimestamp;
+        private var fixedInertialDampenFactor = 1F
 
-        private long spawnedTimestamp;
+        private val lastMoveReasons = HashSet<MoveReason>()
 
-        private int liveBolts = 0;
-
-        private final Players players;
-
-        private final Bolts bolts;
-
-        private final Barriers barriers;
-
-        private final Clock clock;
-
-        private final ScoreBoard scoreBoard;
-
-        private final ResetPosition resetPosition;
-
-        private final PositionVector position;
-
-        private final PlayerPositionConfiguration playerPositionConfiguration;
-
-        private float fixedInertialDampenFactor = 1F;
-
-        private final Set<MoveReason> lastMoveReasons = new HashSet<>();
-
-        private Implementation(EntityId id, Players players, Bolts bolts, Barriers barriers, Clock clock, ScoreBoard scoreBoard) {
-            this.players = players;
-            this.bolts = bolts;
-            this.clock = clock;
-            this.barriers = barriers;
-            this.scoreBoard = scoreBoard;
-            this.id = id;
-
-            this.ship = RNG.nextInt(12);
-            this.spawned = false;
-            this.lastSpawnOrUnspawnTimestamp = clock.getTime();
-            this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition());
-            this.playerPositionConfiguration = new PlayerPositionConfiguration();
+        init {
+            this.ship = RNG.nextInt(12)
+            this.lastSpawnOrUnspawnTimestamp = clock.getTime()
+            this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition())
+            this.playerPositionConfiguration = PlayerPositionConfiguration()
             this.position = PositionVector.of(
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    playerPositionConfiguration);
+                0F,
+                0F,
+                0F,
+                0F,
+                0,
+                playerPositionConfiguration
+            )
         }
 
-        @Override
-        public EntityId id() {
-            return this.id;
+        override fun id(): EntityId {
+            return this.id
         }
 
-        @Override
-        public void setDampenMovementFactorUntilNextFixedUpdate(float factor) {
-            this.playerPositionConfiguration.setDampenFactor(factor);
+        override fun setDampenMovementFactorUntilNextFixedUpdate(factor: Float) {
+            this.playerPositionConfiguration.setDampenFactor(factor)
         }
 
-        private void setSpawned(boolean spawned) {
-            this.spawned = spawned;
-            this.lastSpawnOrUnspawnTimestamp = clock.getTime();
+        private fun setSpawned(spawned: Boolean) {
+            this.spawned = spawned
+            this.lastSpawnOrUnspawnTimestamp = clock.getTime()
         }
 
-        private Vector2 getFiredBoltVector(float boltSpeed, long firedTime) {
-            Vector2 boltVector = Vector2.fromAngleMagnitude(this.angle, boltSpeed);
+        private fun getFiredBoltVector(boltSpeed: Float, firedTime: Long): Vector2 {
+            val boltVector = Vector2.fromAngleMagnitude(this.angle, boltSpeed)
 
-            Vector2 currentShipVector = this.position.getVectorAt(firedTime);
-            Vector2 projection = currentShipVector
-                    .projection(boltVector);
+            val currentShipVector = this.position.getVectorAt(firedTime)
+            var projection = currentShipVector
+                .projection(boltVector)
 
-            Vector2 rejection = currentShipVector
-                    .minus(projection)
-                    .scale(Config.get().getBoltInertiaRejectionScale());
+            val rejection = currentShipVector
+                .minus(projection)
+                .scale(Config.get().getBoltInertiaRejectionScale())
 
-            if (boltVector.sameDirection(projection)) {
-                projection = projection.scale(Config.get().getBoltInertiaProjectionScale());
+            projection = if (boltVector.sameDirection(projection)) {
+                projection.scale(Config.get().getBoltInertiaProjectionScale())
             } else {
-                projection = projection.scale(Config.get().getBoltInertiaNegativeProjectionScale());
+                projection.scale(Config.get().getBoltInertiaNegativeProjectionScale())
             }
             projection = projection
-                    .scale(Config.get().getBoltInertiaProjectionScale());
+                .scale(Config.get().getBoltInertiaProjectionScale())
 
-            return boltVector.add(rejection).add(projection);
+            return boltVector.add(rejection).add(projection)
         }
 
-        @Override
-        public void fire() {
+        override fun fire() {
             if (!spawned) {
-                return;
+                return
             }
 
-            long now = clock.getTime();
+            val now = clock.getTime()
 
-            float boltSpeed = Config.get().getBoltSpeed();
-            float boltAngle;
+            var boltSpeed = Config.get().getBoltSpeed()
+            val boltAngle: Float
 
-            Vector2 boltVector;
-            if (!Config.get().isBoltInertiaEnabled()) {
-                boltAngle = angle;
-                boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed);
+            val boltVector: Vector2
+            if (!Config.get().isBoltInertiaEnabled) {
+                boltAngle = angle
+                boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed)
             } else {
-                boltVector = getFiredBoltVector(boltSpeed, now);
-                boltSpeed = boltVector.getMagnitude();
-                boltAngle = boltVector.getAngle();
+                boltVector = getFiredBoltVector(boltSpeed, now)
+                boltSpeed = boltVector.getMagnitude()
+                boltAngle = boltVector.getAngle()
             }
 
 
-            Vector2 positionAtNow = Vector2.fromXY(
-                    position.getXat(now),
-                    position.getYat(now)
-            );
+            val positionAtNow = Vector2.fromXY(
+                position.getXat(now),
+                position.getYat(now)
+            )
 
-            int ttl = calculateBoltTll(positionAtNow, boltVector, boltSpeed);
+            val ttl = calculateBoltTll(positionAtNow, boltVector, boltSpeed)
 
 
-            final EntityId boltId = EntityId.newId();
+            val boltId = EntityId.newId()
             GameEvents.getDomainEvents()
-                    .dispatch(DomainEvent.create(
-                            GameTopic.BOLT_LIFECYCLE_TOPIC.name(),
-                            boltId.getId(),
-                            Event.newBuilder()
-                                    .setPlayerFired(BoltFiredEventDto.newBuilder()
-                                            .setBoltId(boltId.getGuid())
-                                            .setOwnerPlayerId(id.getGuid())
-                                            .setX(positionAtNow.getX())
-                                            .setY(positionAtNow.getY())
-                                            .setAngle(boltAngle)
-                                            .setSpeed(boltSpeed)
-                                            .setStartTimestamp(now)
-                                            .setTtl(ttl)
-                                    )
-                                    .build()
-                    ));
+                .dispatch(
+                    DomainEvent.create(
+                        GameTopic.BOLT_LIFECYCLE_TOPIC.name,
+                        boltId.getId(),
+                        Event.newBuilder()
+                            .setPlayerFired(
+                                BoltFiredEventDto.newBuilder()
+                                    .setBoltId(boltId.getGuid())
+                                    .setOwnerPlayerId(id.getGuid())
+                                    .setX(positionAtNow.getX())
+                                    .setY(positionAtNow.getY())
+                                    .setAngle(boltAngle)
+                                    .setSpeed(boltSpeed)
+                                    .setStartTimestamp(now)
+                                    .setTtl(ttl)
+                            )
+                            .build()
+                    )
+                )
         }
 
-        private int calculateBoltTll(Vector2 positionAtNow, Vector2 boltVector, float boltSpeed) {
-            int maxTtl = Config.get().getBoltMaxDuration();
+        private fun calculateBoltTll(positionAtNow: Vector2, boltVector: Vector2, boltSpeed: Float): Int {
+            val maxTtl = Config.get().getBoltMaxDuration()
 
-            Vector2 moveDelta = Vector2.calculateMoveDelta(boltVector, Float.MIN_VALUE, maxTtl);
+            val moveDelta = Vector2.calculateMoveDelta(boltVector, Float.Companion.MIN_VALUE, maxTtl.toLong())
 
-            Vector2 positionAtEnd = positionAtNow.add(moveDelta);
+            val positionAtEnd = positionAtNow.add(moveDelta)
 
-            float magnitudeForTtl = -1;
+            var magnitudeForTtl = -1F
 
-            for (Barrier barrier : barriers
-                    .search(positionAtNow.getX(), positionAtNow.getY(), positionAtEnd.getX(), positionAtEnd.getY(), SHIP_LENGTH_TIMES_10)) {
-                Vector2 intersection = Vector2.intersectedWith(positionAtNow, positionAtEnd, barrier.getTo(), barrier.getFrom());
+            for (barrier in barriers
+                .search(
+                    positionAtNow.getX(),
+                    positionAtNow.getY(),
+                    positionAtEnd.getX(),
+                    positionAtEnd.getY(),
+                    SHIP_LENGTH_TIMES_10
+                )) {
+                val intersection = Vector2.intersectedWith(positionAtNow, positionAtEnd, barrier.to, barrier.from)
                 if (intersection != null) {
-                    if (magnitudeForTtl == -1) {
-                        magnitudeForTtl = intersection.minus(positionAtNow).getMagnitude();
+                    if (magnitudeForTtl == -1F) {
+                        magnitudeForTtl = intersection.minus(positionAtNow).getMagnitude()
                     } else {
-                        float m = intersection.minus(positionAtNow).getMagnitude();
+                        val m = intersection.minus(positionAtNow).getMagnitude()
                         if (m < magnitudeForTtl) {
-                            magnitudeForTtl = m;
+                            magnitudeForTtl = m
                         }
                     }
                 }
             }
 
-            if (magnitudeForTtl != -1) {
-                return Math.min(maxTtl, (int) (1000F * magnitudeForTtl / boltSpeed));
+            if (magnitudeForTtl != -1F) {
+                return min(maxTtl, (1000F * magnitudeForTtl / boltSpeed).toInt())
             }
-            return maxTtl;
+            return maxTtl
         }
 
-        public void fired(BoltFiredEventDto event) {
-            long now = clock.getTime();
-            if (Bolt.isExpired(now, event.getStartTimestamp(), event.getTtl())) {
+        override fun fired(event: BoltFiredEventDto) {
+            val now = clock.getTime()
+            if (isExpired(now, event.startTimestamp, event.ttl)) {
                 toBolt(event)
-                        .flatMap(b -> b.updateTimestamp(now))
-                        .ifPresent(b -> b.tackleBoltExhaustion(now));
+                    .flatMap { b -> b.updateTimestamp(now) }
+                    .ifPresent { b -> b.tackleBoltExhaustion(now) }
             } else if (this.liveBolts < Config.get().getMaxBolts()) {
-                toBolt(event).ifPresent(b -> this.firedNew(event, b));
+                toBolt(event).ifPresent { b -> this.firedNew(event, b) }
             }
         }
 
-        private void firedNew(BoltFiredEventDto event, Bolt bolt) {
-            this.liveBolts++;
-            bolt.fire(event);
-            liveBoltsChanged();
-            GameMetrics.get().getBoltFired().increment(this.clientPlatform);
+        private fun firedNew(event: BoltFiredEventDto, bolt: Bolt) {
+            this.liveBolts++
+            bolt.fire(event)
+            liveBoltsChanged()
+            GameMetrics.get().getBoltFired().increment(this.clientPlatform)
         }
 
-        private Optional<Bolt> toBolt(BoltFiredEventDto event) {
+        private fun toBolt(event: BoltFiredEventDto): Optional<Bolt> {
             return this.bolts.fired(
-                    players,
-                    EntityId.of(event.getBoltId()),
-                    this.id,
-                    event.getX(),
-                    event.getY(),
-                    event.getAngle(),
-                    event.getSpeed(),
-                    event.getStartTimestamp(),
-                    event.getTtl());
+                players,
+                EntityId.of(event.boltId),
+                this.id,
+                event.x,
+                event.y,
+                event.angle,
+                event.speed,
+                event.startTimestamp,
+                event.ttl
+            )
         }
 
 
-        @Override
-        public int getActiveBoltCount() {
-            return this.liveBolts;
+        override fun getActiveBoltCount(): Int {
+            return this.liveBolts
         }
 
-        @Override
-        public boolean is(EntityId playerId) {
-            return id.equals(playerId);
+        override fun hasId(playerId: EntityId): Boolean {
+            return id == playerId
         }
 
-        @Override
-        public Optional<PlayerDto> toDtoIfJoined() {
-            if (!isJoined()) {
-                return Optional.empty();
+        override fun toDtoIfJoined(): Optional<PlayerDto> {
+            return if (!this.isJoined) {
+                Optional.empty()
+            } else {
+                Optional.of(
+                    PlayerDto.newBuilder()
+                        .setPlayerId(id.getGuid())
+                        .setShip(ship)
+                        .setX(position.getX())
+                        .setY(position.getY())
+                        .setAngle(angle)
+                        .setSpawned(spawned)
+                        .setName(name)
+                        .build()
+                )
             }
-            return Optional.of(PlayerDto.newBuilder()
-                    .setPlayerId(id.getGuid())
-                    .setShip(ship)
-                    .setX(position.getX())
-                    .setY(position.getY())
-                    .setAngle(angle)
-                    .setSpawned(spawned)
-                    .setName(name)
-                    .build());
         }
 
-        private void resetPosition(long resetTime) {
-            position.initialized(resetPosition.getNextX(), resetPosition.getNextY(), resetTime);
-            this.angle = 0f;
+        private fun resetPosition(resetTime: Long) {
+            position.initialized(resetPosition.getNextX(), resetPosition.getNextY(), resetTime)
+            this.angle = 0F
         }
 
-        private void setName(String n) {
-            n = (n == null || n.length() == 0) ?
-                    id.getId().toString() :
-                    n;
-            if (n.length() > Config.get().getPlayerNameLength()) {
-                n = n.substring(0, Config.get().getPlayerNameLength());
+        private fun setName(name: String) {
+            var n = name
+            n = n.ifEmpty { id.getId().toString() }
+
+            if (n.length > Config.get().getPlayerNameLength()) {
+                n = n.substring(0, Config.get().getPlayerNameLength())
             }
-            this.name = n;
+            this.name = n
         }
 
-        public void setClientPlatform(ClientPlatforms clientPlatform) {
-            this.clientPlatform = clientPlatform;
+        fun setClientPlatform(clientPlatform: ClientPlatforms) {
+            this.clientPlatform = clientPlatform
         }
 
-        @Override
-        public boolean teleport(float x, float y, long timestamp, MoveReason moveReason) {
-            position.teleport(x, y, timestamp);
-            lastMoveReasons.add(moveReason);
+        override fun teleport(x: Float, y: Float, timestamp: Long, moveReason: MoveReason): Boolean {
+            position.teleport(x, y, timestamp)
+            lastMoveReasons.add(moveReason)
 
-            return true;
+            return true
         }
 
-        @Override
-        public void join(JoinCommandDto command) {
-            setName(command.getName());
-            setClientPlatform(command.getClientPlatform());
+        override fun join(command: JoinCommandDto) {
+            setName(command.name)
+            setClientPlatform(command.getClientPlatform())
 
             GameEvents.getDomainEvents().dispatch(
-                    DomainEvent
-                            .create(GameTopic.JOIN_GAME_TOPIC.name(),
-                                    this.id.getId(),
-                                    Event.newBuilder()
-                                            .setPlayerJoined(PlayerJoinedEventDto.newBuilder()
-                                                    .setPlayerId(id.getGuid())
-                                                    .setShip(ship)
-                                                    .setName(name)
-                                                    .setClientPlatform(clientPlatform)
-                                            )
-                                            .build()
+                DomainEvent
+                    .create(
+                        GameTopic.JOIN_GAME_TOPIC.name,
+                        this.id.getId(),
+                        Event.newBuilder()
+                            .setPlayerJoined(
+                                PlayerJoinedEventDto.newBuilder()
+                                    .setPlayerId(id.getGuid())
+                                    .setShip(ship)
+                                    .setName(name)
+                                    .setClientPlatform(clientPlatform)
                             )
-            );
+                            .build()
+                    )
+            )
         }
 
-        @Override
-        public void joined(PlayerJoinedEventDto event) {
-            this.name = event.getName();
-            this.clientPlatform = event.getClientPlatform();
-            this.ship = event.getShip();
+        override fun joined(event: PlayerJoinedEventDto) {
+            this.name = event.name
+            this.clientPlatform = event.getClientPlatform()
+            this.ship = event.ship
             GameEvents
-                    .getClientEvents()
-                    .dispatch(Dto.newBuilder()
-                            .setEvent(Event.newBuilder()
-                                    .setPlayerJoined(PlayerJoinedEventDto.newBuilder()
-                                            .mergeFrom(event)
-                                            .clearClientPlatform()  //let's not publish to all clients user data
-                                    )
-                            ).build());
-            GameMetrics.get().getPlayerJoined().increment(this.clientPlatform);
+                .getClientEvents()
+                .dispatch(
+                    Dto.newBuilder()
+                        .setEvent(
+                            Event.newBuilder()
+                                .setPlayerJoined(
+                                    PlayerJoinedEventDto.newBuilder()
+                                        .mergeFrom(event)
+                                        .clearClientPlatform() //let's not publish to all clients user data
+                                )
+                        ).build()
+                )
+            GameMetrics.get().getPlayerJoined().increment(this.clientPlatform)
         }
 
-        @Override
-        public void setFixedInertialDampenFactor(float value) {
-            this.fixedInertialDampenFactor = Math.min(1F, value);
+        override fun setFixedInertialDampenFactor(value: Float) {
+            this.fixedInertialDampenFactor = min(1F, value)
         }
 
-        @Override
-        public void move(float moveX, float moveY, MoveReason moveReason) {
-            move(moveX, moveY, (Float) null);
+        override fun move(moveX: Float, moveY: Float, moveReason: MoveReason?) {
+            move(moveX, moveY, null as Float?)
             if (moveReason != null) {
-                this.lastMoveReasons.add(moveReason);
+                this.lastMoveReasons.add(moveReason)
             }
         }
 
-        @Override
-        public void move(float moveX, float moveY, Float angle) {
+        override fun move(moveX: Float, moveY: Float, angle: Float?) {
             if (!this.spawned) {
-                return;
+                return
             }
 
             if (angle != null) {
-                this.previousAngle = this.angle;
-                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle());
+                this.previousAngle = this.angle
+                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle())
             }
 
-            position.scheduleMove(moveX, moveY);
+            position.scheduleMove(moveX, moveY)
         }
 
-        @Override
-        public void moved(PlayerMovedEventDto event) {
-            if (event.getTimestamp() > this.movedTimestamp) {
-                this.movedTimestamp = event.getTimestamp();
-                movedOrSpawned(event, null);
+        override fun moved(event: PlayerMovedEventDto) {
+            val ts = event.timestamp
+            if (ts > this.movedTimestamp) {
+                this.movedTimestamp = ts
+                movedOrSpawned(event, null)
             }
         }
 
-        private void movedOrSpawned(PlayerMovedEventDto movedEvent, PlayerSpawnedEventDto spawnedEvent) {
+        private fun movedOrSpawned(movedEvent: PlayerMovedEventDto, spawnedEvent: PlayerSpawnedEventDto?) {
             this.position.moved(
-                    movedEvent.getX(),
-                    movedEvent.getY(),
-                    movedEvent.getThrustAngle(),
-                    movedEvent.getVelocity(),
-                    movedEvent.getTimestamp());
-            this.angle = movedEvent.getAngle();
+                movedEvent.x,
+                movedEvent.y,
+                movedEvent.thrustAngle,
+                movedEvent.velocity,
+                movedEvent.timestamp
+            )
+            this.angle = movedEvent.angle
 
-            Event.Builder eventBuilder = Event.newBuilder();
+            val eventBuilder = Event.newBuilder()
             if (spawnedEvent != null) {
-                eventBuilder.setPlayerSpawned(spawnedEvent);
+                eventBuilder.setPlayerSpawned(spawnedEvent)
             } else {
-                eventBuilder.setPlayerMoved(movedEvent);
+                eventBuilder.setPlayerMoved(movedEvent)
             }
             GameEvents
-                    .getClientEvents()
-                    .dispatch(
-                            Dto.newBuilder()
-                                    .setEvent(eventBuilder)
-                                    .build()
-                    );
-
-        }
-
-        private void fireMoveDomainEvent(long eventTime) {
-            GameEvents.getDomainEvents().dispatch(
-                    DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
-                            this.id.getId(),
-                            Event.newBuilder()
-                                    .setPlayerMoved(
-                                            PlayerMovedEventDto.newBuilder()
-                                                    .setPlayerId(id.getGuid())
-                                                    .setX(position.getX())
-                                                    .setY(position.getY())
-                                                    .setAngle(angle)
-                                                    .setThrustAngle(position.getVelocity().getAngle())
-                                                    .setVelocity(position.getVelocity().getMagnitude())
-                                                    .setTimestamp(eventTime)
-                                                    .addAllReasons(lastMoveReasons)
-                                                    .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
-
-                                    ).build()));
-
-            lastMoveReasons.clear();
-        }
-
-        @Override
-        public void leave() {
-            GameEvents.getDomainEvents().dispatch(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name(), this.id.getId()));
-            GameEvents.getDomainEvents().dispatch(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name(), this.id.getId()));
-        }
-
-        @Override
-        public void left() {
-            scoreBoard.resetScore(this.id);
-            GameEvents.getClientEvents().dispatch(
+                .getClientEvents()
+                .dispatch(
                     Dto.newBuilder()
-                            .setEvent(Event.newBuilder()
-                                    .setPlayerLeft(PlayerLeftEventDto.newBuilder().setPlayerId(id.getGuid()))
-                            )
-                            .build());
-            GameMetrics.get().getPlayerLeft().increment(this.clientPlatform);
-            this.spawned = false;
+                        .setEvent(eventBuilder)
+                        .build()
+                )
         }
 
-        @Override
-        public boolean collision(PositionVector positionVector, float collisionRadius) {
+        private fun fireMoveDomainEvent(eventTime: Long) {
+            GameEvents.getDomainEvents().dispatch(
+                DomainEvent.create(
+                    GameTopic.PLAYER_ACTION_TOPIC.name,
+                    this.id.getId(),
+                    Event.newBuilder()
+                        .setPlayerMoved(
+                            PlayerMovedEventDto.newBuilder()
+                                .setPlayerId(id.getGuid())
+                                .setX(position.getX())
+                                .setY(position.getY())
+                                .setAngle(angle)
+                                .setThrustAngle(position.getVelocity().getAngle())
+                                .setVelocity(position.getVelocity().getMagnitude())
+                                .setTimestamp(eventTime)
+                                .addAllReasons(lastMoveReasons)
+                                .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
+
+                        ).build()
+                )
+            )
+
+            lastMoveReasons.clear()
+        }
+
+        override fun leave() {
+            GameEvents.getDomainEvents().dispatch(DomainEvent.delete(GameTopic.JOIN_GAME_TOPIC.name, this.id.getId()))
+            GameEvents.getDomainEvents()
+                .dispatch(DomainEvent.delete(GameTopic.PLAYER_ACTION_TOPIC.name, this.id.getId()))
+        }
+
+        override fun left() {
+            scoreBoard.resetScore(this.id)
+            GameEvents.getClientEvents().dispatch(
+                Dto.newBuilder()
+                    .setEvent(
+                        Event.newBuilder()
+                            .setPlayerLeft(PlayerLeftEventDto.newBuilder().setPlayerId(id.getGuid()))
+                    )
+                    .build()
+            )
+            GameMetrics.get().getPlayerLeft().increment(this.clientPlatform)
+            this.spawned = false
+        }
+
+        override fun collision(velocityVector: PositionVector, collisionRadius: Float): Boolean {
             if (!this.spawned) {
-                return false;
+                return false
             }
-            return positionVector.intersectedWith(this.position, collisionRadius);
+            return velocityVector.intersectedWith(this.position, collisionRadius)
         }
 
-        @Override
-        public void destroy(EntityId byPlayerId, long timestamp) {
+        override fun destroy(byPlayerId: EntityId, timestamp: Long) {
             if (spawned) {
-                hazardDestroy(byPlayerId, timestamp);
-                this.scoreBoard.updateScore(byPlayerId, 1);
+                hazardDestroy(byPlayerId, timestamp)
+                this.scoreBoard.updateScore(byPlayerId, 1)
             }
         }
 
-        @Override
-        public void hazardDestroy(EntityId hazardId, long timestamp) {
+        override fun hazardDestroy(hazardId: EntityId, timestamp: Long) {
             if (spawned) {
                 GameEvents.getDomainEvents().dispatch(
-                        DomainEvent.create(
-                                GameTopic.PLAYER_ACTION_TOPIC.name(),
-                                this.id.getId(),
-                                Event.newBuilder()
-                                        .setPlayerDestroyed(PlayerDestroyedEventDto.newBuilder()
-                                                .setPlayerId(this.id.getGuid())
-                                                .setDestroyedById(hazardId.getGuid())
-                                                .setDestroyedTimestamp(timestamp))
-                                        .build()
-                        )
-                );
+                    DomainEvent.create(
+                        GameTopic.PLAYER_ACTION_TOPIC.name,
+                        this.id.getId(),
+                        Event.newBuilder()
+                            .setPlayerDestroyed(
+                                PlayerDestroyedEventDto.newBuilder()
+                                    .setPlayerId(this.id.getGuid())
+                                    .setDestroyedById(hazardId.getGuid())
+                                    .setDestroyedTimestamp(timestamp)
+                            )
+                            .build()
+                    )
+                )
             }
         }
 
-        @Override
-        public void destroyed(PlayerDestroyedEventDto event) {
-            setSpawned(false);
-            this.scoreBoard.resetScore(this.id);
+        override fun destroyed(event: PlayerDestroyedEventDto) {
+            setSpawned(false)
+            this.scoreBoard.resetScore(this.id)
             GameEvents.getClientEvents().dispatch(
-                    Dto.newBuilder()
-                            .setEvent(Event.newBuilder().setPlayerDestroyed(event))
-                            .build()
-            );
-            GameMetrics.get().getPlayerDestroyed().increment(this.clientPlatform);
+                Dto.newBuilder()
+                    .setEvent(Event.newBuilder().setPlayerDestroyed(event))
+                    .build()
+            )
+            GameMetrics.get().getPlayerDestroyed().increment(this.clientPlatform)
         }
 
-        @Override
-        public void boltExhausted() {
-            this.liveBolts = Math.max(0, liveBolts - 1);
-            liveBoltsChanged();
-            GameMetrics.get().getBoltExhausted().increment(this.clientPlatform);
+        override fun boltExhausted() {
+            this.liveBolts = max(0, liveBolts - 1)
+            liveBoltsChanged()
+            GameMetrics.get().getBoltExhausted().increment(this.clientPlatform)
         }
 
-        private void liveBoltsChanged() {
+        private fun liveBoltsChanged() {
             if (players.isConnected(id)) {
-                BoltsAvailableCommandDto.Builder dto = BoltsAvailableCommandDto.newBuilder()
-                        .setAvailable(Math.max(0, Config.get().getMaxBolts() - this.liveBolts));
+                val dto = BoltsAvailableCommandDto.newBuilder()
+                    .setAvailable(max(0, Config.get().getMaxBolts() - this.liveBolts))
 
-                DirectedCommand.Builder builder = DirectedCommand.newBuilder()
-                        .setPlayerId(id.getGuid())
-                        .setBoltsAvailable(dto);
+                val builder = DirectedCommand.newBuilder()
+                    .setPlayerId(id.getGuid())
+                    .setBoltsAvailable(dto)
 
                 GameEvents.getClientEvents().dispatch(
-                        Dto.newBuilder()
-                                .setDirectedCommand(builder)
-                                .build()
-                );
+                    Dto.newBuilder()
+                        .setDirectedCommand(builder)
+                        .build()
+                )
             }
         }
 
-        @Override
-        public void spawn() {
+        override fun spawn() {
             if (!this.spawned) {
-                setSpawned(true);
-                long now = clock.getTime();
-                resetPosition(now);
+                setSpawned(true)
+                val now = clock.getTime()
+                resetPosition(now)
                 GameEvents.getDomainEvents().dispatch(
-                        DomainEvent.create(GameTopic.PLAYER_ACTION_TOPIC.name(),
-                                this.id.getId(),
-                                Event.newBuilder()
-                                        .setPlayerSpawned(PlayerSpawnedEventDto.newBuilder()
-                                                .setLocation(
-                                                        PlayerMovedEventDto.newBuilder()
-                                                                .setPlayerId(id.getGuid())
-                                                                .setX(position.getX())
-                                                                .setY(position.getY())
-                                                                .setAngle(angle)
-                                                                .setThrustAngle(position.getVelocity().getAngle())
-                                                                .setTimestamp(now)
-                                                                .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
-                                                )
-                                        )
-                                        .build()
-                        )
-                );
+                    DomainEvent.create(
+                        GameTopic.PLAYER_ACTION_TOPIC.name,
+                        this.id.getId(),
+                        Event.newBuilder()
+                            .setPlayerSpawned(
+                                PlayerSpawnedEventDto.newBuilder()
+                                    .setLocation(
+                                        PlayerMovedEventDto.newBuilder()
+                                            .setPlayerId(id.getGuid())
+                                            .setX(position.getX())
+                                            .setY(position.getY())
+                                            .setAngle(angle)
+                                            .setThrustAngle(position.getVelocity().getAngle())
+                                            .setTimestamp(now)
+                                            .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
+                                    )
+                            )
+                            .build()
+                    )
+                )
             }
         }
 
-        @Override
-        public void spawned(PlayerSpawnedEventDto event) {
-            if (event.getLocation().getTimestamp() > this.spawnedTimestamp) {
-                this.spawnedTimestamp = event.getLocation().getTimestamp();
-                setSpawned(true);
-                this.position.initialized(event.getLocation().getX(),
-                        event.getLocation().getY(),
-                        0L);
-                movedOrSpawned(event.getLocation(), event);
-                GameMetrics.get().getPlayerSpawned().increment(this.clientPlatform);
+        override fun spawned(event: PlayerSpawnedEventDto) {
+            val ts = event.location.timestamp
+            if (ts > this.spawnedTimestamp) {
+                this.spawnedTimestamp = ts
+                setSpawned(true)
+                this.position.initialized(
+                    event.location.x,
+                    event.location.y,
+                    0L
+                )
+                movedOrSpawned(event.location, event)
+                GameMetrics.get().getPlayerSpawned().increment(this.clientPlatform)
             }
         }
 
-        @Override
-        public void expungeIfStalled() {
-            if ((!spawned || !isJoined()) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get().getExpungeSinceLastSpawnTimeout()) {
-                leave();
-                GameMetrics.get().getPlayerStalled().increment(this.clientPlatform);
+        override fun expungeIfStalled() {
+            if ((!spawned || !this.isJoined) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get()
+                    .getExpungeSinceLastSpawnTimeout()
+            ) {
+                leave()
+                GameMetrics.get().getPlayerStalled().increment(this.clientPlatform)
             }
         }
 
-        @Override
-        public void fixedUpdate(long timestamp) {
-            float x = position.getX();
-            float y = position.getY();
-            this.position.update(timestamp);
-            boolean angleChanged = this.previousAngle != this.angle;
+        override fun fixedUpdate(timestamp: Long) {
+            val x = position.getX()
+            val y = position.getY()
+            this.position.update(timestamp)
+            val angleChanged = this.previousAngle != this.angle
             if (x != position.getX() || y != position.getY()) {
-                tackleBarrierHit();
-                fireMoveDomainEvent(timestamp);
+                tackleBarrierHit()
+                fireMoveDomainEvent(timestamp)
             } else if (angleChanged) {
-                fireMoveDomainEvent(timestamp);
+                fireMoveDomainEvent(timestamp)
             }
             if (angleChanged) {
-                this.previousAngle = this.angle;
+                this.previousAngle = this.angle
             }
-            this.playerPositionConfiguration.setDampenFactor(this.fixedInertialDampenFactor);
+            this.playerPositionConfiguration.setDampenFactor(this.fixedInertialDampenFactor)
         }
 
-        private void tackleBarrierHit() {
+        private fun tackleBarrierHit() {
             if (!position.noMovement()) {
-                for (Barrier barrier : barriers
-                        .search(position.getPreviousX(), position.getPreviousY(), position.getX(), position.getY(), SHIP_LENGTH_TIMES_10)) {
-                    Vector2 intersection = position.intersectedWith(barrier.getTo(), barrier.getFrom(), SHIP_HALF_LENGTH);
+                for (barrier in barriers
+                    .search(
+                        position.getPreviousX(),
+                        position.getPreviousY(),
+                        position.getX(),
+                        position.getY(),
+                        SHIP_LENGTH_TIMES_10
+                    )) {
+                    val intersection = position.intersectedWith(barrier.to, barrier.from, SHIP_HALF_LENGTH)
                     if (intersection != null) {
-                        position.reflect(intersection, barrier.getNormal(), SHIP_HALF_LENGTH, 0.5F);
+                        position.reflect(intersection, barrier.normal, SHIP_HALF_LENGTH, 0.5F)
                     }
                 }
             }
         }
 
-        private boolean isJoined() {
-            return this.name != null;
+        private val isJoined: Boolean
+            get() = this.name != null
+
+        override fun getX(): Float {
+            return this.position.getX()
         }
 
-        @Override
-        public float getX() {
-            return this.position.getX();
+        override fun getY(): Float {
+            return this.position.getY()
         }
 
-        @Override
-        public float getY() {
-            return this.position.getY();
+        override fun getClientPlatform(): ClientPlatforms {
+            return clientPlatform
         }
 
-        @Override
-        public ClientPlatforms getClientPlatform() {
-            return clientPlatform;
+        override fun supportsInertialDampener(): Boolean {
+            return true
         }
 
-        @Override
-        public boolean supportsInertialDampener() {
-            return true;
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other == null || javaClass != other.javaClass) return false
+            val that = other as Implementation
+            return id == that.id
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Implementation that = (Implementation) o;
-            return Objects.equals(id, that.id);
+        override fun hashCode(): Int {
+            return Objects.hash(id)
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
+        class PlayerPositionConfiguration : PositionVector.Configuration {
+            private var dampenFactor = 1F
 
-        static class PlayerPositionConfiguration implements PositionVector.Configuration {
-
-            private float dampenFactor = 1F;
-
-            public void setDampenFactor(float dampenFactor) {
-                this.dampenFactor = dampenFactor;
+            fun setDampenFactor(dampenFactor: Float) {
+                this.dampenFactor = dampenFactor
             }
 
-            public float getDampenFactor() {
-                return dampenFactor;
+            fun getDampenFactor(): Float {
+                return dampenFactor
             }
 
-            @Override
-            public AtBoundsOptions atBounds() {
-                return AtBoundsOptions.BOUNCE;
+            override fun atBounds(): AtBoundsOptions {
+                return AtBoundsOptions.BOUNCE
             }
 
-            @Override
-            public OptionalDouble maxMagnitude() {
-                return OptionalDouble.of(Config.get().getPlayerMaxMove());
+            override fun maxMagnitude(): OptionalDouble {
+                return OptionalDouble.of(Config.get().getPlayerMaxMove().toDouble())
             }
 
-            @Override
-            public float dampenMagnitudeCoefficient() {
-                return Config.get().getInertiaDampenCoefficient() * dampenFactor;
+            override fun dampenMagnitudeCoefficient(): Float {
+                return Config.get().getInertiaDampenCoefficient() * dampenFactor
             }
+        }
+
+        companion object {
+            private const val SHIP_LENGTH = 0.003F
+
+            private const val SHIP_HALF_LENGTH: Float = SHIP_LENGTH / 2F
+
+            private const val SHIP_LENGTH_TIMES_10: Float = SHIP_LENGTH * 10F
+
+            private val RNG = Random()
+        }
+    }
+
+    companion object {
+        /**
+         * Creates an instanceof a player
+         *
+         * @param id         the player's id
+         * @param players    the collection of all players
+         * @param bolts      the collection of all bolts
+         * @param barriers   the collection of all barriers
+         * @param clock      the game clock.
+         * @param scoreBoard scoreboard
+         * @return an new instance of player
+         */
+        @JvmStatic
+        fun create(
+            id: EntityId,
+            players: Players,
+            bolts: Bolts,
+            barriers: Barriers,
+            clock: Clock,
+            scoreBoard: ScoreBoard
+        ): Player {
+            return Implementation(id, players, bolts, barriers, clock, scoreBoard)
         }
     }
 }

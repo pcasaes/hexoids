@@ -1,34 +1,23 @@
-package me.pcasaes.hexoids.infrastructure.health;
+package me.pcasaes.hexoids.infrastructure.health
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Liveness;
-
-import java.util.List;
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric
+import org.eclipse.microprofile.health.HealthCheck
+import org.eclipse.microprofile.health.HealthCheckResponse
+import org.eclipse.microprofile.health.Liveness
 
 @Liveness
 @ApplicationScoped
-public class StalledHealthCheck implements HealthCheck {
-
-    private final List<QueueMetric> queueMetricList;
-
-    @Inject
-    public StalledHealthCheck(List<QueueMetric> queueMetricList) {
-        this.queueMetricList = queueMetricList;
-    }
-
-    @Override
-    public HealthCheckResponse call() {
+class StalledHealthCheck @Inject constructor(private val queueMetricList: List<QueueMetric>) : HealthCheck {
+    override fun call(): HealthCheckResponse {
         return queueMetricList
-                .stream()
-                .sorted(QueueMetric::compare)
-                .filter(QueueMetric::isStalled)
-                .map(m -> "Stalled. Queue '" + m.getName() + "' was checked  " + m.getLastCheckTimeAgoNano() + " nanosecond ago.")
-                .map(HealthCheckResponse::down)
-                .findFirst()
-                .orElse(HealthCheckResponse.up("Queue is up to date"));
+            .stream()
+            .sorted { a, b -> QueueMetric.Companion.compare(a, b) }
+            .filter { obj -> obj.isStalled() }
+            .map { m -> "Stalled. Queue '${m.getName()}' was checked  ${m.getLastCheckTimeAgoNano()} nanosecond ago." }
+            .map { name -> HealthCheckResponse.down(name) }
+            .findFirst()
+            .orElse(HealthCheckResponse.up("Queue is up to date"))
     }
 }

@@ -1,112 +1,91 @@
-package me.pcasaes.hexoids.entrypoints.web;
+package me.pcasaes.hexoids.entrypoints.web
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.service.GameTimeService;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import pcasaes.hexoids.proto.DirectedCommand;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.Events;
-
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
+import me.pcasaes.hexoids.core.domain.service.GameTimeService
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.proto.Events
 
 /**
  * Used to broadcast events to the game clients
  */
 @ApplicationScoped
-public class ClientBroadcaster {
+class ClientBroadcaster @Inject constructor(
+    private val clientSessions: ClientSessions,
+    private val gameTime: GameTimeService,
+    @param:ConfigProperty(
+        name = "hexoids.config.service.client-broadcast.enabled",
+        defaultValue = "true"
+    ) private val enabled: Boolean,
+    @param:ConfigProperty(
+        name = "hexoids.config.service.client-broadcast.batch.size",
+        defaultValue = "64"
+    ) private val batchSize: Int,
+    @param:ConfigProperty(
+        name = "hexoids.config.service.client-broadcast.batch.timeout",
+        defaultValue = "20"
+    ) private val batchTimeout: Int
+) {
+    private val dtoBuilder: Dto.Builder = Dto.newBuilder()
+    private val eventsBuilder: Events.Builder = Events.newBuilder()
 
-    private static final String NAME = "client-broadcast";
+    private var flushTimestamp: Long = 0
 
-    private final ClientSessions clientSessions;
-    private final boolean enabled;
-    private final int batchSize;
-    private final int batchTimeout;
-    private final Dto.Builder dtoBuilder;
-    private final Events.Builder eventsBuilder;
-    private final GameTimeService gameTime;
-
-    private long flushTimestamp;
-
-
-    @Inject
-    public ClientBroadcaster(ClientSessions clientSessions,
-                             GameTimeService gameTime,
-                             @ConfigProperty(
-                                     name = "hexoids.config.service.client-broadcast.enabled",
-                                     defaultValue = "true"
-                             ) boolean enabled,
-                             @ConfigProperty(
-                                     name = "hexoids.config.service.client-broadcast.batch.size",
-                                     defaultValue = "64"
-                             ) int batchSize,
-                             @ConfigProperty(
-                                     name = "hexoids.config.service.client-broadcast.batch.timeout",
-                                     defaultValue = "20"
-                             ) int batchTimeout) {
-        this.clientSessions = clientSessions;
-        this.gameTime = gameTime;
-        this.enabled = enabled;
-        this.batchSize = batchSize;
-        this.batchTimeout = batchTimeout;
-        if (enabled) {
-            this.eventsBuilder = Events.newBuilder();
-            this.dtoBuilder = Dto.newBuilder();
-        } else {
-            this.eventsBuilder = null;
-            this.dtoBuilder = null;
-        }
-    }
-
-    public void accept(Dto dto) {
+    fun accept(dto: Dto?) {
         if (dto != null) {
-            if (dto.hasEvent()) {
-                eventsBuilder
-                        .addEvents(dto.getEvent());
-            } else if (dto.hasDirectedCommand()) {
-                DirectedCommand command = dto.getDirectedCommand();
-                this.clientSessions.direct(EntityId.of(command.getPlayerId()), dto.toByteArray());
-            } else if (dto.hasFlush() && canFlush()) {
-                flushEvents(this.gameTime.getTime());
-                return;
+            when {
+                dto.hasEvent() -> {
+                    eventsBuilder
+                        .addEvents(dto.getEvent())
+                }
+
+                dto.hasDirectedCommand() -> {
+                    val command = dto.getDirectedCommand()
+                    this.clientSessions.direct(of(command.playerId), dto.toByteArray())
+                }
+
+                dto.hasFlush() && canFlush() -> {
+                    flushEvents(this.gameTime.getTime())
+                    return
+                }
             }
         }
-        long now = this.gameTime.getTime();
-        if (eventsBuilder.getEventsCount() > this.batchSize ||
-                now > this.flushTimestamp) {
-            flushEvents(now);
+        val now = this.gameTime.getTime()
+        if (eventsBuilder.eventsCount > this.batchSize ||
+            now > this.flushTimestamp
+        ) {
+            flushEvents(now)
         }
     }
 
-    private void flushEvents(long now) {
-        if (eventsBuilder.getEventsCount() > 0) {
-            this.clientSessions.broadcast(dtoBuilder
+    private fun flushEvents(now: Long) {
+        if (eventsBuilder.eventsCount > 0) {
+            this.clientSessions.broadcast(
+                dtoBuilder
                     .setEvents(
-                            eventsBuilder
+                        eventsBuilder
                     )
                     .build()
-                    .toByteArray());
+                    .toByteArray()
+            )
 
-            dtoBuilder.clearEvents();
-            eventsBuilder.clear();
+            dtoBuilder.clearEvents()
+            eventsBuilder.clear()
         }
-        this.flushTimestamp = now + this.batchTimeout;
+        this.flushTimestamp = now + this.batchTimeout
     }
 
-    public String getName() {
-        return NAME;
+    fun isEnabled(): Boolean {
+        return enabled
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    private fun canFlush(): Boolean {
+        return this.gameTime.getTime() > this.flushTimestamp
     }
 
-    private boolean canFlush() {
-        return this.gameTime.getTime() > this.flushTimestamp;
+    fun getBatchTimeout(): Int {
+        return batchTimeout
     }
-
-    public int getBatchTimeout() {
-        return batchTimeout;
-    }
-
 }

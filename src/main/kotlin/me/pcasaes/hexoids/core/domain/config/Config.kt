@@ -1,282 +1,281 @@
-package me.pcasaes.hexoids.core.domain.config;
+package me.pcasaes.hexoids.core.domain.config
 
-public class Config {
+class Config {
 
-    private long updateFrequencyInMillis;
-    private float updateFrequencyInMillisWithAdded20Percent;
-    private float updateFrequencyInMillisWithSubstract10Percent;
-    private float inertiaDampenCoefficient;
+    companion object {
+
+        @JvmStatic
+        fun get(): Config {
+            return ConfigHolder.INSTANCE
+        }
+    }
+
+    private var updateFrequencyInMillis: Long = 0
+    private var updateFrequencyInMillisWithAdded20Percent = 0F
+    private var updateFrequencyInMillisWithSubstract10Percent = 0F
+    private var inertiaDampenCoefficient = 0F
 
     /**
      * The smallest value for a valid magnitude. Should be 1/boundSizeInPixels
      */
-    private float minMove;
-    private int playerNameLength;
-    private float playerMaxMove;
-    private float playerMaxAngle;
-    private String playerResetPosition;
-    private int maxBolts;
-    private int boltMaxDuration;
-    private float boltSpeed;
-    private float boltCollisionRadius;
-    private boolean boltInertiaEnabled;
-    private float boltInertiaRejectionScale;
-    private float boltInertiaProjectionScale;
-    private float boltInertiaNegativeProjectionScale;
-    private long expungeSinceLastSpawnTimeout;
+    private var minMove = 0F
+    private var playerNameLength = 0
+    private var playerMaxMove = 0F
+    private var playerMaxAngle = 0F
+    private var playerResetPosition: String = ""
+    private var maxBolts = 0
+    private var boltMaxDuration = 0
+    private var boltSpeed = 0F
+    private var boltCollisionRadius = 0F
+    var isBoltInertiaEnabled: Boolean = false
+        private set
+    private var boltInertiaRejectionScale = 0F
+    private var boltInertiaProjectionScale = 0F
+    private var boltInertiaNegativeProjectionScale = 0F
+    private var expungeSinceLastSpawnTimeout: Long = 0
 
-    private float boltCollisionIndexSearchDistance;
+    private var boltCollisionIndexSearchDistance = 0F
 
-    private final PlayerDestroyedShockwave playerDestroyedShockwave = new PlayerDestroyedShockwave();
+    private val playerDestroyedShockwave = PlayerDestroyedShockwave()
 
-    private final Blackhole blackhole = new Blackhole();
+    private val blackhole = Blackhole()
 
-    private static class ConfigHolder {
-        static final Config INSTANCE = new Config();
+    private object ConfigHolder {
+        val INSTANCE: Config = Config()
     }
 
-    public static Config get() {
-        return ConfigHolder.INSTANCE;
+    fun getUpdateFrequencyInMillis(): Long {
+        return updateFrequencyInMillis
     }
 
-    public long getUpdateFrequencyInMillis() {
-        return updateFrequencyInMillis;
+    fun setUpdateFrequencyInMillis(updateFrequencyInMillis: Long) {
+        this.updateFrequencyInMillis = updateFrequencyInMillis
+        this.updateFrequencyInMillisWithAdded20Percent = updateFrequencyInMillis * 1.2f
+        this.updateFrequencyInMillisWithSubstract10Percent = updateFrequencyInMillis * 0.9f
     }
 
-    public void setUpdateFrequencyInMillis(long updateFrequencyInMillis) {
-        this.updateFrequencyInMillis = updateFrequencyInMillis;
-        this.updateFrequencyInMillisWithAdded20Percent = updateFrequencyInMillis * 1.2f;
-        this.updateFrequencyInMillisWithSubstract10Percent = updateFrequencyInMillis * 0.9f;
+    fun getUpdateFrequencyInMillisWithAdded20Percent(): Float {
+        return updateFrequencyInMillisWithAdded20Percent
     }
 
-    public float getUpdateFrequencyInMillisWithAdded20Percent() {
-        return updateFrequencyInMillisWithAdded20Percent;
+    fun getUpdateFrequencyInMillisWithSubstract10Percent(): Float {
+        return updateFrequencyInMillisWithSubstract10Percent
     }
 
-    public float getUpdateFrequencyInMillisWithSubstract10Percent() {
-        return updateFrequencyInMillisWithSubstract10Percent;
+    fun getInertiaDampenCoefficient(): Float {
+        return inertiaDampenCoefficient
     }
 
-    public float getInertiaDampenCoefficient() {
-        return inertiaDampenCoefficient;
+    fun setInertiaDampenCoefficient(inertiaDampenCoefficient: Float) {
+        this.inertiaDampenCoefficient = inertiaDampenCoefficient
     }
 
-    public void setInertiaDampenCoefficient(float inertiaDampenCoefficient) {
-        this.inertiaDampenCoefficient = inertiaDampenCoefficient;
+    fun getMaxBolts(): Int {
+        return maxBolts
     }
 
-    public int getMaxBolts() {
-        return maxBolts;
+    fun getMinMove(): Float {
+        return minMove
     }
 
-    public float getMinMove() {
-        return minMove;
+    fun setMinMove(minMove: Float) {
+        this.minMove = minMove
     }
 
-    public void setMinMove(float minMove) {
-        this.minMove = minMove;
+    fun getPlayerMaxMove(): Float {
+        return playerMaxMove
     }
 
-    public float getPlayerMaxMove() {
-        return playerMaxMove;
+    fun getPlayerMaxAngle(): Float {
+        return playerMaxAngle
     }
 
-    public float getPlayerMaxAngle() {
-        return playerMaxAngle;
+    fun getPlayerNameLength(): Int {
+        return playerNameLength
     }
 
-    public int getPlayerNameLength() {
-        return playerNameLength;
+    fun setPlayerNameLength(playerNameLength: Int) {
+        this.playerNameLength = playerNameLength
     }
 
-    public void setPlayerNameLength(int playerNameLength) {
-        this.playerNameLength = playerNameLength;
+    fun setPlayerMaxAngleDivisor(playerMaxAngleDivisor: Float) {
+        this.playerMaxAngle = Math.PI.toFloat() / playerMaxAngleDivisor
     }
 
-    public void setPlayerMaxAngleDivisor(float playerMaxAngleDivisor) {
-        this.playerMaxAngle = (float) Math.PI / playerMaxAngleDivisor;
+    fun setPlayerMaxMove(playerMaxMove: Float) {
+        this.playerMaxMove = playerMaxMove
     }
 
-    public void setPlayerMaxMove(float playerMaxMove) {
-        this.playerMaxMove = playerMaxMove;
+    fun getPlayerResetPosition(): String {
+        return playerResetPosition
     }
 
-    public String getPlayerResetPosition() {
-        return playerResetPosition;
+    fun setPlayerResetPosition(playerResetPosition: String) {
+        this.playerResetPosition = playerResetPosition
     }
 
-    public void setPlayerResetPosition(String playerResetPosition) {
-        this.playerResetPosition = playerResetPosition;
+    fun setMaxBolts(maxBolts: Int) {
+        this.maxBolts = maxBolts
     }
 
-    public void setMaxBolts(int maxBolts) {
-        this.maxBolts = maxBolts;
+    fun getBoltMaxDuration(): Int {
+        return boltMaxDuration
     }
 
-    public int getBoltMaxDuration() {
-        return boltMaxDuration;
+    fun setBoltMaxDuration(boltMaxDuration: Int) {
+        this.boltMaxDuration = boltMaxDuration
     }
 
-    public void setBoltMaxDuration(int boltMaxDuration) {
-        this.boltMaxDuration = boltMaxDuration;
+    fun getBoltSpeed(): Float {
+        return boltSpeed
     }
 
-    public float getBoltSpeed() {
-        return boltSpeed;
+    fun setBoltSpeed(boltSpeed: Float) {
+        this.boltSpeed = boltSpeed
     }
 
-    public void setBoltSpeed(float boltSpeed) {
-        this.boltSpeed = boltSpeed;
+    fun getBoltCollisionRadius(): Float {
+        return boltCollisionRadius
     }
 
-    public float getBoltCollisionRadius() {
-        return boltCollisionRadius;
+    fun setBoltCollisionRadius(boltCollisionRadius: Float) {
+        this.boltCollisionIndexSearchDistance = 100F * boltCollisionRadius
+        this.boltCollisionRadius = boltCollisionRadius
     }
 
-    public void setBoltCollisionRadius(float boltCollisionRadius) {
-        this.boltCollisionIndexSearchDistance = 100f * boltCollisionRadius;
-        this.boltCollisionRadius = boltCollisionRadius;
+    fun setBoltInertiaEnabled(boltInertiaEnabled: Boolean) {
+        this.isBoltInertiaEnabled = boltInertiaEnabled
     }
 
-    public boolean isBoltInertiaEnabled() {
-        return boltInertiaEnabled;
+    fun getBoltInertiaRejectionScale(): Float {
+        return boltInertiaRejectionScale
     }
 
-    public void setBoltInertiaEnabled(boolean boltInertiaEnabled) {
-        this.boltInertiaEnabled = boltInertiaEnabled;
+    fun setBoltInertiaRejectionScale(boltInertiaRejectionScale: Float) {
+        this.boltInertiaRejectionScale = boltInertiaRejectionScale
     }
 
-    public float getBoltInertiaRejectionScale() {
-        return boltInertiaRejectionScale;
+    fun getBoltInertiaProjectionScale(): Float {
+        return boltInertiaProjectionScale
     }
 
-    public void setBoltInertiaRejectionScale(float boltInertiaRejectionScale) {
-        this.boltInertiaRejectionScale = boltInertiaRejectionScale;
+    fun getBoltInertiaNegativeProjectionScale(): Float {
+        return boltInertiaNegativeProjectionScale
     }
 
-    public float getBoltInertiaProjectionScale() {
-        return boltInertiaProjectionScale;
+    fun setBoltInertiaNegativeProjectionScale(boltInertiaNegativeProjectionScale: Float) {
+        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale
     }
 
-    public float getBoltInertiaNegativeProjectionScale() {
-        return boltInertiaNegativeProjectionScale;
+    fun setBoltInertiaProjectionScale(boltInertiaProjectionScale: Float) {
+        this.boltInertiaProjectionScale = boltInertiaProjectionScale
     }
 
-    public void setBoltInertiaNegativeProjectionScale(float boltInertiaNegativeProjectionScale) {
-        this.boltInertiaNegativeProjectionScale = boltInertiaNegativeProjectionScale;
+    fun getExpungeSinceLastSpawnTimeout(): Long {
+        return expungeSinceLastSpawnTimeout
     }
 
-    public void setBoltInertiaProjectionScale(float boltInertiaProjectionScale) {
-        this.boltInertiaProjectionScale = boltInertiaProjectionScale;
+    fun setExpungeSinceLastSpawnTimeout(expungeSinceLastSpawnTimeout: Long) {
+        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout
     }
 
-    public long getExpungeSinceLastSpawnTimeout() {
-        return expungeSinceLastSpawnTimeout;
+    fun getBoltCollisionIndexSearchDistance(): Float {
+        return boltCollisionIndexSearchDistance
     }
 
-    public void setExpungeSinceLastSpawnTimeout(long expungeSinceLastSpawnTimeout) {
-        this.expungeSinceLastSpawnTimeout = expungeSinceLastSpawnTimeout;
+    fun getPlayerDestroyedShockwave(): PlayerDestroyedShockwave {
+        return playerDestroyedShockwave
     }
 
-    public float getBoltCollisionIndexSearchDistance() {
-        return boltCollisionIndexSearchDistance;
+    fun getBlackhole(): Blackhole {
+        return blackhole
     }
 
-    public PlayerDestroyedShockwave getPlayerDestroyedShockwave() {
-        return playerDestroyedShockwave;
-    }
+    class PlayerDestroyedShockwave internal constructor() {
+        private var distance = 0F
+        private var duration: Long = 0
+        private var impulse = 0F
 
-    public Blackhole getBlackhole() {
-        return blackhole;
-    }
-
-    public static class PlayerDestroyedShockwave {
-        private float distance;
-        private long duration;
-        private float impulse;
-
-        private PlayerDestroyedShockwave() {
+        fun getDistance(): Float {
+            return distance
         }
 
-        public float getDistance() {
-            return distance;
+        fun setDistance(distance: Float) {
+            this.distance = distance
         }
 
-        public void setDistance(float distance) {
-            this.distance = distance;
+        fun getDuration(): Long {
+            return duration
         }
 
-        public long getDuration() {
-            return duration;
+        fun setDuration(duration: Long) {
+            this.duration = duration
         }
 
-        public void setDuration(long duration) {
-            this.duration = duration;
+        fun getImpulse(): Float {
+            return impulse
         }
 
-        public float getImpulse() {
-            return impulse;
-        }
-
-        public void setImpulse(float impulse) {
-            this.impulse = impulse;
+        fun setImpulse(impulse: Float) {
+            this.impulse = impulse
         }
     }
 
-    public static class Blackhole {
-        private float eventHorizonRadius;
-        private float gravityRadius;
-        private float gravityImpulse;
-        private float dampenFactor;
-        private int genesisProbabilityFactor;
-        private float teleportProbability;
+    class Blackhole {
+        private var eventHorizonRadius = 0F
+        private var gravityRadius = 0F
+        private var gravityImpulse = 0F
+        private var dampenFactor = 0F
+        private var genesisProbabilityFactor = 0
+        private var teleportProbability = 0F
 
-        public float getEventHorizonRadius() {
-            return eventHorizonRadius;
+        fun getEventHorizonRadius(): Float {
+            return eventHorizonRadius
         }
 
-        public void setEventHorizonRadius(float eventHorizonRadius) {
-            this.eventHorizonRadius = eventHorizonRadius;
+        fun setEventHorizonRadius(eventHorizonRadius: Float) {
+            this.eventHorizonRadius = eventHorizonRadius
         }
 
-        public float getGravityRadius() {
-            return gravityRadius;
+        fun getGravityRadius(): Float {
+            return gravityRadius
         }
 
-        public void setGravityRadius(float gravityRadius) {
-            this.gravityRadius = gravityRadius;
+        fun setGravityRadius(gravityRadius: Float) {
+            this.gravityRadius = gravityRadius
         }
 
-        public float getGravityImpulse() {
-            return gravityImpulse;
+        fun getGravityImpulse(): Float {
+            return gravityImpulse
         }
 
-        public void setGravityImpulse(float gravityImpulse) {
-            this.gravityImpulse = gravityImpulse;
+        fun setGravityImpulse(gravityImpulse: Float) {
+            this.gravityImpulse = gravityImpulse
         }
 
-        public float getDampenFactor() {
-            return dampenFactor;
+        fun getDampenFactor(): Float {
+            return dampenFactor
         }
 
-        public void setDampenFactor(float dampenFactor) {
-            this.dampenFactor = dampenFactor;
+        fun setDampenFactor(dampenFactor: Float) {
+            this.dampenFactor = dampenFactor
         }
 
-        public int getGenesisProbabilityFactor() {
-            return genesisProbabilityFactor;
+        fun getGenesisProbabilityFactor(): Int {
+            return genesisProbabilityFactor
         }
 
-        public void setGenesisProbabilityFactor(int genesisProbabilityFactor) {
-            this.genesisProbabilityFactor = genesisProbabilityFactor;
+        fun setGenesisProbabilityFactor(genesisProbabilityFactor: Int) {
+            this.genesisProbabilityFactor = genesisProbabilityFactor
         }
 
-        public float getTeleportProbability() {
-            return teleportProbability;
+        fun getTeleportProbability(): Float {
+            return teleportProbability
         }
 
-        public void setTeleportProbability(float teleportProbability) {
-            this.teleportProbability = teleportProbability;
+        fun setTeleportProbability(teleportProbability: Float) {
+            this.teleportProbability = teleportProbability
         }
     }
+
 }

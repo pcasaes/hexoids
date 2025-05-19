@@ -1,68 +1,67 @@
-package me.pcasaes.hexoids.core.domain.service;
+package me.pcasaes.hexoids.core.domain.service
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.model.Game;
-
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import me.pcasaes.hexoids.core.domain.config.Config
+import me.pcasaes.hexoids.core.domain.model.Game
+import java.util.Optional
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * Used to add events into the game loop.
  */
-public class GameLoopService {
+class GameLoopService private constructor() {
+    private val fixedUpdateRunnable: Optional<Runnable> = Optional.of(Runnable { this.fixedUpdate() })
 
-    private static final GameLoopService INSTANCE = new GameLoopService();
 
-    public static GameLoopService getInstance() {
-        return INSTANCE;
+    private var nextFixedUpdateTime: Long
+
+    private fun gethGameTime(): Long {
+        return Game.get().getClock().getTime()
     }
 
-    private static final String NAME = "game-loop";
-    private static final Logger LOGGER = Logger.getLogger(GameLoopService.class.getName());
-
-    private final Optional<Runnable> fixedUpdateRunnable = Optional.of(this::fixedUpdate);
-
-
-    private long nextFixedUpdateTime;
-
-    private long getGameTime() {
-        return Game.get().getClock().getTime();
+    init {
+        this.nextFixedUpdateTime = this.gethGameTime()
     }
 
-    private GameLoopService() {
-        this.nextFixedUpdateTime = this.getGameTime();
-    }
-
-    private void fixedUpdate() {
-        long timestamp = this.getGameTime();
+    private fun fixedUpdate() {
+        val timestamp = this.gethGameTime()
         if (timestamp > this.nextFixedUpdateTime) {
             Game.get()
-                    .fixedUpdate(timestamp);
+                .fixedUpdate(timestamp)
 
-            this.nextFixedUpdateTime = timestamp + Config.get().getUpdateFrequencyInMillis();
+            this.nextFixedUpdateTime = timestamp + Config.get().getUpdateFrequencyInMillis()
         }
     }
 
-    public void accept(Runnable runnable) {
+    fun accept(runnable: Runnable) {
         try {
-            runnable.run();
-        } catch (RuntimeException ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+            runnable.run()
+        } catch (ex: RuntimeException) {
+            LOGGER.log(Level.SEVERE, ex.message, ex)
         }
-        fixedUpdate();
+        fixedUpdate()
     }
 
-    public String getName() {
-        return NAME;
+    fun getName(): String {
+        return NAME
     }
 
-    public Optional<Runnable> getFixedUpdateRunnable() {
-        long timestamp = this.getGameTime();
+    fun getFixedUpdateRunnable(): Optional<Runnable> {
+        val timestamp = this.gethGameTime()
         if (timestamp > nextFixedUpdateTime) {
-            return fixedUpdateRunnable;
+            return fixedUpdateRunnable
         }
-        return Optional.empty();
+        return Optional.empty()
     }
 
+    companion object {
+        private val INSTANCE = GameLoopService()
+
+        fun getInstance(): GameLoopService {
+            return INSTANCE
+        }
+
+        private const val NAME = "game-loop"
+        private val LOGGER: Logger = Logger.getLogger(GameLoopService::class.java.getName())
+    }
 }

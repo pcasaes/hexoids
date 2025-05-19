@@ -1,72 +1,46 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
-import me.pcasaes.hexoids.core.domain.model.physics.Shockwave;
-import pcasaes.hexoids.proto.BoltExhaustedEventDto;
-import pcasaes.hexoids.proto.BoltFiredEventDto;
-import pcasaes.hexoids.proto.BoltsAvailableCommandDto;
-import pcasaes.hexoids.proto.CurrentViewCommandDto;
-import pcasaes.hexoids.proto.DirectedCommand;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.PlayerDestroyedEventDto;
-import pcasaes.hexoids.proto.PlayerJoinedEventDto;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
+import me.pcasaes.hexoids.core.domain.model.physics.Shockwave.Companion.shipExploded
+import pcasaes.hexoids.proto.BoltsAvailableCommandDto
+import pcasaes.hexoids.proto.CurrentViewCommandDto
+import pcasaes.hexoids.proto.DirectedCommand
+import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.proto.PlayerDestroyedEventDto
+import pcasaes.hexoids.proto.PlayerJoinedEventDto
+import java.util.Optional
+import java.util.UUID
+import java.util.function.Consumer
+import java.util.stream.Collectors
+import java.util.stream.Stream
+import java.util.stream.StreamSupport
 
 /**
  * The collection of Players.
  */
-public class Players implements Iterable<Player> {
-
-    static Players create(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueueEnqueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
-        return new Players(bolts, clock, scoreBoard, barriers, physicsQueue, spatialIndexFactory);
-    }
-
+class Players private constructor(
+    private val bolts: Bolts,
+    private val clock: Clock,
+    private val scoreBoard: ScoreBoard,
+    private val barriers: Barriers,
+    private val physicsQueue: PhysicsQueueEnqueue,
+    private val spatialIndexFactory: PlayerSpatialIndexFactory
+) : Iterable<Player> {
     /**
      * All players are maintained in this map
      */
-    private final Map<EntityId, Player> playerMap = new HashMap<>(5000, 0.5f);
+    private val playerMap = HashMap<EntityId, Player>(5000, 0.5F)
 
     /**
      * Only players connected to this node are maintained in this set
      */
-    private final Set<EntityId> playerServerUpdateSet = new HashSet<>(5000, 0.5f);
+    private val playerServerUpdateSet = HashSet<EntityId>(5000, 0.5F)
 
-    private final Bolts bolts;
-
-    private final Clock clock;
-
-    private final ScoreBoard scoreBoard;
-
-    private final Barriers barriers;
-
-    private final PhysicsQueueEnqueue physicsQueue;
-
-    private final PlayerSpatialIndexFactory spatialIndexFactory;
-
-    private final Map<EntityId, Consumer<CurrentViewCommandDto.Builder>> registeredCurrentViewModifiers = new HashMap<>();
-
-    private Players(Bolts bolts, Clock clock, ScoreBoard scoreBoard, Barriers barriers, PhysicsQueueEnqueue physicsQueue, PlayerSpatialIndexFactory spatialIndexFactory) {
-        this.bolts = bolts;
-        this.clock = clock;
-        this.scoreBoard = scoreBoard;
-        this.physicsQueue = physicsQueue;
-        this.barriers = barriers;
-        this.spatialIndexFactory = spatialIndexFactory;
-    }
+    private val registeredCurrentViewModifiers = HashMap<EntityId, Consumer<CurrentViewCommandDto.Builder>>()
 
     /**
      * If the player hasn't been created will do so and return the player
@@ -74,11 +48,11 @@ public class Players implements Iterable<Player> {
      * @param id player's id.
      * @return If created returns the player
      */
-    public Optional<Player> createPlayer(EntityId id) {
+    fun createPlayer(id: EntityId): Optional<Player> {
         if (playerMap.containsKey(id)) {
-            return Optional.empty();
+            return Optional.empty()
         }
-        return Optional.of(createOrGet(id));
+        return Optional.of(createOrGet(id))
     }
 
     /**
@@ -87,36 +61,37 @@ public class Players implements Iterable<Player> {
      * @param id the player's id.
      * @return the player
      */
-    public Player createOrGet(EntityId id) {
-        return playerMap.computeIfAbsent(id, this::create);
+    fun createOrGet(id: EntityId): Player {
+        return playerMap.computeIfAbsent(id) { id -> this.create(id) }
     }
 
     /**
      * Returns a specific player if they exist.
-     * <p>
+     *
+     *
      *
      * @param id player's identifier
      * @return Returns the player if they exist
      */
-    public Optional<Player> get(EntityId id) {
-        return Optional.ofNullable(playerMap.get(id));
+    fun get(id: EntityId): Optional<Player> {
+        return Optional.ofNullable(playerMap[id])
     }
 
-    private Optional<Player> get(UUID id) {
-        return get(EntityId.of(id));
+    private fun get(id: UUID): Optional<Player> {
+        return get(of(id))
     }
 
-    private Player create(EntityId id) {
-        requestCurrentView(id);
-        return Player.create(id, this, this.bolts, this.barriers, this.clock, this.scoreBoard);
+    private fun create(id: EntityId): Player {
+        requestCurrentView(id)
+        return Player.create(id, this, this.bolts, this.barriers, this.clock, this.scoreBoard)
     }
 
-    public void registerCurrentViewModifier(EntityId modifierId, Consumer<CurrentViewCommandDto.Builder> builderConsumer) {
-        registeredCurrentViewModifiers.put(modifierId, builderConsumer);
+    fun registerCurrentViewModifier(modifierId: EntityId, builderConsumer: Consumer<CurrentViewCommandDto.Builder>) {
+        registeredCurrentViewModifiers.put(modifierId, builderConsumer)
     }
 
-    public void unregisterCurrentViewModifier(EntityId modifierId) {
-        registeredCurrentViewModifiers.remove(modifierId);
+    fun unregisterCurrentViewModifier(modifierId: EntityId) {
+        registeredCurrentViewModifiers.remove(modifierId)
     }
 
     /**
@@ -124,35 +99,36 @@ public class Players implements Iterable<Player> {
      *
      * @param requesterId player to have the current view sent to.
      */
-    public void requestCurrentView(EntityId requesterId) {
-        CurrentViewCommandDto.Builder currentViewBuilder = CurrentViewCommandDto.newBuilder()
-                .addAllBarriers(StreamSupport.stream(barriers.spliterator(), false)
-                        .map(Barrier::toDto)
-                        .collect(Collectors.toList())
-                )
-                .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.get().getMaxBolts()));
+    fun requestCurrentView(requesterId: EntityId) {
+        val currentViewBuilder = CurrentViewCommandDto.newBuilder()
+            .addAllBarriers(
+                StreamSupport.stream(barriers.spliterator(), false)
+                    .map { obj -> obj.toDto() }
+                    .collect(Collectors.toList())
+            )
+            .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(get().getMaxBolts()))
 
         registeredCurrentViewModifiers
-                .values()
-                .forEach(c -> c.accept(currentViewBuilder));
+            .values
+            .forEach { c -> c.accept(currentViewBuilder) }
 
         playerMap
-                .values()
-                .stream()
-                .map(Player::toDtoIfJoined)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(currentViewBuilder::addPlayers);
+            .values
+            .stream()
+            .map { obj -> obj.toDtoIfJoined() }
+            .filter { obj -> obj.isPresent }
+            .map { obj -> obj.get() }
+            .forEach { value -> currentViewBuilder.addPlayers(value) }
 
-        DirectedCommand.Builder builder = DirectedCommand.newBuilder()
-                .setPlayerId(requesterId.getGuid())
-                .setCurrentView(currentViewBuilder);
+        val builder = DirectedCommand.newBuilder()
+            .setPlayerId(requesterId.getGuid())
+            .setCurrentView(currentViewBuilder)
 
-        GameEvents.getClientEvents().dispatch(
-                Dto.newBuilder()
-                        .setDirectedCommand(builder)
-                        .build()
-        );
+        getClientEvents().dispatch(
+            Dto.newBuilder()
+                .setDirectedCommand(builder)
+                .build()
+        )
     }
 
     /**
@@ -160,11 +136,10 @@ public class Players implements Iterable<Player> {
      *
      * @return
      */
-    @Override
-    public Iterator<Player> iterator() {
+    override fun iterator(): MutableIterator<Player> {
         return playerMap
-                .values()
-                .iterator();
+            .values
+            .iterator()
     }
 
     /**
@@ -172,48 +147,48 @@ public class Players implements Iterable<Player> {
      *
      * @return
      */
-    public Stream<Player> stream() {
-        return StreamSupport.stream(spliterator(), false);
+    fun stream(): Stream<Player> {
+        return StreamSupport.stream(spliterator(), false)
     }
 
-    void joined(PlayerJoinedEventDto event) {
-        Player player = createOrGet(EntityId.of(event.getPlayerId()));
-        player.joined(event);
+    fun joined(event: PlayerJoinedEventDto) {
+        val player = createOrGet(of(event.playerId))
+        player.joined(event)
     }
 
-    private void left(EntityId playerId) {
-        Player player = createOrGet(playerId);
-        playerMap.remove(playerId);
-        playerServerUpdateSet.remove(playerId);
-        player.left();
+    private fun left(playerId: EntityId) {
+        val player = createOrGet(playerId)
+        playerMap.remove(playerId)
+        playerServerUpdateSet.remove(playerId)
+        player.left()
     }
 
-    void consumeFromJoinTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() == null) {
-            left(EntityId.of(domainEvent.getKey()));
-        } else if (domainEvent.getEvent().hasPlayerJoined()) {
-            joined(domainEvent.getEvent().getPlayerJoined());
+    fun consumeFromJoinTopic(domainEvent: DomainEvent) {
+        if (domainEvent.event == null) {
+            left(of(domainEvent.key))
+        } else if (domainEvent.event.hasPlayerJoined()) {
+            joined(domainEvent.event.getPlayerJoined())
         }
     }
 
-    void consumeFromPlayerActionTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerMoved()) {
-            get(domainEvent.getKey())
-                    .ifPresent(p -> p.moved(domainEvent.getEvent().getPlayerMoved()));
+    fun consumeFromPlayerActionTopic(domainEvent: DomainEvent) {
+        if (domainEvent.event != null && domainEvent.event.hasPlayerMoved()) {
+            get(domainEvent.key)
+                .ifPresent { p -> p.moved(domainEvent.event.getPlayerMoved()) }
         }
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerDestroyed()) {
-            get(domainEvent.getKey())
-                    .ifPresent(p -> handleDestroyed(p, domainEvent.getEvent().getPlayerDestroyed()));
+        if (domainEvent.event != null && domainEvent.event.hasPlayerDestroyed()) {
+            get(domainEvent.key)
+                .ifPresent { p -> handleDestroyed(p, domainEvent.event.getPlayerDestroyed()) }
         }
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerSpawned()) {
-            get(domainEvent.getKey())
-                    .ifPresent(p -> p.spawned(domainEvent.getEvent().getPlayerSpawned()));
+        if (domainEvent.event != null && domainEvent.event.hasPlayerSpawned()) {
+            get(domainEvent.key)
+                .ifPresent { p -> p.spawned(domainEvent.event.getPlayerSpawned()) }
         }
     }
 
-    void handleDestroyed(Player player, PlayerDestroyedEventDto playerDestroyedEvent) {
-        handleShockwave(player, playerDestroyedEvent.getDestroyedTimestamp());
-        player.destroyed(playerDestroyedEvent);
+    fun handleDestroyed(player: Player, playerDestroyedEvent: PlayerDestroyedEventDto) {
+        handleShockwave(player, playerDestroyedEvent.destroyedTimestamp)
+        player.destroyed(playerDestroyedEvent)
     }
 
     /**
@@ -222,33 +197,33 @@ public class Players implements Iterable<Player> {
      *
      * @param fromPlayer
      */
-    void handleShockwave(Player fromPlayer, long destroyedAt) {
-        this.physicsQueue.enqueue(Shockwave.shipExploded(fromPlayer, this, destroyedAt));
+    fun handleShockwave(fromPlayer: Player, destroyedAt: Long) {
+        this.physicsQueue.enqueue(shipExploded(fromPlayer, this, destroyedAt))
     }
 
     /**
      * This call marks the player is connected on this running instance.
-     * This is used to to update server calculated vector positions.
+     * This is used to update server calculated vector positions.
      *
      * @param playerId
      */
-    public void connected(EntityId playerId) {
-        playerServerUpdateSet.add(playerId);
+    fun connected(playerId: EntityId) {
+        playerServerUpdateSet.add(playerId)
     }
 
-    void consumeFromPlayerFiredTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasPlayerFired()) {
-            BoltFiredEventDto playerFiredEventDto = domainEvent.getEvent().getPlayerFired();
-            get(EntityId.of(playerFiredEventDto.getOwnerPlayerId()))
-                    .ifPresent(p -> p.fired(domainEvent.getEvent().getPlayerFired()));
+    fun consumeFromPlayerFiredTopic(domainEvent: DomainEvent) {
+        if (domainEvent.event != null && domainEvent.event.hasPlayerFired()) {
+            val playerFiredEventDto = domainEvent.event.getPlayerFired()
+            get(of(playerFiredEventDto.ownerPlayerId))
+                .ifPresent { p -> p.fired(domainEvent.event.getPlayerFired()) }
         }
     }
 
-    void consumeFromBoltActionTopic(DomainEvent domainEvent) {
-        if (domainEvent.getEvent() != null && domainEvent.getEvent().hasBoltExhausted()) {
-            BoltExhaustedEventDto event = domainEvent.getEvent().getBoltExhausted();
-            get(EntityId.of(event.getOwnerPlayerId()))
-                    .ifPresent(Player::boltExhausted);
+    fun consumeFromBoltActionTopic(domainEvent: DomainEvent) {
+        if (domainEvent.event != null && domainEvent.event.hasBoltExhausted()) {
+            val event = domainEvent.event.getBoltExhausted()
+            get(of(event.ownerPlayerId))
+                .ifPresent { obj -> obj.boltExhausted() }
         }
     }
 
@@ -257,12 +232,11 @@ public class Players implements Iterable<Player> {
      *
      * @param timestamp the timestamp to update the players to.
      */
-    void fixedUpdate(long timestamp) {
+    fun fixedUpdate(timestamp: Long) {
         playerServerUpdateSet
-                .stream()
-                .map(playerMap::get)
-                .filter(Objects::nonNull)
-                .forEach(p -> p.fixedUpdate(timestamp));
+            .stream()
+            .map { key -> playerMap[key] }
+            .forEach { p -> p?.fixedUpdate(timestamp) }
     }
 
     /**
@@ -271,8 +245,8 @@ public class Players implements Iterable<Player> {
      *
      * @return
      */
-    public int getTotalNumberOfPlayers() {
-        return this.playerMap.size();
+    fun getTotalNumberOfPlayers(): Int {
+        return this.playerMap.size
     }
 
     /**
@@ -281,19 +255,33 @@ public class Players implements Iterable<Player> {
      *
      * @return
      */
-    public int getNumberOfConnectedPlayers() {
-        return this.playerServerUpdateSet.size();
+    fun getNumberOfConnectedPlayers(): Int {
+        return this.playerServerUpdateSet.size
     }
 
-    public boolean hasConnectedPlayers() {
-        return !this.playerServerUpdateSet.isEmpty();
+    fun hasConnectedPlayers(): Boolean {
+        return this.playerServerUpdateSet.isNotEmpty()
     }
 
-    public PlayerSpatialIndex getSpatialIndex() {
-        return spatialIndexFactory.get();
+    fun getSpatialIndex(): PlayerSpatialIndex {
+        return spatialIndexFactory.get()
     }
 
-    public boolean isConnected(EntityId id) {
-        return playerServerUpdateSet.contains(id);
+    fun isConnected(id: EntityId): Boolean {
+        return playerServerUpdateSet.contains(id)
+    }
+
+    companion object {
+        @JvmStatic
+        fun create(
+            bolts: Bolts,
+            clock: Clock,
+            scoreBoard: ScoreBoard,
+            barriers: Barriers,
+            physicsQueue: PhysicsQueueEnqueue,
+            spatialIndexFactory: PlayerSpatialIndexFactory
+        ): Players {
+            return Players(bolts, clock, scoreBoard, barriers, physicsQueue, spatialIndexFactory)
+        }
     }
 }

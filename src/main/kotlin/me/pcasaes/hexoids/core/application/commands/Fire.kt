@@ -1,19 +1,12 @@
-package me.pcasaes.hexoids.core.application.commands;
+package me.pcasaes.hexoids.core.application.commands
 
-import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-import me.pcasaes.hexoids.core.domain.model.Game;
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import me.pcasaes.hexoids.core.domain.model.Game
 
-public class Fire {
+class Fire internal constructor(private val gameQueue: GameQueue) {
 
-    private final GameQueue gameQueue;
-
-    Fire(GameQueue gameQueue) {
-        this.gameQueue = gameQueue;
+    fun fire(userId: EntityId) {
+        this.gameQueue.enqueue { Game.get().getPlayers().createOrGet(userId).fire() }
     }
-
-    public void fire(EntityId userId) {
-        this.gameQueue.enqueue(() -> Game.get().getPlayers().createOrGet(userId).fire());
-    }
-
 }

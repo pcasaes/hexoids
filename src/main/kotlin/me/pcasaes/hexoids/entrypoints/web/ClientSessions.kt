@@ -1,94 +1,88 @@
-package me.pcasaes.hexoids.entrypoints.web;
+package me.pcasaes.hexoids.entrypoints.web
 
-import io.quarkus.runtime.ShutdownEvent;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ServerWebSocket;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import me.pcasaes.hexoids.core.application.commands.ApplicationCommands;
-import me.pcasaes.hexoids.core.domain.model.EntityId;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import io.quarkus.runtime.ShutdownEvent
+import io.vertx.core.AsyncResult
+import io.vertx.core.Handler
+import io.vertx.core.buffer.Buffer
+import io.vertx.core.http.ServerWebSocket
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import jakarta.inject.Inject
+import me.pcasaes.hexoids.core.application.commands.ApplicationCommands
+import me.pcasaes.hexoids.core.domain.model.EntityId
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
+import java.util.logging.Level
+import java.util.logging.Logger
 
 @ApplicationScoped
-public class ClientSessions {
+class ClientSessions @Inject constructor(private val commandsService: ApplicationCommands) {
+    private val sessions = ConcurrentHashMap<EntityId, ServerWebSocket>()
 
-    private static final Logger LOGGER = Logger.getLogger(ClientSessions.class.getName());
-
-    private final Map<EntityId, ServerWebSocket> sessions;
-
-    private final ApplicationCommands commandsService;
-
-    @Inject
-    public ClientSessions(ApplicationCommands commandsService) {
-        this.commandsService = commandsService;
-        this.sessions = new ConcurrentHashMap<>();
+    fun add(id: EntityId, session: ServerWebSocket) {
+        this.sessions.put(id, session)
     }
 
-    public void add(EntityId id, ServerWebSocket session) {
-        this.sessions.put(id, session);
+    fun remove(id: EntityId): Boolean {
+        return this.sessions.remove(id) != null
     }
 
-    public boolean remove(EntityId id) {
-        return this.sessions.remove(id) != null;
+    private fun get(id: EntityId): Optional<ServerWebSocket> {
+        return Optional.ofNullable(sessions[id])
     }
 
-    private Optional<ServerWebSocket> get(EntityId id) {
-        return Optional.ofNullable(sessions.get(id));
-    }
-
-    public void direct(EntityId id, byte[] message) {
-        Buffer buffer = Buffer.buffer(message);
+    fun direct(id: EntityId, message: ByteArray) {
+        val buffer = Buffer.buffer(message)
         get(id)
-                .ifPresent(s -> asyncSend(id, s, buffer));
+            .ifPresent { s -> asyncSend(id, s, buffer) }
     }
 
-    public void broadcast(byte[] message) {
-        Buffer buffer = Buffer.buffer(message);
-        sessions.forEach((key, value) -> asyncSend(key, value, buffer));
+    fun broadcast(message: ByteArray) {
+        val buffer = Buffer.buffer(message)
+        sessions.forEach { (key, value) -> asyncSend(key, value, buffer) }
     }
 
-    private void asyncSend(EntityId userId, ServerWebSocket session, Buffer message) {
+    private fun asyncSend(userId: EntityId, session: ServerWebSocket, message: Buffer) {
         try {
-            session.write(message, result -> {
+            session.write(message, Handler { result ->
                 if (result.failed()) {
-                    removeAndClose(userId, session, result.cause());
+                    removeAndClose(userId, session, result.cause())
                 }
-            });
-        } catch (RuntimeException ex) {
-            removeAndClose(userId, session, ex);
+            })
+        } catch (ex: RuntimeException) {
+            removeAndClose(userId, session, ex)
         }
     }
 
-    private void removeAndClose(EntityId userId, ServerWebSocket session, Throwable ex) {
-        boolean removed = this.remove(userId);
+    private fun removeAndClose(userId: EntityId, session: ServerWebSocket, ex: Throwable) {
+        val removed = this.remove(userId)
         if (removed && LOGGER.isLoggable(Level.WARNING)) {
-            LOGGER.warning("Session closed: " + userId + ", " + ex);
+            LOGGER.warning("Session closed: $userId, $ex")
         }
-        close(removed, session);
+        close(removed, session)
         if (removed) {
             this.commandsService
-                    .getLeaveGameCommand()
-                    .leave(userId);
+                .getLeaveGameCommand()
+                .leave(userId)
         }
     }
 
-    private void close(boolean removed, ServerWebSocket session) {
+    private fun close(removed: Boolean, session: ServerWebSocket) {
         try {
-            session.close();
-        } catch (RuntimeException ex) {
+            session.close()
+        } catch (ex: RuntimeException) {
             if (removed && LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("Already closed " + ex.getMessage());
+                LOGGER.warning("Already closed " + ex.message)
             }
         }
     }
 
-    void stop(@Observes ShutdownEvent event) {
-        sessions.clear();
+    fun stop(@Observes event: ShutdownEvent) {
+        sessions.clear()
+    }
+
+    companion object {
+        private val LOGGER: Logger = Logger.getLogger(ClientSessions::class.java.getName())
     }
 }

@@ -1,12 +1,10 @@
-package me.pcasaes.hexoids.infrastructure.kafka.converter;
+package me.pcasaes.hexoids.infrastructure.kafka.converter
 
-import org.apache.kafka.common.serialization.Serializer;
-import pcasaes.hexoids.proto.Event;
+import org.apache.kafka.common.serialization.Serializer
+import pcasaes.hexoids.proto.Event
 
-public class EventDtoSerializer implements Serializer<Event> {
-
-    @Override
-    public byte[] serialize(String topic, Event data) {
-        return data == null ? null : data.toByteArray();
+class EventDtoSerializer : Serializer<Event?> {
+    override fun serialize(topic: String, data: Event?): ByteArray? {
+        return data?.toByteArray()
     }
 }

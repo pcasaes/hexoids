@@ -1,19 +1,17 @@
-package me.pcasaes.hexoids.core.domain.service;
+package me.pcasaes.hexoids.core.domain.service
 
-import me.pcasaes.hexoids.core.domain.model.Game;
+import me.pcasaes.hexoids.core.domain.model.Game.Companion.get
 
-public class GameTimeService {
-
-    private static final GameTimeService INSTANCE = new GameTimeService();
-
-    public static GameTimeService getInstance() {
-        return INSTANCE;
+class GameTimeService private constructor() {
+    fun getTime(): Long {
+        return get().getClock().getTime()
     }
 
-    private GameTimeService() {
-    }
+    companion object {
+        private val INSTANCE = GameTimeService()
 
-    public long getTime() {
-        return Game.get().getClock().getTime();
+        fun getInstance(): GameTimeService {
+            return INSTANCE
+        }
     }
 }

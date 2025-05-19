@@ -36,7 +36,7 @@ class ScoreBoardTest {
         doReturn(scoreBoard).when(game).getScoreBoard();
 
         GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
-                GameTopic.valueOf(domainEvent.getTopic()).consume(domainEvent)
+                GameTopic.valueOf(domainEvent.topic).consume(domainEvent)
         );
     }
 
