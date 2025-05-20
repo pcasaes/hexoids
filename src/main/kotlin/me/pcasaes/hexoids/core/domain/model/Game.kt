@@ -168,7 +168,6 @@ interface Game {
          *
          * @return
          */
-        @JvmStatic
         fun get(): Game {
             return Implementation.Companion.INSTANCE
         }

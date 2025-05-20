@@ -46,12 +46,10 @@ class GameEvents<T> private constructor(private val name: String) {
 
         private val DOMAIN_EVENT_INSTANCE = GameEvents<DomainEvent>("domain-event")
 
-        @JvmStatic
         fun getClientEvents(): GameEvents<Dto> {
             return CLIENT_INSTANCE
         }
 
-        @JvmStatic
         fun getDomainEvents(): GameEvents<DomainEvent> {
             return DOMAIN_EVENT_INSTANCE
         }

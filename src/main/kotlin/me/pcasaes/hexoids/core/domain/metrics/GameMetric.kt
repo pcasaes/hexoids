@@ -8,7 +8,7 @@ class GameMetric private constructor(
 
 
     companion object {
-        @JvmStatic
+
         fun of(name: String): GameMetric {
             return GameMetric(name)
         }

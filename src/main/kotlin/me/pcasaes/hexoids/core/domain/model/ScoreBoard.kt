@@ -238,7 +238,6 @@ interface ScoreBoard {
     }
 
     companion object {
-        @JvmStatic
         fun create(clock: Clock): ScoreBoard {
             return Implementation(clock)
         }

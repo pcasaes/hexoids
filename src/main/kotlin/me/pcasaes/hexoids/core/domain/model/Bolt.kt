@@ -233,7 +233,6 @@ class Bolt private constructor(
          * @param ttl
          * @return
          */
-        @JvmStatic
         fun create(
             players: Players,
             boltId: EntityId,
@@ -274,7 +273,6 @@ class Bolt private constructor(
             }
         }
 
-        @JvmStatic
         fun destroyObject(bolt: Bolt) {
             // FIXME: we need to reset a bolt to not have ownership when returned to the pool
             //bolt.id = null
@@ -282,7 +280,6 @@ class Bolt private constructor(
             POOL.offer(bolt)
         }
 
-        @JvmStatic
         fun isExpired(now: Long, startTimestamp: Long, ttl: Int): Boolean {
             return now - startTimestamp > ttl
         }

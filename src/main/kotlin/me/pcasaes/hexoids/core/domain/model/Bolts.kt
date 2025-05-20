@@ -202,7 +202,6 @@ class Bolts : Iterable<Bolt> {
          *
          * @return
          */
-        @JvmStatic
         fun create(): Bolts {
             return Bolts()
         }

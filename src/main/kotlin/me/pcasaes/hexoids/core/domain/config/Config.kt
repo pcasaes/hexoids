@@ -4,7 +4,6 @@ class Config {
 
     companion object {
 
-        @JvmStatic
         fun get(): Config {
             return ConfigHolder.INSTANCE
         }

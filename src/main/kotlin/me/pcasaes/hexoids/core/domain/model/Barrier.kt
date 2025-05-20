@@ -17,7 +17,6 @@ class Barrier private constructor(
         const val HALF_LENGTH: Float = LENGTH / 2F
         val HALF_HYPOTENUSE: Float = hypot(HALF_LENGTH.toDouble(), HALF_WIDTH.toDouble()).toFloat()
 
-        @JvmStatic
         fun place(centerPosition: Vector2, rotationAngle: Float): Barrier {
             return Barrier(centerPosition, rotationAngle)
         }

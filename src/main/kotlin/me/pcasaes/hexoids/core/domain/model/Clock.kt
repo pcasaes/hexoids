@@ -36,7 +36,7 @@ interface Clock {
     }
 
     companion object {
-        @JvmStatic
+
         fun create(): Clock {
             return Implementation.Companion.holder
         }

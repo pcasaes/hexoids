@@ -117,7 +117,6 @@ class QueueMetric private constructor(private val name: String) {
             return LIST
         }
 
-        @JvmStatic
         fun compare(a: QueueMetric, b: QueueMetric): Int {
             return b.loadFactor.compareTo(a.loadFactor)
         }

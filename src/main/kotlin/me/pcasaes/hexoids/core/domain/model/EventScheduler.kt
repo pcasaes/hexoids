@@ -75,7 +75,6 @@ class EventScheduler private constructor(private val physicsQueueEnqueue: Physic
 
         const val GRANULAR_TIME_IN_MILLIS: Long = GRANULAR_TIME_IN_MINUTES * MINUTE_IN_MILLIS
 
-        @JvmStatic
         fun create(physicsQueueEnqueue: PhysicsQueueEnqueue): EventScheduler {
             return EventScheduler(physicsQueueEnqueue)
         }

@@ -10,7 +10,7 @@ import kotlin.math.sqrt
 class Barriers private constructor() : Iterable<Barrier> {
 
     companion object {
-        @JvmStatic
+
         fun create(): Barriers {
             return Barriers()
         }

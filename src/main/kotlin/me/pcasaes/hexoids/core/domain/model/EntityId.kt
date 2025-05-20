@@ -55,7 +55,6 @@ class EntityId private constructor(
          * @param id a uuid
          * @return
          */
-        @JvmStatic
         fun of(id: UUID): EntityId {
             return EntityId(id, uuidToGuid(id))
         }
@@ -66,7 +65,6 @@ class EntityId private constructor(
          * @param guid a dto guid
          * @return
          */
-        @JvmStatic
         fun of(guid: GUID): EntityId {
             return EntityId(guidToUuid(guid), guid)
         }
@@ -78,7 +76,6 @@ class EntityId private constructor(
          * @return
          * @see UUID.fromString
          */
-        @JvmStatic
         fun of(uuid: String): EntityId {
             return of(stringToUuid(uuid))
         }
@@ -88,7 +85,6 @@ class EntityId private constructor(
          *
          * @return
          */
-        @JvmStatic
         fun newId(): EntityId {
             return of(UUID.randomUUID())
         }

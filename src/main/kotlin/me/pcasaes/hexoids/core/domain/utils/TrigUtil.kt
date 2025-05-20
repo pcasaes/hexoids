@@ -104,7 +104,6 @@ object TrigUtil {
      * @param y2
      * @return
      */
-    @JvmStatic
     fun calculateAngleBetweenTwoPoints(
         x1: Float, y1: Float,
         x2: Float, y2: Float
@@ -112,22 +111,18 @@ object TrigUtil {
         return atan2((y2 - y1).toDouble(), (x2 - x1).toDouble()).toFloat()
     }
 
-    @JvmStatic
     fun calculateAngleFromComponents(x: Float, y: Float): Float {
         return atan2(y.toDouble(), x.toDouble()).toFloat()
     }
 
-    @JvmStatic
     fun calculateMagnitudeFromComponents(x: Float, y: Float): Float {
         return sqrt((x * x + y * y).toDouble()).toFloat()
     }
 
-    @JvmStatic
     fun calculateXComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
         return speed * cos(angle.toDouble()).toFloat()
     }
 
-    @JvmStatic
     fun calculateYComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
         return speed * sin(angle.toDouble()).toFloat()
     }

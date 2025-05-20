@@ -175,7 +175,6 @@ class Blackhole private constructor(
     companion object {
         private val LOGGER: Logger = Logger.getLogger(Blackhole::class.java.getName())
 
-        @JvmStatic
         fun massCollapsed(
             rng: Random,
             startTimestamp: Long, endTimestamp: Long,

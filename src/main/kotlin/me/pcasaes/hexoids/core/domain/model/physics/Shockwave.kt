@@ -70,7 +70,6 @@ class Shockwave private constructor(
     }
 
     companion object {
-        @JvmStatic
         fun shipExploded(fromPlayer: Player, players: Players, startedAt: Long): Shockwave {
             return Shockwave(fromPlayer, players, startedAt)
         }

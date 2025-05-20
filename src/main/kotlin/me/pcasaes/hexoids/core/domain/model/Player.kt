@@ -817,7 +817,6 @@ interface Player : GameObject {
          * @param scoreBoard scoreboard
          * @return an new instance of player
          */
-        @JvmStatic
         fun create(
             id: EntityId,
             players: Players,

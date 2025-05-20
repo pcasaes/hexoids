@@ -270,7 +270,6 @@ class Players private constructor(
     }
 
     companion object {
-        @JvmStatic
         fun create(
             bolts: Bolts,
             clock: Clock,

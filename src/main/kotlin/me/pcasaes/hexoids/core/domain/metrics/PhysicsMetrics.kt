@@ -30,7 +30,6 @@ class PhysicsMetrics private constructor() {
     companion object {
         private val instance = PhysicsMetrics()
 
-        @JvmStatic
         fun get(): PhysicsMetrics {
             return instance
         }

@@ -15,7 +15,6 @@ class PlayerSpatialIndexFactory private constructor() {
     companion object {
         private val FACTORY = PlayerSpatialIndexFactory()
 
-        @JvmStatic
         fun factory(): PlayerSpatialIndexFactory {
             return FACTORY
         }

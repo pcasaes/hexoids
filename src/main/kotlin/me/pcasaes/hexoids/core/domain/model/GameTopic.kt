@@ -62,7 +62,6 @@ enum class GameTopic(private val consumer: (DomainEvent) -> Unit) {
     companion object {
         private lateinit var game: Game
 
-        @JvmStatic
         fun setGame(game: Game) {
             GameTopic.Companion.game = game
         }

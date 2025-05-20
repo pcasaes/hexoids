@@ -236,12 +236,10 @@ open class Vector2(
             }
         }
 
-        @JvmStatic
         fun fromAngleMagnitude(angle: Float, magnitude: Float): Vector2 {
             return Vector2(angle, magnitude, true, 0F, 0F, false)
         }
 
-        @JvmStatic
         fun fromXY(x: Float, y: Float): Vector2 {
             return Vector2(0F, 0F, false, x, y, true)
         }

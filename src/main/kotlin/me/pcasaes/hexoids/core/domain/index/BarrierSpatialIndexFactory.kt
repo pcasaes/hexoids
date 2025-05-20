@@ -15,7 +15,6 @@ class BarrierSpatialIndexFactory private constructor() {
     companion object {
         private val FACTORY = BarrierSpatialIndexFactory()
 
-        @JvmStatic
         fun factory(): BarrierSpatialIndexFactory {
             return FACTORY
         }

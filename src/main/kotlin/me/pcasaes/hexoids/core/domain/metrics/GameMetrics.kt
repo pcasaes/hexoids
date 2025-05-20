@@ -7,7 +7,6 @@ class GameMetrics private constructor() {
     companion object {
         private val INSTANCE = GameMetrics()
 
-        @JvmStatic
         fun get(): GameMetrics {
             return INSTANCE
         }

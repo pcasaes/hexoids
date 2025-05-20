@@ -33,7 +33,6 @@ interface PhysicsQueue : PhysicsQueueEnqueue {
     }
 
     companion object {
-        @JvmStatic
         fun create(): PhysicsQueue {
             return Implementation()
         }

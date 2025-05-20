@@ -446,7 +446,6 @@ class PositionVector private constructor(
     }
 
     companion object {
-        @JvmStatic
         fun of(
             startX: Float,
             startY: Float,
@@ -464,7 +463,6 @@ class PositionVector private constructor(
             )
         }
 
-        @JvmStatic
         fun of(
             startX: Float,
             startY: Float,
