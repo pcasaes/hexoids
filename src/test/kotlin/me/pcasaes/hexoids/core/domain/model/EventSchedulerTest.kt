@@ -1,116 +1,108 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.LongPredicate;
-
-import static me.pcasaes.hexoids.core.domain.model.EventScheduler.GRANULAR_TIME_IN_MILLIS;
-import static me.pcasaes.hexoids.core.domain.model.EventScheduler.HOUR_IN_MILLIS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import io.mockk.mockk
+import io.mockk.verify
+import me.pcasaes.hexoids.core.domain.model.EventScheduler.Companion.create
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import java.util.Optional
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.LongPredicate
 
 class EventSchedulerTest {
+    @Test
+    fun testEnqueueOnCreate() {
+        val physicsQueueEnqueue = mockk<PhysicsQueueEnqueue>(relaxed = true)
+        val scheduler = create(physicsQueueEnqueue)
+
+        scheduler.register { r, s, e ->
+            Optional.of<LongPredicate>(
+                LongPredicate { true })
+        }
+
+        scheduler.timer(0L)
+
+        verify(exactly = 1) { physicsQueueEnqueue.enqueue(any()) }
+    }
 
     @Test
-    void testEnqueueOnCreate() {
-        PhysicsQueueEnqueue physicsQueueEnqueue = mock(PhysicsQueueEnqueue.class);
-        EventScheduler scheduler = EventScheduler.create(physicsQueueEnqueue);
+    fun testReplay() {
+        val physicsQueueEnqueue = mockk<PhysicsQueueEnqueue>(relaxed = true)
+        val scheduler = create(physicsQueueEnqueue)
 
-        scheduler.register((r, s, e) -> Optional.of(l -> true));
+        val counter = AtomicInteger(0)
+        scheduler.register { r, s, e ->
+            val c = counter.getAndIncrement()
+            Assertions.assertEquals(c * EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS + 0L, s)
+            Assertions.assertEquals(
+                c * EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS,
+                e
+            )
+            Optional.of<LongPredicate>(LongPredicate { true })
+        }
+        scheduler.fixedUpdate(180000L)
 
-        scheduler.timer(0L);
+        Assertions.assertEquals(2, counter.get())
 
-        verify(physicsQueueEnqueue, times(1)).enqueue(any(LongPredicate.class));
-    }
-
-    @Test
-    void testReplay() {
-        PhysicsQueueEnqueue physicsQueueEnqueue = mock(PhysicsQueueEnqueue.class);
-        EventScheduler scheduler = EventScheduler.create(physicsQueueEnqueue);
-
-        AtomicInteger counter = new AtomicInteger(0);
-        scheduler.register((r, s, e) -> {
-
-            int c = counter.getAndIncrement();
-            assertEquals(c * GRANULAR_TIME_IN_MILLIS + 0L, s);
-            assertEquals(c * GRANULAR_TIME_IN_MILLIS + GRANULAR_TIME_IN_MILLIS, e);
-
-            return Optional.of(l -> true);
-        });
-        scheduler.fixedUpdate(180_000L);
-
-        assertEquals(2, counter.get());
-
-        verify(physicsQueueEnqueue, times(2)).enqueue(any(LongPredicate.class));
+        verify(exactly = 2) { physicsQueueEnqueue.enqueue(any()) }
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25})
-    void testZeroTimestamp(int hour) {
-        long hoursInMillis = hour * HOUR_IN_MILLIS;
+    @ValueSource(ints = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+    fun testZeroTimestamp(hour: Int) {
+        val hoursInMillis = hour * EventScheduler.Companion.HOUR_IN_MILLIS
 
-        PhysicsQueueEnqueue physicsQueueEnqueue = mock(PhysicsQueueEnqueue.class);
-        EventScheduler scheduler = EventScheduler.create(physicsQueueEnqueue);
+        val physicsQueueEnqueue = mockk<PhysicsQueueEnqueue>(relaxed = true)
+        val scheduler = create(physicsQueueEnqueue)
 
-        scheduler.register((r, s, e) -> {
+        scheduler.register { r, s, e ->
+            Assertions.assertEquals(hoursInMillis + 0L, s)
+            Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
+            Optional.of<LongPredicate>(LongPredicate { true })
+        }
 
-            assertEquals(hoursInMillis + 0L, s);
-            assertEquals(hoursInMillis + GRANULAR_TIME_IN_MILLIS, e);
+        scheduler.timer(hoursInMillis + 0L)
 
-            return Optional.of(l -> true);
-        });
-
-        scheduler.timer(hoursInMillis + 0L);
-
-        verify(physicsQueueEnqueue, times(1)).enqueue(any(LongPredicate.class));
+        verify(exactly = 1) { physicsQueueEnqueue.enqueue(any()) }
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25})
-    void test180Minus1Timestamp(int hour) {
-        long hoursInMillis = hour * HOUR_IN_MILLIS;
+    @ValueSource(ints = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+    fun test180Minus1Timestamp(hour: Int) {
+        val hoursInMillis = hour * EventScheduler.Companion.HOUR_IN_MILLIS
 
-        PhysicsQueueEnqueue physicsQueueEnqueue = mock(PhysicsQueueEnqueue.class);
-        EventScheduler scheduler = EventScheduler.create(physicsQueueEnqueue);
+        val physicsQueueEnqueue = mockk<PhysicsQueueEnqueue>(relaxed = true)
+        val scheduler = create(physicsQueueEnqueue)
 
-        scheduler.register((r, s, e) -> {
+        scheduler.register { r, s, e ->
+            Assertions.assertEquals(hoursInMillis + 0L, s)
+            Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
+            Optional.of<LongPredicate>(LongPredicate { true })
+        }
 
-            assertEquals(hoursInMillis + 0L, s);
-            assertEquals(hoursInMillis + GRANULAR_TIME_IN_MILLIS, e);
+        scheduler.timer(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS - 1)
 
-            return Optional.of(l -> true);
-        });
-
-        scheduler.timer(hoursInMillis + GRANULAR_TIME_IN_MILLIS - 1);
-
-        verify(physicsQueueEnqueue, times(1)).enqueue(any(LongPredicate.class));
+        verify(exactly = 1) { physicsQueueEnqueue.enqueue(any()) }
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25})
-    void test180Timestamp(int hour) {
-        long hoursInMillis = hour * HOUR_IN_MILLIS;
+    @ValueSource(ints = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+    fun test180Timestamp(hour: Int) {
+        val hoursInMillis = hour * EventScheduler.Companion.HOUR_IN_MILLIS
 
-        PhysicsQueueEnqueue physicsQueueEnqueue = mock(PhysicsQueueEnqueue.class);
-        EventScheduler scheduler = EventScheduler.create(physicsQueueEnqueue);
+        val physicsQueueEnqueue = mockk<PhysicsQueueEnqueue>(relaxed = true)
+        val scheduler = create(physicsQueueEnqueue)
 
-        scheduler.register((r, s, e) -> {
+        scheduler.register { r, s, e ->
+            Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, s)
+            Assertions.assertEquals(hoursInMillis + 2 * EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
+            Optional.of<LongPredicate>(LongPredicate { true })
+        }
 
-            assertEquals(hoursInMillis + GRANULAR_TIME_IN_MILLIS, s);
-            assertEquals(hoursInMillis + 2 * GRANULAR_TIME_IN_MILLIS, e);
+        scheduler.timer(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS)
 
-            return Optional.of(l -> true);
-        });
-
-        scheduler.timer(hoursInMillis + GRANULAR_TIME_IN_MILLIS);
-
-        verify(physicsQueueEnqueue, times(1)).enqueue(any(LongPredicate.class));
+        verify(exactly = 1) { physicsQueueEnqueue.enqueue(any()) }
     }
 }

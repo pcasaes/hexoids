@@ -141,7 +141,7 @@ class Barriers private constructor() : Iterable<Barrier> {
         }
     }
 
-    override fun iterator(): MutableIterator<Barrier> {
+    override fun iterator(): Iterator<Barrier> {
         return barriers.iterator()
     }
 

@@ -1,171 +1,175 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
+import io.mockk.every
+import io.mockk.mockk
+import me.pcasaes.hexoids.core.domain.model.Clock.Companion.create
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
+import me.pcasaes.hexoids.core.domain.model.ScoreBoard.Companion.create
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import pcasaes.hexoids.proto.Dto
+import java.util.concurrent.atomic.AtomicReference
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import pcasaes.hexoids.proto.Dto;
-import pcasaes.hexoids.proto.ScoreBoardUpdatedEventDto;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
 
 class ScoreBoardTest {
 
-    @Mock
-    private Game game;
+    private val game = mockk<Game>(relaxed = true)
 
-    private ScoreBoard scoreBoard;
+    private lateinit var scoreBoard: ScoreBoard
 
     @BeforeEach
-    void setup() {
-        MockitoAnnotations.initMocks(this);
-        GameEvents.getClientEvents().registerEventDispatcher(null);
+    fun setup() {
+        getClientEvents().registerEventDispatcher(null)
 
-        GameTopic.setGame(game);
+        GameTopic.setGame(game)
 
-        scoreBoard = ScoreBoard.create(Clock.create());
-        doReturn(scoreBoard).when(game).getScoreBoard();
+        scoreBoard = create(create())
 
-        GameEvents.getDomainEvents().registerEventDispatcher(domainEvent ->
-                GameTopic.valueOf(domainEvent.topic).consume(domainEvent)
-        );
+        every { game.getScoreBoard() } returns scoreBoard
+
+        getDomainEvents().registerEventDispatcher { domainEvent ->
+            GameTopic.valueOf(domainEvent.topic!!).consume(
+                domainEvent
+            )
+        }
     }
 
     @Test
-    void testNotEnoughTime() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
+    fun testNotEnoughTime() {
+        val eventReference = AtomicReference<Dto?>(null)
+        getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        scoreBoard.fixedUpdate(500L);
+        scoreBoard.fixedUpdate(500L)
 
-        assertNull(eventReference.get());
+        Assertions.assertNull(eventReference.get())
     }
 
     @Test
-    void testEmptyLeaderBoard() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
+    fun testEmptyLeaderBoard() {
+        val eventReference = AtomicReference<Dto?>(null)
+        getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        scoreBoard.fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L)
 
-        assertNull(eventReference.get());
+        Assertions.assertNull(eventReference.get())
     }
 
     @Test
-    void testSimpleReset() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
+    fun testSimpleReset() {
+        val eventReference = AtomicReference<Dto?>(null)
+        getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
 
-        EntityId one = EntityId.newId();
-        scoreBoard.updateScore(one, 100);
+        val one = newId()
+        scoreBoard.updateScore(one, 100)
 
-        scoreBoard.fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L)
 
-        scoreBoard.resetScore(one);
+        scoreBoard.resetScore(one)
 
 
-        scoreBoard.fixedUpdate(2000L);
+        scoreBoard.fixedUpdate(2000L)
 
-        assertTrue(eventReference.get().hasEvent());
-        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
-        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
-        assertNotNull(event);
+        Assertions.assertTrue(eventReference.get()!!.hasEvent())
+        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        val event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
+        Assertions.assertNotNull(event)
 
-        assertEquals(1, event.getScoresCount());
+        Assertions.assertEquals(1, event!!.scoresCount)
 
-        assertEquals(one.getGuid(), event.getScoresList().get(0).getPlayerId());
-        assertEquals(0, event.getScoresList().get(0).getScore());
+        Assertions.assertEquals(one.getGuid(), event.scoresList[0].playerId)
+        Assertions.assertEquals(0, event.scoresList[0].score)
     }
 
     @Test
-    void testSimpleFull() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
+    fun testSimpleFull() {
+        val eventReference = AtomicReference<Dto?>(null)
+        getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
+        val ids = ArrayList<EntityId>(ScoreBoard.Implementation.SCORE_BOARD_SIZE)
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            ids.add(EntityId.newId());
+        repeat(ScoreBoard.Implementation.SCORE_BOARD_SIZE) { i ->
+            ids.add(newId())
         }
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            scoreBoard.updateScore(ids.get(i), ScoreBoard.Implementation.SCORE_BOARD_SIZE - i);
+        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+            scoreBoard.updateScore(ids[i], ScoreBoard.Implementation.SCORE_BOARD_SIZE - i)
         }
 
-        scoreBoard.fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L)
 
-        assertTrue(eventReference.get().hasEvent());
-        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
-        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
-        assertNotNull(event);
+        Assertions.assertTrue(eventReference.get()!!.hasEvent())
+        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        val event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
+        Assertions.assertNotNull(event)
 
-        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScoresCount());
+        Assertions.assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event!!.scoresCount)
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            assertEquals(ids.get(i).getGuid(), event.getScoresList().get(i).getPlayerId());
-            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScoresList().get(i).getScore());
+        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+            Assertions.assertEquals(ids[i].getGuid(), event.scoresList[i].playerId)
+            Assertions.assertEquals(
+                ScoreBoard.Implementation.SCORE_BOARD_SIZE - i,
+                event.scoresList[i].score
+            )
         }
-
     }
 
     @Test
-    void testSimplePastFull() {
-        AtomicReference<Dto> eventReference = new AtomicReference<>(null);
-        GameEvents.getClientEvents().registerEventDispatcher(eventReference::set);
+    fun testSimplePastFull() {
+        val eventReference = AtomicReference<Dto?>(null)
+        getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        List<EntityId> ids = new ArrayList<>(ScoreBoard.Implementation.SCORE_BOARD_SIZE);
+        val ids = ArrayList<EntityId>(ScoreBoard.Implementation.SCORE_BOARD_SIZE)
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            ids.add(EntityId.newId());
+        repeat(ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+            ids.add(newId())
         }
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE; i++) {
-            scoreBoard.updateScore(ids.get(i), ScoreBoard.Implementation.SCORE_BOARD_SIZE - i);
+        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+            scoreBoard.updateScore(ids[i], ScoreBoard.Implementation.SCORE_BOARD_SIZE - i)
         }
 
-        scoreBoard.fixedUpdate(1000L);
+        scoreBoard.fixedUpdate(1000L)
 
-        assertTrue(eventReference.get().hasEvent());
-        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
-        ScoreBoardUpdatedEventDto event = eventReference.get().getEvent().getScoreBoardUpdated();
-        assertNotNull(event);
+        Assertions.assertTrue(eventReference.get()!!.hasEvent())
+        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        var event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
+        Assertions.assertNotNull(event)
 
-        EntityId a = EntityId.newId();
-        EntityId b = EntityId.newId();
-        EntityId c = EntityId.newId();
-        scoreBoard.updateScore(a, 100);
-        scoreBoard.updateScore(b, 3);
-        scoreBoard.updateScore(c, -1);
+        val a = newId()
+        val b = newId()
+        val c = newId()
+        scoreBoard.updateScore(a, 100)
+        scoreBoard.updateScore(b, 3)
+        scoreBoard.updateScore(c, -1)
 
-        scoreBoard.fixedUpdate(2000L);
+        scoreBoard.fixedUpdate(2000L)
 
-        assertTrue(eventReference.get().hasEvent());
-        assertTrue(eventReference.get().getEvent().hasScoreBoardUpdated());
-        event = eventReference.get().getEvent().getScoreBoardUpdated();
-        assertNotNull(event);
+        Assertions.assertTrue(eventReference.get()!!.hasEvent())
+        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
+        Assertions.assertNotNull(event)
 
-        assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.getScoresCount());
+        Assertions.assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.scoresCount)
 
-        assertEquals(a.getGuid(), event.getScoresList().get(0).getPlayerId());
-        assertEquals(100, event.getScoresList().get(0).getScore());
+        Assertions.assertEquals(a.getGuid(), event.scoresList[0].playerId)
+        Assertions.assertEquals(100, event.scoresList[0].score)
 
-        assertEquals(b.getGuid(), event.getScoresList().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getPlayerId());
-        assertEquals(3, event.getScoresList().get(ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1).getScore());
+        Assertions.assertEquals(
+            b.getGuid(),
+            event.scoresList[ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1].playerId
+        )
+        Assertions.assertEquals(3, event.scoresList[ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1].score)
 
-        for (int i = 0; i < ScoreBoard.Implementation.SCORE_BOARD_SIZE - 2; i++) {
-            assertEquals(ids.get(i).getGuid(), event.getScoresList().get(i + 1).getPlayerId());
-            assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE - i, event.getScoresList().get(i + 1).getScore());
+        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE - 2) {
+            Assertions.assertEquals(ids[i].getGuid(), event.scoresList[i + 1].playerId)
+            Assertions.assertEquals(
+                ScoreBoard.Implementation.SCORE_BOARD_SIZE - i,
+                event.scoresList[i + 1].score
+            )
         }
-
     }
 }

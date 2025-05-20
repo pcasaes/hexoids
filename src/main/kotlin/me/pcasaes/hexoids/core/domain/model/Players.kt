@@ -136,7 +136,7 @@ class Players private constructor(
      *
      * @return
      */
-    override fun iterator(): MutableIterator<Player> {
+    override fun iterator(): Iterator<Player> {
         return playerMap
             .values
             .iterator()

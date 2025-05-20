@@ -1,25 +1,23 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import java.util.UUID
 
 class EntityIdTest {
-
     @Test
-    void testConversion() {
-        var uuid = UUID.randomUUID();
+    fun testConversion() {
+        val uuid = UUID.randomUUID()
 
-        var entityId = EntityId.of(uuid);
+        val entityId = of(uuid)
 
-        var guid = entityId.getGuid();
+        val guid = entityId.getGuid()
 
-        var entityId2 = EntityId.of(guid);
+        val entityId2 = of(guid)
 
-        var uuid2 = entityId2.getId();
+        val uuid2 = entityId2.getId()
 
-        assertEquals(uuid, uuid2);
+        Assertions.assertEquals(uuid, uuid2)
     }
 }

@@ -18,7 +18,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <maven.compiler.release>21</maven.compiler.release>
-    <mockito.version>5.17.0</mockito.version>
+    <mockk.version>1.14.2</mockk.version>
     <lmax.disruptor.version>4.0.0</lmax.disruptor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -53,10 +53,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-config-yaml</artifactId>
     </dependency>
+
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
+      <groupId>io.mockk</groupId>
+      <artifactId>mockk-jvm</artifactId>
+      <version>${mockk.version}</version>
       <scope>test</scope>
     </dependency>
 

@@ -1,27 +1,23 @@
-package me.pcasaes.hexoids.infrastructure.kafka.converter;
+package me.pcasaes.hexoids.infrastructure.kafka.converter
 
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import java.lang.Long
+import java.util.UUID
 
 class UUIDBytesSerializerDeserializerTest {
-
     @Test
-    void tessUUIDSerializerAndDeserializer() {
-        UUID one = UUID.randomUUID();
+    fun tessUUIDSerializerAndDeserializer() {
+        val one = UUID.randomUUID()
 
-        byte[] oneBytes = new UUIDBytesSerializer().serialize("", one);
-        assertNotNull(oneBytes);
-        assertEquals(Long.BYTES * 2, oneBytes.length);
+        val oneBytes = UUIDBytesSerializer().serialize("", one)
+        Assertions.assertNotNull(oneBytes)
+        Assertions.assertEquals(Long.BYTES * 2, oneBytes.size)
 
-        UUID oneDeserialized = new UUIDBytesDeserializer().deserialize("", oneBytes);
-        assertNotNull(oneDeserialized);
+        val oneDeserialized = UUIDBytesDeserializer().deserialize("", oneBytes)
+        Assertions.assertNotNull(oneDeserialized)
 
-        assertEquals(one, oneDeserialized);
-        assertNotSame(one, oneDeserialized);
+        Assertions.assertEquals(one, oneDeserialized)
+        Assertions.assertNotSame(one, oneDeserialized)
     }
 }

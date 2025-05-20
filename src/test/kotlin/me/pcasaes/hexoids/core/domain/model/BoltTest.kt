@@ -1,449 +1,452 @@
-package me.pcasaes.hexoids.core.domain.model;
+package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config;
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex;
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory;
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import pcasaes.hexoids.proto.BoltExhaustedEventDto;
-import pcasaes.hexoids.proto.Event;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import io.mockk.every
+import io.mockk.mockk
+import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
+import me.pcasaes.hexoids.core.domain.model.Bolts.Companion.create
+import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
+import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import pcasaes.hexoids.proto.Event
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
+import java.util.stream.Collectors
 
 class BoltTest {
 
-    @Mock
-    private Clock clock;
+    private lateinit var clock: Clock
 
-    @Mock
-    private Players players;
+    private lateinit var players: Players
 
-    private Bolts bolts;
+    private lateinit var bolts: Bolts
 
     @BeforeEach
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
+    fun setup() {
+        clock = mockk(relaxed = true)
+        players = mockk(relaxed = true)
 
-        GameEvents.getClientEvents().registerEventDispatcher(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(null);
+        getClientEvents().registerEventDispatcher(null)
+        getDomainEvents().registerEventDispatcher(null)
 
-        bolts = Bolts.create();
+        bolts = create()
 
-        assertEquals(0, this.bolts.getTotalNumberOfActiveBolts());
+        Assertions.assertEquals(0, this.bolts.getTotalNumberOfActiveBolts())
 
-        when(clock.getTime()).thenReturn(0L);
+        every { clock.getTime() } returns 0L
 
-        Config.get().setBoltMaxDuration(10_000);
-        Config.get().setBoltSpeed(0.01f);
-        Config.get().setBoltCollisionRadius(0.001f);
-        Config.get().setMinMove(0.000000001f);
+        get().setBoltMaxDuration(10000)
+        get().setBoltSpeed(0.01F)
+        get().setBoltCollisionRadius(0.001F)
+        get().setMinMove(0.000000001F)
 
-        doAnswer(c -> Collections.emptyIterator()).when(players).iterator();
-        doAnswer(c -> Collections.emptyList().spliterator()).when(players).spliterator();
-        doAnswer(c -> Stream.empty()).when(players).stream();
+        every { players.iterator() } returns emptyList<Player>().iterator()
+        every { players.spliterator() } returns emptyList<Player>().spliterator()
+        every { players.stream() } returns emptyList<Player>().stream()
 
         PlayerSpatialIndexFactory
-                .factory()
-                .setPlayerSpatialIndex((float x1, float y1, float x2, float y2, float distance) -> players);
+            .factory()
+            .setPlayerSpatialIndex { x1: Float, y1: Float, x2: Float, y2: Float, distance: Float -> players }
 
         BarrierSpatialIndexFactory
-                .factory()
-                .setBarrierSpatialIndex(new BarrierSpatialIndex() {
-                    @Override
-                    public @NotNull Iterable<@NotNull Barrier> search(float x1, float y1, float x2, float y2, float distance) {
-                        return Collections.emptyList();
-                    }
+            .factory()
+            .setBarrierSpatialIndex(object : BarrierSpatialIndex {
+                override fun search(x1: Float, y1: Float, x2: Float, y2: Float, distance: Float): Iterable<Barrier> {
+                    return mutableListOf()
+                }
 
-                    @Override
-                    public void update(@NotNull Iterable<Barrier> barriers) {
+                override fun update(barriers: Iterable<Barrier>) {
+                }
+            })
 
-                    }
-                });
-
-        doAnswer(ctx -> PlayerSpatialIndexFactory.factory().get())
-                .when(players)
-                .getSpatialIndex();
+        every { players.getSpatialIndex() } returns PlayerSpatialIndexFactory.factory().get()
     }
 
     @Test
-    void testFireMoveAndExhaust() {
-        List<DomainEvent> events = new ArrayList<>();
-        GameEvents.getDomainEvents().registerEventDispatcher(events::add);
+    fun testFireMoveAndExhaust() {
+        val events = ArrayList<DomainEvent>()
+        getDomainEvents().registerEventDispatcher { e -> events.add(e) }
 
-        EntityId one = EntityId.newId();
-        Config.get().setBoltMaxDuration(1_500);
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0f,
-                0f,
-                0f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        EntityId boltId = bolt.id;
-        assertNotNull(bolt);
+        val one = newId()
+        get().setBoltMaxDuration(1500)
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0F,
+            0F,
+            0F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        val boltId = bolt!!.id
+        Assertions.assertNotNull(bolt)
 
-        assertTrue(bolt.isOwnedBy(one));
+        Assertions.assertTrue(bolt.isOwnedBy(one))
 
-        assertEquals(1, this.bolts.getTotalNumberOfActiveBolts());
+        Assertions.assertEquals(1, this.bolts.getTotalNumberOfActiveBolts())
 
 
-        assertEquals(1,
-                bolts
-                        .stream()
-                        .count());
-
-        assertTrue(bolts
+        Assertions.assertEquals(
+            1,
+            bolts
                 .stream()
-                .anyMatch(b -> bolt == b));
+                .count()
+        )
 
-        assertFalse(bolt.isExhausted());
-        assertTrue(bolt.isActive());
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertFalse(bolt.isExhausted());
-        assertTrue(bolt.isActive());
-
-        when(clock.getTime()).thenReturn(2_000L);
-
-        events.clear();
-        bolts.fixedUpdate(clock.getTime());
-        assertEquals(1, events.size());
-        DomainEvent domainEvent = events.get(0);
-        assertNotNull(domainEvent);
-
-        assertTrue(domainEvent.event.hasBoltExhausted());
-        BoltExhaustedEventDto exhaustedEvent = domainEvent.event.getBoltExhausted();
-
-        assertNotNull(exhaustedEvent);
-        assertArrayEquals(boltId.getGuid().getGuid().toByteArray(), exhaustedEvent.getBoltId().getGuid().toByteArray());
-
-        assertTrue(bolt.isExhausted());
-        assertFalse(bolt.isActive());
-
-        events.clear();
-
-        assertEquals(0, bolts
+        Assertions.assertTrue(
+            bolts
                 .stream()
-                .count());
+                .anyMatch { b: Bolt? -> bolt == b })
 
-        assertEquals(0, this.bolts.getTotalNumberOfActiveBolts());
+        Assertions.assertFalse(bolt.isExhausted)
+        Assertions.assertTrue(bolt.isActive)
 
-    }
+        every { clock.getTime() } returns 1000L
 
-    @Test
-    void testMoveRight() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
+        bolts.fixedUpdate(clock.getTime())
 
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0f,
-                0f,
-                0f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
+        Assertions.assertFalse(bolt.isExhausted)
+        Assertions.assertTrue(bolt.isActive)
 
+        every { clock.getTime() } returns 2000L
 
-        when(clock.getTime()).thenReturn(1_000L);
+        events.clear()
+        bolts.fixedUpdate(clock.getTime())
+        Assertions.assertEquals(1, events.size)
+        val domainEvent = events[0]
+        Assertions.assertNotNull(domainEvent)
+        Assertions.assertNotNull(domainEvent.event)
 
-        bolts.fixedUpdate(clock.getTime());
+        Assertions.assertTrue(domainEvent.event!!.hasBoltExhausted())
+        val exhaustedEvent = domainEvent.event.getBoltExhausted()
 
-        assertEquals(0.01f, bolt.positionVector.getX());
-        assertEquals(0f, bolt.positionVector.getY());
+        Assertions.assertNotNull(exhaustedEvent)
+        Assertions.assertArrayEquals(
+            boltId.getGuid().guid.toByteArray(),
+            exhaustedEvent!!.boltId.guid.toByteArray()
+        )
 
-    }
+        Assertions.assertTrue(bolt.isExhausted)
+        Assertions.assertFalse(bolt.isActive)
 
-    @Test
-    void testMoveRightDown() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
+        events.clear()
 
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0f,
-                0f,
-                (float) Math.PI / 4f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(0.0070710676f, bolt.positionVector.getX());
-        assertEquals(0.0070710676f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testMoveDown() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
-
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0f,
-                0f,
-                (float) Math.PI / 2f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(0f, bolt.positionVector.getX());
-        assertEquals(0.01f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testMoveLeftDown() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
-
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                1f,
-                0f,
-                (float) (3 * Math.PI / 4f),
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(1f - 0.0070710676f, bolt.positionVector.getX());
-        assertEquals(0.0070710676f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testMoveLeft() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
-
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                1f,
-                0f,
-                (float) Math.PI,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(0.99f, bolt.positionVector.getX());
-        assertEquals(0f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testMoveLefUp() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
-
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                1f,
-                1f,
-                (float) (5 * Math.PI / 4f),
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(1f - 0.0070710676f, bolt.positionVector.getX());
-        assertEquals(1f - 0.0070710676f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testMoveUp() {
-        AtomicReference<DomainEvent> eventReference = new AtomicReference<>(null);
-        GameEvents.getDomainEvents().registerEventDispatcher(eventReference::set);
-
-        Config.get().setBoltMaxDuration(1_500);
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                1f,
-                1f,
-                (float) (3 * Math.PI / 2f),
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-
-        when(clock.getTime()).thenReturn(1_000L);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        assertEquals(1f, bolt.positionVector.getX());
-        assertEquals(0.99f, bolt.positionVector.getY());
-    }
-
-    @Test
-    void testCollisionHit() {
-        Config.get().setBoltMaxDuration(1_500);
-
-        Player player = mock(Player.class);
-
-        List<Player> playersList = Collections.singletonList(player);
-        doAnswer(c -> playersList.iterator()).when(this.players).iterator();
-        doAnswer(c -> playersList.spliterator()).when(this.players).spliterator();
-        doAnswer(c -> playersList.stream()).when(this.players).stream();
-        doAnswer(c -> {
-            Consumer<Player> consumer = c.getArgument(0, Consumer.class);
-            this.players.stream().forEach(consumer);
-            return null;
-        }).when(this.players).forEach(any(Consumer.class));
-
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0.5f,
-                0.5f,
-                0f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
-        EntityId boltId = bolt.id;
-
-        doReturn(1_000L).when(clock).getTime();
-
-        doReturn(true)
-                .when(player)
-                .collision(bolt.positionVector, Config.get().getBoltCollisionRadius());
-
-
-        List<DomainEvent> domainEvents = new ArrayList<>();
-        GameEvents.getDomainEvents().registerEventDispatcher(domainEvents::add);
-
-        bolts.fixedUpdate(clock.getTime());
-
-        List<Event> events = domainEvents
+        Assertions.assertEquals(
+            0, bolts
                 .stream()
-                .map(d -> d.event)
-                .collect(Collectors.toList());
+                .count()
+        )
 
-
-        BoltExhaustedEventDto boltExhaustedEventDto = events
-                .stream()
-                .filter(Event::hasBoltExhausted)
-                .map(Event::getBoltExhausted)
-                .findFirst().orElse(null);
-
-        assertNotNull(boltExhaustedEventDto);
-        assertArrayEquals(boltId.getGuid().getGuid().toByteArray(), boltExhaustedEventDto.getBoltId().getGuid().toByteArray());
-
+        Assertions.assertEquals(0, this.bolts.getTotalNumberOfActiveBolts())
     }
 
     @Test
-    void testCollisionMiss() {
-        Config.get().setBoltMaxDuration(1_500);
+    fun testMoveRight() {
+        val eventReference = AtomicReference<DomainEvent?>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
 
-        Player player = mock(Player.class);
-
-        List<Player> playersList = Collections.singletonList(player);
-        doAnswer(c -> playersList.iterator()).when(this.players).iterator();
-        doAnswer(c -> playersList.spliterator()).when(this.players).spliterator();
-        doAnswer(c -> playersList.stream()).when(this.players).stream();
-
-        EntityId one = EntityId.newId();
-        final Bolt bolt = bolts.fired(players,
-                EntityId.newId(),
-                one,
-                0.5f,
-                0.5f,
-                0f,
-                Config.get().getBoltSpeed(),
-                clock.getTime(),
-                Config.get().getBoltMaxDuration()).orElse(null);
-        assertNotNull(bolt);
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0F,
+            0F,
+            0F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
 
 
-        doReturn(1_000L).when(clock).getTime();
-        doReturn(false)
-                .when(player)
-                .collision(bolt.positionVector, Config.get().getBoltCollisionRadius());
+        every { clock.getTime() } returns 1000L
 
-        List<DomainEvent> events = new ArrayList<>();
-        GameEvents.getDomainEvents().registerEventDispatcher(events::add);
+        bolts.fixedUpdate(clock.getTime())
 
-        bolts.fixedUpdate(clock.getTime());
-
-
-        assertEquals(0, events
-                .stream()
-                .map(d -> d.event)
-                .filter(Event::hasBoltExhausted)
-                .count());
-
+        Assertions.assertEquals(0.01F, bolt.positionVector.getX())
+        Assertions.assertEquals(0F, bolt.positionVector.getY())
     }
 
+    @Test
+    fun testMoveRightDown() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0F,
+            0F,
+            Math.PI.toFloat() / 4F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getX())
+        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testMoveDown() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0F,
+            0F,
+            Math.PI.toFloat() / 2F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(0F, bolt!!.positionVector.getX())
+        Assertions.assertEquals(0.01F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testMoveLeftDown() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            1F,
+            0F,
+            (3 * Math.PI / 4F).toFloat(),
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.getX())
+        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testMoveLeft() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            1F,
+            0F,
+            Math.PI.toFloat(),
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(0.99F, bolt!!.positionVector.getX())
+        Assertions.assertEquals(0F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testMoveLefUp() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            1F,
+            1F,
+            (5 * Math.PI / 4F).toFloat(),
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.getX())
+        Assertions.assertEquals(1F - 0.0070710676F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testMoveUp() {
+        val eventReference = AtomicReference<DomainEvent>(null)
+        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+
+        get().setBoltMaxDuration(1500)
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            1F,
+            1F,
+            (3 * Math.PI / 2F).toFloat(),
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+        every { clock.getTime() } returns 1000L
+
+        bolts.fixedUpdate(clock.getTime())
+
+        Assertions.assertEquals(1F, bolt!!.positionVector.getX())
+        Assertions.assertEquals(0.99F, bolt.positionVector.getY())
+    }
+
+    @Test
+    fun testCollisionHit() {
+        get().setBoltMaxDuration(1500)
+
+        val player = mockk<Player>(relaxed = true)
+
+        val playersList = mutableListOf(player)
+
+        every { players.iterator() } returns playersList.iterator()
+        every { players.spliterator() } returns playersList.spliterator()
+        every { players.stream() } returns playersList.stream()
+
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0.5F,
+            0.5F,
+            0F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+        val boltId = bolt!!.id
+
+        every { clock.getTime() } returns 1000L
+
+        every { player.collision(bolt.positionVector, get().getBoltCollisionRadius()) } returns true
+
+
+        val domainEvents = ArrayList<DomainEvent>()
+        getDomainEvents().registerEventDispatcher { e -> domainEvents.add(e) }
+
+        bolts.fixedUpdate(clock.getTime())
+
+        val events = domainEvents
+            .stream()
+            .map { d -> d.event }
+            .collect(Collectors.toList())
+
+
+        val boltExhaustedEventDto = events
+            .stream()
+            .filter { obj -> obj!!.hasBoltExhausted() }
+            .map { obj -> obj!!.getBoltExhausted() }
+            .findFirst().orElse(null)
+
+        Assertions.assertNotNull(boltExhaustedEventDto)
+        Assertions.assertArrayEquals(
+            boltId.getGuid().guid.toByteArray(),
+            boltExhaustedEventDto!!.boltId.getGuid().toByteArray()
+        )
+    }
+
+    @Test
+    fun testCollisionMiss() {
+        get().setBoltMaxDuration(1500)
+
+        val player = mockk<Player>(relaxed = true)
+
+        val playersList = mutableListOf(player)
+
+        every { players.iterator() } returns playersList.iterator()
+        every { players.spliterator() } returns playersList.spliterator()
+        every { players.stream() } returns playersList.stream()
+
+
+        val one = newId()
+        val bolt = bolts.fired(
+            players,
+            newId(),
+            one,
+            0.5F,
+            0.5F,
+            0F,
+            get().getBoltSpeed(),
+            clock.getTime(),
+            get().getBoltMaxDuration()
+        ).orElse(null)
+        Assertions.assertNotNull(bolt)
+
+
+        every { clock.getTime() } returns 1000L
+        every { player.collision(bolt.positionVector, get().getBoltCollisionRadius()) } returns false
+
+        val events = ArrayList<DomainEvent>()
+        getDomainEvents().registerEventDispatcher(Consumer { e -> events.add(e) })
+
+        bolts.fixedUpdate(clock.getTime())
+
+
+        Assertions.assertEquals(
+            0, events
+                .stream()
+                .map<Event?> { d: DomainEvent? -> d!!.event }
+                .filter { obj: Event? -> obj!!.hasBoltExhausted() }
+                .count())
+    }
 }

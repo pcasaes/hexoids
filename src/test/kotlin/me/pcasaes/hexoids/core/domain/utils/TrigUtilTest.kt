@@ -1,14 +1,15 @@
-package me.pcasaes.hexoids.core.domain.utils;
+package me.pcasaes.hexoids.core.domain.utils
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateXComponentFromAngleAndMagnitude
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateYComponentFromAngleAndMagnitude
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 
 class TrigUtilTest {
-
+    
     @Test
-    void testZeroAngleMagnitude() {
-        assertEquals(0f, TrigUtil.calculateXComponentFromAngleAndMagnitude(0, 0), Float.MAX_VALUE);
-        assertEquals(0f, TrigUtil.calculateYComponentFromAngleAndMagnitude(0, 0), Float.MAX_VALUE);
+    fun testZeroAngleMagnitude() {
+        Assertions.assertEquals(0F, calculateXComponentFromAngleAndMagnitude(0F, 0F), Float.Companion.MAX_VALUE)
+        Assertions.assertEquals(0F, calculateYComponentFromAngleAndMagnitude(0F, 0F), Float.Companion.MAX_VALUE)
     }
 }
