@@ -5,9 +5,9 @@ import pcasaes.hexoids.proto.Event
 import java.util.UUID
 
 class DomainEvent private constructor(
-    @JvmField @get:JsonIgnore val topic: String?,
-    @JvmField val key: UUID,
-    @JvmField val event: Event?
+    @get:JsonIgnore val topic: String?,
+    val key: UUID,
+    val event: Event?
 ) {
 
     companion object {

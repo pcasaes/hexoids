@@ -16,9 +16,9 @@ import kotlin.math.max
  */
 class Bolt private constructor(
     private val players: Players,
-    @JvmField var id: EntityId,
+    var id: EntityId,
     private var ownerPlayerId: EntityId,
-    @JvmField val positionVector: PositionVector,
+    val positionVector: PositionVector,
     private var timestamp: Long,
     private var ttl: Int
 ) : GameObject {

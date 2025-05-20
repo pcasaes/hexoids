@@ -2,6 +2,7 @@ package me.pcasaes.hexoids.entrypoints.web
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.quarkus.vertx.web.Route
 import io.quarkus.vertx.web.RouteBase
 import io.vertx.ext.web.RoutingContext
@@ -31,7 +32,7 @@ class ClientsAvailableRoute {
             versions.put("HTML5", "0.8.0")
 
             try {
-                AVAILABLE = ObjectMapper().writeValueAsString(versions)
+                AVAILABLE = ObjectMapper().registerKotlinModule().writeValueAsString(versions)
             } catch (ex: JsonProcessingException) {
                 throw IllegalStateException(ex)
             }

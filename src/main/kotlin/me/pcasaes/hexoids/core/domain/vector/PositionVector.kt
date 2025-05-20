@@ -520,7 +520,6 @@ class PositionVector private constructor(
             return minSeparation <= intersectionThreshold
         }
 
-        @JvmField
         val DEFAULT_CONFIGURATION: Configuration = object : Configuration {
         }
     }
