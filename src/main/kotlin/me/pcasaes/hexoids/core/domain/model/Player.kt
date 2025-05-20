@@ -22,8 +22,6 @@ import pcasaes.hexoids.proto.PlayerLeftEventDto
 import pcasaes.hexoids.proto.PlayerMovedEventDto
 import pcasaes.hexoids.proto.PlayerSpawnedEventDto
 import java.util.Objects
-import java.util.Optional
-import java.util.OptionalDouble
 import java.util.Random
 import kotlin.math.max
 import kotlin.math.min
@@ -76,7 +74,7 @@ interface Player : GameObject {
      *
      * @return
      */
-    fun toDtoIfJoined(): Optional<PlayerDto>
+    fun toDtoIfJoined(): PlayerDto?
 
     /**
      * The player will join the game
@@ -358,11 +356,16 @@ interface Player : GameObject {
         override fun fired(event: BoltFiredEventDto) {
             val now = clock.getTime()
             if (isExpired(now, event.startTimestamp, event.ttl)) {
-                toBolt(event)
-                    .flatMap { b -> b.updateTimestamp(now) }
-                    .ifPresent { b -> b.tackleBoltExhaustion(now) }
+                val bolt = toBolt(event)
+                if (bolt != null) {
+                    bolt.updateTimestamp(now)
+                    bolt.tackleBoltExhaustion(now)
+                }
             } else if (this.liveBolts < Config.get().getMaxBolts()) {
-                toBolt(event).ifPresent { b -> this.firedNew(event, b) }
+                val bolt = toBolt(event)
+                if (bolt != null) {
+                    firedNew(event, bolt)
+                }
             }
         }
 
@@ -373,7 +376,7 @@ interface Player : GameObject {
             GameMetrics.get().getBoltFired().increment(this.clientPlatform)
         }
 
-        private fun toBolt(event: BoltFiredEventDto): Optional<Bolt> {
+        private fun toBolt(event: BoltFiredEventDto): Bolt? {
             return this.bolts.fired(
                 players,
                 EntityId.of(event.boltId),
@@ -396,21 +399,19 @@ interface Player : GameObject {
             return id == playerId
         }
 
-        override fun toDtoIfJoined(): Optional<PlayerDto> {
+        override fun toDtoIfJoined(): PlayerDto? {
             return if (!this.isJoined) {
-                Optional.empty()
+                null
             } else {
-                Optional.of(
-                    PlayerDto.newBuilder()
-                        .setPlayerId(id.getGuid())
-                        .setShip(ship)
-                        .setX(position.getX())
-                        .setY(position.getY())
-                        .setAngle(angle)
-                        .setSpawned(spawned)
-                        .setName(name)
-                        .build()
-                )
+                PlayerDto.newBuilder()
+                    .setPlayerId(id.getGuid())
+                    .setShip(ship)
+                    .setX(position.getX())
+                    .setY(position.getY())
+                    .setAngle(angle)
+                    .setSpawned(spawned)
+                    .setName(name)
+                    .build()
             }
         }
 
@@ -784,8 +785,8 @@ interface Player : GameObject {
                 return AtBoundsOptions.BOUNCE
             }
 
-            override fun maxMagnitude(): OptionalDouble {
-                return OptionalDouble.of(Config.get().getPlayerMaxMove().toDouble())
+            override fun maxMagnitude(): Double? {
+                return Config.get().getPlayerMaxMove().toDouble()
             }
 
             override fun dampenMagnitudeCoefficient(): Float {

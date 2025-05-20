@@ -14,8 +14,6 @@ import pcasaes.hexoids.proto.ClockSync
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.RequestCommand
 import java.io.IOException
-import java.util.Optional
-import java.util.function.Consumer
 import java.util.function.Supplier
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -73,7 +71,7 @@ class GameRoutes @Inject constructor(
     fun onMessage(ctx: ServerWebSocket, message: ByteArray, userId: EntityId) {
         try {
             getCommand(message)
-                .ifPresent { command -> onCommand(ctx, userId, command) }
+                ?.let { command -> onCommand(ctx, userId, command) }
         } catch (ex: RuntimeException) {
             LOGGER.warning(ex.message)
         }
@@ -107,17 +105,17 @@ class GameRoutes @Inject constructor(
         }
     }
 
-    private fun getCommand(value: ByteArray): Optional<RequestCommand> {
-        try {
+    private fun getCommand(value: ByteArray): RequestCommand? {
+        return try {
             val builder = RequestCommand.newBuilder()
             builder.mergeFrom(value)
-            return Optional.of(builder.build())
+            builder.build()
         } catch (ex: IOException) {
             LOGGER.warning(ex.message)
-            return Optional.empty()
+            null
         } catch (ex: RuntimeException) {
             LOGGER.warning(ex.message)
-            return Optional.empty()
+            null
         }
     }
 

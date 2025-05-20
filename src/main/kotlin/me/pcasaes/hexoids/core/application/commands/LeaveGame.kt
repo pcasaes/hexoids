@@ -8,7 +8,7 @@ class LeaveGame internal constructor(private val gameQueue: GameQueue) {
 
     fun leave(userId: EntityId) {
         this.gameQueue.enqueue {
-            Game.get().getPlayers().get(userId).ifPresent { player -> player.leave() }
+            Game.get().getPlayers().get(userId)?.leave()
         }
     }
 }

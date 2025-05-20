@@ -1,6 +1,5 @@
 package me.pcasaes.hexoids.core.domain.model
 
-import java.util.Optional
 import java.util.Random
 import java.util.function.LongPredicate
 
@@ -12,7 +11,7 @@ import java.util.function.LongPredicate
  *
  */
 class EventScheduler private constructor(private val physicsQueueEnqueue: PhysicsQueueEnqueue) {
-    private val eventFactories: MutableList<EventFactory> = ArrayList<EventFactory>()
+    private val eventFactories = ArrayList<EventFactory>()
 
     var currentTime: Long = -1
     var replayed: Boolean = false
@@ -48,11 +47,12 @@ class EventScheduler private constructor(private val physicsQueueEnqueue: Physic
             val end: Long = start + GRANULAR_TIME_IN_MILLIS
 
             eventFactories
-                .stream()
                 .map { ef -> ef.createEvent(rng, start, end) }
-                .filter { obj -> obj.isPresent }
-                .map { obj -> obj.get() }
-                .forEach { action -> physicsQueueEnqueue.enqueue(action) }
+                .forEach { action ->
+                    if (action != null) {
+                        physicsQueueEnqueue.enqueue(action)
+                    }
+                }
         }
     }
 
@@ -63,7 +63,7 @@ class EventScheduler private constructor(private val physicsQueueEnqueue: Physic
     }
 
     fun interface EventFactory {
-        fun createEvent(rng: Random, start: Long, end: Long): Optional<LongPredicate>
+        fun createEvent(rng: Random, start: Long, end: Long): LongPredicate?
     }
 
     companion object {

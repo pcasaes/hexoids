@@ -2,7 +2,6 @@ package me.pcasaes.hexoids.core.domain.service
 
 import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.model.Game
-import java.util.Optional
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -10,7 +9,7 @@ import java.util.logging.Logger
  * Used to add events into the game loop.
  */
 class GameLoopService private constructor() {
-    private val fixedUpdateRunnable: Optional<Runnable> = Optional.of(Runnable { this.fixedUpdate() })
+    private val fixedUpdateRunnable: Runnable = Runnable { this.fixedUpdate() }
 
 
     private var nextFixedUpdateTime: Long
@@ -46,12 +45,13 @@ class GameLoopService private constructor() {
         return NAME
     }
 
-    fun getFixedUpdateRunnable(): Optional<Runnable> {
+    fun getFixedUpdateRunnable(): Runnable? {
         val timestamp = this.gethGameTime()
-        if (timestamp > nextFixedUpdateTime) {
-            return fixedUpdateRunnable
+        return if (timestamp > nextFixedUpdateTime) {
+            fixedUpdateRunnable
+        } else {
+            null
         }
-        return Optional.empty()
     }
 
     companion object {

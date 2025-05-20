@@ -84,7 +84,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         val boltId = bolt!!.id
         Assertions.assertNotNull(bolt)
 
@@ -164,7 +164,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -172,7 +172,7 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0.01F, bolt.positionVector.getX())
+        Assertions.assertEquals(0.01F, bolt!!.positionVector.getX())
         Assertions.assertEquals(0F, bolt.positionVector.getY())
     }
 
@@ -193,7 +193,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -201,7 +201,7 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getX())
+        Assertions.assertEquals(0.0070710676F, bolt!!.positionVector.getX())
         Assertions.assertEquals(0.0070710676F, bolt.positionVector.getY())
     }
 
@@ -222,7 +222,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -251,7 +251,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -280,7 +280,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -309,7 +309,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
@@ -338,7 +338,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
         every { clock.getTime() } returns 1000L
@@ -372,7 +372,7 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
         val boltId = bolt!!.id
 
@@ -429,12 +429,12 @@ class BoltTest {
             get().getBoltSpeed(),
             clock.getTime(),
             get().getBoltMaxDuration()
-        ).orElse(null)
+        )
         Assertions.assertNotNull(bolt)
 
 
         every { clock.getTime() } returns 1000L
-        every { player.collision(bolt.positionVector, get().getBoltCollisionRadius()) } returns false
+        every { player.collision(bolt!!.positionVector, get().getBoltCollisionRadius()) } returns false
 
         val events = ArrayList<DomainEvent>()
         getDomainEvents().registerEventDispatcher(Consumer { e -> events.add(e) })

@@ -1,7 +1,6 @@
 package me.pcasaes.hexoids.entrypoints.web
 
 import io.quarkus.runtime.ShutdownEvent
-import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.ServerWebSocket
@@ -10,9 +9,7 @@ import jakarta.enterprise.event.Observes
 import jakarta.inject.Inject
 import me.pcasaes.hexoids.core.application.commands.ApplicationCommands
 import me.pcasaes.hexoids.core.domain.model.EntityId
-import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -28,14 +25,14 @@ class ClientSessions @Inject constructor(private val commandsService: Applicatio
         return this.sessions.remove(id) != null
     }
 
-    private fun get(id: EntityId): Optional<ServerWebSocket> {
-        return Optional.ofNullable(sessions[id])
+    private fun get(id: EntityId): ServerWebSocket? {
+        return sessions[id]
     }
 
     fun direct(id: EntityId, message: ByteArray) {
         val buffer = Buffer.buffer(message)
         get(id)
-            .ifPresent { s -> asyncSend(id, s, buffer) }
+            ?.let { s -> asyncSend(id, s, buffer) }
     }
 
     fun broadcast(message: ByteArray) {

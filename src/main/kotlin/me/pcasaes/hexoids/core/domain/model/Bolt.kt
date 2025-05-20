@@ -8,7 +8,6 @@ import pcasaes.hexoids.proto.BoltFiredEventDto
 import pcasaes.hexoids.proto.Event
 import pcasaes.hexoids.proto.MoveReason
 import java.util.ArrayDeque
-import java.util.Optional
 import java.util.Queue
 import kotlin.math.max
 
@@ -33,14 +32,10 @@ class Bolt private constructor(
     var isExhausted: Boolean = false
         private set
 
-    private val optionalThis: Optional<Bolt> // NOSONAR: optional memo
-
     private var firedEventDto: BoltFiredEventDto? = null
 
     init {
         this.startTimestamp = this.timestamp
-
-        this.optionalThis = Optional.of<Bolt>(this)
     }
 
     /**
@@ -74,16 +69,17 @@ class Bolt private constructor(
      * @param timestamp
      * @return return empty if the timestamp hasn't changed
      */
-    fun updateTimestamp(timestamp: Long): Optional<Bolt> {
+    fun updateTimestamp(timestamp: Long): Bolt? {
         val elapsed = max(0L, timestamp - this.timestamp)
-        if (elapsed > 0L) {
+        return if (elapsed > 0L) {
             this.timestamp = timestamp
             this.positionVector.update(timestamp)
             tackleDiverted(timestamp)
 
-            return optionalThis
+            this
+        } else {
+            null
         }
-        return Optional.empty<Bolt>()
     }
 
     private fun tackleDiverted(timestamp: Long) {

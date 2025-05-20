@@ -16,7 +16,6 @@ import pcasaes.hexoids.proto.Event
 import pcasaes.hexoids.proto.MassCollapsedIntoBlackHoleEventDto
 import pcasaes.hexoids.proto.MoveReason
 import java.util.Locale
-import java.util.Optional
 import java.util.Random
 import java.util.function.Consumer
 import java.util.function.LongPredicate
@@ -183,9 +182,9 @@ class Blackhole private constructor(
             clock: Clock,
             players: Players,
             bolts: Bolts
-        ): Optional<LongPredicate> {
+        ): LongPredicate? {
             if (rng.nextInt(Config.get().getBlackhole().getGenesisProbabilityFactor()) > 0) {
-                return Optional.empty<LongPredicate>()
+                return null
             }
 
             val entityId = EntityId.newId(rng)
@@ -194,7 +193,7 @@ class Blackhole private constructor(
 
             // we must do this check AFTER consuming the RNG otherwise we introduce non-deterministic behavior
             if (endTimestamp < clock.getTime()) {
-                return Optional.empty<LongPredicate>()
+                return null
             }
 
             val blackhole = Blackhole(
@@ -209,7 +208,7 @@ class Blackhole private constructor(
             GameMetrics.get().getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN)
             LOGGER.info { "Mass collapsed. id = " + blackhole.entityId + ", name = " + blackhole.name + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp }
 
-            return Optional.of<LongPredicate>(blackhole)
+            return blackhole
         }
     }
 }

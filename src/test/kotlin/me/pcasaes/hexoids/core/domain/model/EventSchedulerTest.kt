@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.util.Optional
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.LongPredicate
 
@@ -18,8 +17,7 @@ class EventSchedulerTest {
         val scheduler = create(physicsQueueEnqueue)
 
         scheduler.register { r, s, e ->
-            Optional.of<LongPredicate>(
-                LongPredicate { true })
+            LongPredicate { true }
         }
 
         scheduler.timer(0L)
@@ -40,7 +38,7 @@ class EventSchedulerTest {
                 c * EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS,
                 e
             )
-            Optional.of<LongPredicate>(LongPredicate { true })
+            LongPredicate { true }
         }
         scheduler.fixedUpdate(180000L)
 
@@ -60,7 +58,7 @@ class EventSchedulerTest {
         scheduler.register { r, s, e ->
             Assertions.assertEquals(hoursInMillis + 0L, s)
             Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
-            Optional.of<LongPredicate>(LongPredicate { true })
+            LongPredicate { true }
         }
 
         scheduler.timer(hoursInMillis + 0L)
@@ -79,7 +77,7 @@ class EventSchedulerTest {
         scheduler.register { r, s, e ->
             Assertions.assertEquals(hoursInMillis + 0L, s)
             Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
-            Optional.of<LongPredicate>(LongPredicate { true })
+            LongPredicate { true }
         }
 
         scheduler.timer(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS - 1)
@@ -98,7 +96,7 @@ class EventSchedulerTest {
         scheduler.register { r, s, e ->
             Assertions.assertEquals(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, s)
             Assertions.assertEquals(hoursInMillis + 2 * EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS, e)
-            Optional.of<LongPredicate>(LongPredicate { true })
+            LongPredicate { true }
         }
 
         scheduler.timer(hoursInMillis + EventScheduler.Companion.GRANULAR_TIME_IN_MILLIS)

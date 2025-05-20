@@ -12,7 +12,6 @@ import pcasaes.hexoids.proto.DirectedCommand
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.PlayerDestroyedEventDto
 import pcasaes.hexoids.proto.PlayerJoinedEventDto
-import java.util.Optional
 import java.util.UUID
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -48,11 +47,12 @@ class Players private constructor(
      * @param id player's id.
      * @return If created returns the player
      */
-    fun createPlayer(id: EntityId): Optional<Player> {
-        if (playerMap.containsKey(id)) {
-            return Optional.empty()
+    fun createPlayer(id: EntityId): Player? {
+        return if (playerMap.containsKey(id)) {
+            null
+        } else {
+            createOrGet(id)
         }
-        return Optional.of(createOrGet(id))
     }
 
     /**
@@ -73,11 +73,11 @@ class Players private constructor(
      * @param id player's identifier
      * @return Returns the player if they exist
      */
-    fun get(id: EntityId): Optional<Player> {
-        return Optional.ofNullable(playerMap[id])
+    fun get(id: EntityId): Player? {
+        return playerMap[id]
     }
 
-    private fun get(id: UUID): Optional<Player> {
+    private fun get(id: UUID): Player? {
         return get(of(id))
     }
 
@@ -116,9 +116,11 @@ class Players private constructor(
             .values
             .stream()
             .map { obj -> obj.toDtoIfJoined() }
-            .filter { obj -> obj.isPresent }
-            .map { obj -> obj.get() }
-            .forEach { value -> currentViewBuilder.addPlayers(value) }
+            .forEach { value ->
+                if (value != null) {
+                    currentViewBuilder.addPlayers(value)
+                }
+            }
 
         val builder = DirectedCommand.newBuilder()
             .setPlayerId(requesterId.getGuid())
@@ -173,16 +175,14 @@ class Players private constructor(
 
     fun consumeFromPlayerActionTopic(domainEvent: DomainEvent) {
         if (domainEvent.event != null && domainEvent.event.hasPlayerMoved()) {
-            get(domainEvent.key)
-                .ifPresent { p -> p.moved(domainEvent.event.getPlayerMoved()) }
+            get(domainEvent.key)?.moved(domainEvent.event.getPlayerMoved())
         }
         if (domainEvent.event != null && domainEvent.event.hasPlayerDestroyed()) {
             get(domainEvent.key)
-                .ifPresent { p -> handleDestroyed(p, domainEvent.event.getPlayerDestroyed()) }
+                ?.let { p -> handleDestroyed(p, domainEvent.event.getPlayerDestroyed()) }
         }
         if (domainEvent.event != null && domainEvent.event.hasPlayerSpawned()) {
-            get(domainEvent.key)
-                .ifPresent { p -> p.spawned(domainEvent.event.getPlayerSpawned()) }
+            get(domainEvent.key)?.spawned(domainEvent.event.getPlayerSpawned())
         }
     }
 
@@ -214,16 +214,14 @@ class Players private constructor(
     fun consumeFromPlayerFiredTopic(domainEvent: DomainEvent) {
         if (domainEvent.event != null && domainEvent.event.hasPlayerFired()) {
             val playerFiredEventDto = domainEvent.event.getPlayerFired()
-            get(of(playerFiredEventDto.ownerPlayerId))
-                .ifPresent { p -> p.fired(domainEvent.event.getPlayerFired()) }
+            get(of(playerFiredEventDto.ownerPlayerId))?.fired(domainEvent.event.getPlayerFired())
         }
     }
 
     fun consumeFromBoltActionTopic(domainEvent: DomainEvent) {
         if (domainEvent.event != null && domainEvent.event.hasBoltExhausted()) {
             val event = domainEvent.event.getBoltExhausted()
-            get(of(event.ownerPlayerId))
-                .ifPresent { obj -> obj.boltExhausted() }
+            get(of(event.ownerPlayerId))?.boltExhausted()
         }
     }
 

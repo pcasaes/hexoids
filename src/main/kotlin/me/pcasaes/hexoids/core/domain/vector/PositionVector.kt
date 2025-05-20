@@ -3,7 +3,6 @@ package me.pcasaes.hexoids.core.domain.vector
 import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleBetweenTwoPoints
 import me.pcasaes.hexoids.core.domain.vector.PositionVector.Configuration.AtBoundsOptions
-import java.util.OptionalDouble
 import java.util.function.DoubleUnaryOperator
 import kotlin.math.abs
 import kotlin.math.cos
@@ -411,8 +410,8 @@ class PositionVector private constructor(
             return AtBoundsOptions.IGNORE
         }
 
-        fun maxMagnitude(): OptionalDouble {
-            return OptionalDouble.empty()
+        fun maxMagnitude(): Double? {
+            return null
         }
 
         /**
@@ -443,11 +442,7 @@ class PositionVector private constructor(
         this.previousTimestamp = startTime
         this.currentTimestamp = this.previousTimestamp
         this.configuration = configuration
-        if (configuration.maxMagnitude().isPresent()) {
-            this.maxMagnitude = configuration.maxMagnitude().getAsDouble().toFloat()
-        } else {
-            this.maxMagnitude = null
-        }
+        this.maxMagnitude = configuration.maxMagnitude()?.toFloat()
     }
 
     companion object {

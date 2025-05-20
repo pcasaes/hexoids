@@ -8,7 +8,6 @@ import pcasaes.hexoids.proto.DirectedCommand
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.GUID
 import pcasaes.hexoids.proto.LiveBoltListCommandDto
-import java.util.Optional
 import java.util.stream.Stream
 import java.util.stream.StreamSupport
 
@@ -44,13 +43,14 @@ class Bolts : Iterable<Bolt> {
         speed: Float,
         startTimestamp: Long,
         ttl: Int
-    ): Optional<Bolt> {
-        if (activeBolts.containsKey(boltId)) {
-            return Optional.empty()
+    ): Bolt? {
+        return if (activeBolts.containsKey(boltId)) {
+            null
+        } else {
+            val bolt = create(players, boltId, ownerPlayerId, x, y, angle, speed, startTimestamp, ttl)
+            activeBolts.put(bolt.id, bolt)
+            bolt
         }
-        val bolt = create(players, boltId, ownerPlayerId, x, y, angle, speed, startTimestamp, ttl)
-        activeBolts.put(bolt.id, bolt)
-        return Optional.of(bolt)
     }
 
 
@@ -64,9 +64,8 @@ class Bolts : Iterable<Bolt> {
             .values
             .stream()
             .map { b -> b.updateTimestamp(timestamp) }
-            .filter { obj -> obj.isPresent }
-            .map { obj -> obj.get() }
-            .map { b -> b.tackleBoltExhaustion(timestamp) }
+            .filter { it != null }
+            .map { b -> b!!.tackleBoltExhaustion(timestamp) }
             .filter(Bolt::isActive)
             .forEach { b -> b.checkHits(timestamp) }
 

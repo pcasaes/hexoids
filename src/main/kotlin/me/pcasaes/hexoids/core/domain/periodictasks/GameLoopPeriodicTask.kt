@@ -10,9 +10,12 @@ class GameLoopPeriodicTask private constructor(
 ) : GamePeriodicTask {
 
     private fun gameLoopPeriodicTask() {
-        gameLoopService
+        val event = gameLoopService
             .getFixedUpdateRunnable()
-            .ifPresent { event -> this.publish(event) }
+
+        if (event != null) {
+            publish(event)
+        }
     }
 
     private fun publish(event: Runnable) {

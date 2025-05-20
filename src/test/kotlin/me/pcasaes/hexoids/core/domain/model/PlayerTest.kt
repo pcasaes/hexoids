@@ -95,9 +95,9 @@ internal class PlayerTest {
         Assertions.assertTrue(player.hasId(one))
         Assertions.assertFalse(player.hasId(two))
 
-        Assertions.assertSame(player, this.players.get(one).orElse(null))
+        Assertions.assertSame(player, this.players.get(one))
 
-        Assertions.assertNotSame(player, this.players.get(two).orElse(null))
+        Assertions.assertNotSame(player, this.players.get(two))
 
         Assertions.assertEquals(1, this.players.getTotalNumberOfPlayers())
         Assertions.assertEquals(0, this.players.getNumberOfConnectedPlayers())
