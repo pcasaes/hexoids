@@ -21,11 +21,10 @@ import pcasaes.hexoids.proto.MoveReason
 import pcasaes.hexoids.proto.PlayerJoinedEventDto
 import pcasaes.hexoids.proto.PlayerMovedEventDto
 import java.util.concurrent.atomic.AtomicReference
-import java.util.stream.Collectors
 import kotlin.math.cos
 
 
-internal class PlayerTest {
+class PlayerTest {
     private val clock = mockk<Clock>(relaxed = true)
 
     private val scoreBoard = mockk<ScoreBoard>(relaxed = true)
@@ -89,8 +88,8 @@ internal class PlayerTest {
         val player = this.players.createOrGet(one)
 
         Assertions.assertTrue(
-            this.players.stream()
-                .anyMatch { p -> p === player })
+            this.players
+                .any { p -> p === player })
 
         Assertions.assertTrue(player.hasId(one))
         Assertions.assertFalse(player.hasId(two))
@@ -181,10 +180,8 @@ internal class PlayerTest {
         player.leave()
 
         val events = dtos
-            .stream()
             .filter { it.hasEvent() }
             .map { it.getEvent() }
-            .collect(Collectors.toList())
 
         Assertions.assertEquals(1, events.size)
 
@@ -192,8 +189,8 @@ internal class PlayerTest {
         Assertions.assertEquals(one.getGuid(), event.getPlayerLeft().playerId)
 
         Assertions.assertFalse(
-            this.players.stream()
-                .anyMatch { p: Player? -> p === player })
+            this.players
+                .any { p: Player? -> p === player })
 
         Assertions.assertEquals(0, this.players.getTotalNumberOfPlayers())
         Assertions.assertEquals(0, this.players.getNumberOfConnectedPlayers())
@@ -704,9 +701,7 @@ internal class PlayerTest {
         player1.destroy(two, clock.getTime())
 
         val events = domainEvents
-            .stream()
             .map { it.event }
-            .collect(Collectors.toList())
 
 
         Assertions.assertEquals(1, events.size)

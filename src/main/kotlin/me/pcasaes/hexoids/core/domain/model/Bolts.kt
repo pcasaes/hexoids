@@ -8,8 +8,6 @@ import pcasaes.hexoids.proto.DirectedCommand
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.GUID
 import pcasaes.hexoids.proto.LiveBoltListCommandDto
-import java.util.stream.Stream
-import java.util.stream.StreamSupport
 
 /**
  * The collection of bolts. This collections only tracks bolts maintained
@@ -62,7 +60,7 @@ class Bolts : Iterable<Bolt> {
     fun fixedUpdate(timestamp: Long) {
         activeBolts
             .values
-            .stream()
+            .asSequence()
             .map { b -> b.updateTimestamp(timestamp) }
             .filter { it != null }
             .map { b -> b!!.tackleBoltExhaustion(timestamp) }
@@ -77,19 +75,10 @@ class Bolts : Iterable<Bolt> {
      *
      * @return
      */
-    override fun iterator(): MutableIterator<Bolt> {
+    override fun iterator(): Iterator<Bolt> {
         return activeBolts
             .values
             .iterator()
-    }
-
-    /**
-     * Returns a stream of the collection.
-     *
-     * @return
-     */
-    fun stream(): Stream<Bolt> {
-        return StreamSupport.stream(spliterator(), false)
     }
 
     /**
@@ -161,7 +150,7 @@ class Bolts : Iterable<Bolt> {
             .map { it.key }
 
         toRemove
-            .stream()
+            .asSequence()
             .map { activeBolts.remove(it) }
             .forEach {
                 if (it != null) {

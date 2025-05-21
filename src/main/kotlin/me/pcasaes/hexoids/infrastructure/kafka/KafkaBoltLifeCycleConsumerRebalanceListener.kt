@@ -7,9 +7,7 @@ import jakarta.inject.Named
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.common.TopicPartition
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import java.util.function.Function
 import java.util.logging.Logger
-import java.util.stream.Collectors
 
 @ApplicationScoped
 @Named("hexoids-server-bolt-life-cycle")
@@ -23,24 +21,17 @@ class KafkaBoltLifeCycleConsumerRebalanceListener @Inject constructor(
 
     override fun onPartitionsAssigned(consumer: Consumer<*, *>, partitions: MutableCollection<TopicPartition>) {
         val now = System.currentTimeMillis()
-        val shouldStartAt = now - (this.boltMaxDuration + 10000L)
+        val shouldStartAt = now - (this.boltMaxDuration + 10_000L)
 
         consumer.offsetsForTimes(
-            partitions
-                .stream()
-                .collect(
-                    Collectors.toMap(
-                        Function { k -> k },
-                        Function { _ -> shouldStartAt })
-                )
-        )
-            .forEach { (k, v) ->
-                if (v != null) {
-                    LOGGER.info("Seeking to $v")
-                    consumer.seek(k, v.offset())
-                    LOGGER.info("Seeked to $v")
-                }
+            partitions.associateWith { shouldStartAt }
+        ).forEach { (k, v) ->
+            if (v != null) {
+                LOGGER.info("Seeking to $v")
+                consumer.seek(k, v.offset())
+                LOGGER.info("Seeked to $v")
             }
+        }
 
         handler
             .onStarted()

@@ -10,9 +10,6 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex
 import me.pcasaes.hexoids.core.domain.model.Barrier
-import java.util.function.Consumer
-import java.util.stream.Collectors
-import java.util.stream.StreamSupport
 import kotlin.math.max
 import kotlin.math.min
 
@@ -49,8 +46,8 @@ class RTree2BarrierSpatialIndex : BarrierSpatialIndex {
 
     override fun update(barriers: Iterable<Barrier>) {
         index = RTree.create(
-            StreamSupport.stream(barriers.spliterator(), false)
-                .map { p: Barrier ->
+            barriers
+                .map { p ->
                     Entries.entry(
                         p, Geometries
                             .rectangle(
@@ -61,7 +58,6 @@ class RTree2BarrierSpatialIndex : BarrierSpatialIndex {
                             )
                     )
                 }
-                .collect(Collectors.toList())
         )
     }
 }

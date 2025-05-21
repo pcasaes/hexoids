@@ -13,9 +13,7 @@ import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import pcasaes.hexoids.proto.Event
 import java.util.concurrent.atomic.AtomicReference
-import java.util.stream.Collectors
 
 class BoltTest {
 
@@ -46,7 +44,6 @@ class BoltTest {
 
         every { players.iterator() } returns emptyList<Player>().iterator()
         every { players.spliterator() } returns emptyList<Player>().spliterator()
-        every { players.stream() } returns emptyList<Player>().stream()
 
         PlayerSpatialIndexFactory
             .factory()
@@ -95,14 +92,12 @@ class BoltTest {
         Assertions.assertEquals(
             1,
             bolts
-                .stream()
                 .count()
         )
 
         Assertions.assertTrue(
             bolts
-                .stream()
-                .anyMatch { b: Bolt? -> bolt == b })
+                .any { b: Bolt? -> bolt == b })
 
         Assertions.assertFalse(bolt.isExhausted)
         Assertions.assertTrue(bolt.isActive)
@@ -139,7 +134,6 @@ class BoltTest {
 
         Assertions.assertEquals(
             0, bolts
-                .stream()
                 .count()
         )
 
@@ -358,7 +352,6 @@ class BoltTest {
 
         every { players.iterator() } returns playersList.iterator()
         every { players.spliterator() } returns playersList.spliterator()
-        every { players.stream() } returns playersList.stream()
 
         val one = newId()
         val bolt = bolts.fired(
@@ -386,16 +379,13 @@ class BoltTest {
         bolts.fixedUpdate(clock.getTime())
 
         val events = domainEvents
-            .stream()
             .map { d -> d.event }
-            .collect(Collectors.toList())
 
 
         val boltExhaustedEventDto = events
-            .stream()
             .filter { obj -> obj!!.hasBoltExhausted() }
             .map { obj -> obj!!.getBoltExhausted() }
-            .findFirst().orElse(null)
+            .firstOrNull()
 
         Assertions.assertNotNull(boltExhaustedEventDto)
         Assertions.assertArrayEquals(
@@ -414,7 +404,6 @@ class BoltTest {
 
         every { players.iterator() } returns playersList.iterator()
         every { players.spliterator() } returns playersList.spliterator()
-        every { players.stream() } returns playersList.stream()
 
 
         val one = newId()
@@ -443,9 +432,6 @@ class BoltTest {
 
         Assertions.assertEquals(
             0, events
-                .stream()
-                .map<Event?> { d: DomainEvent? -> d!!.event }
-                .filter { obj: Event? -> obj!!.hasBoltExhausted() }
-                .count())
+                .map { d -> d.event }.count { obj -> obj!!.hasBoltExhausted() })
     }
 }

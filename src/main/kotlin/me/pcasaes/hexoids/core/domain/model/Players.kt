@@ -14,9 +14,6 @@ import pcasaes.hexoids.proto.PlayerDestroyedEventDto
 import pcasaes.hexoids.proto.PlayerJoinedEventDto
 import java.util.UUID
 import java.util.function.Consumer
-import java.util.stream.Collectors
-import java.util.stream.Stream
-import java.util.stream.StreamSupport
 
 /**
  * The collection of Players.
@@ -102,9 +99,7 @@ class Players private constructor(
     fun requestCurrentView(requesterId: EntityId) {
         val currentViewBuilder = CurrentViewCommandDto.newBuilder()
             .addAllBarriers(
-                StreamSupport.stream(barriers.spliterator(), false)
-                    .map { obj -> obj.toDto() }
-                    .collect(Collectors.toList())
+                barriers.map { it.toDto() }
             )
             .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.getMaxBolts()))
 
@@ -114,7 +109,7 @@ class Players private constructor(
 
         playerMap
             .values
-            .stream()
+            .asSequence()
             .map { obj -> obj.toDtoIfJoined() }
             .forEach { value ->
                 if (value != null) {
@@ -142,15 +137,6 @@ class Players private constructor(
         return playerMap
             .values
             .iterator()
-    }
-
-    /**
-     * Stream of players
-     *
-     * @return
-     */
-    fun stream(): Stream<Player> {
-        return StreamSupport.stream(spliterator(), false)
     }
 
     fun joined(event: PlayerJoinedEventDto) {
@@ -232,7 +218,7 @@ class Players private constructor(
      */
     fun fixedUpdate(timestamp: Long) {
         playerServerUpdateSet
-            .stream()
+            .asSequence()
             .map { key -> playerMap[key] }
             .forEach { p -> p?.fixedUpdate(timestamp) }
     }

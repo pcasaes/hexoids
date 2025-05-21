@@ -12,12 +12,11 @@ import org.eclipse.microprofile.health.Liveness
 class StalledHealthCheck @Inject constructor(private val queueMetricList: List<QueueMetric>) : HealthCheck {
     override fun call(): HealthCheckResponse {
         return queueMetricList
-            .stream()
-            .sorted { a, b -> QueueMetric.Companion.compare(a, b) }
+            .asSequence()
+            .sortedWith { a, b -> QueueMetric.Companion.compare(a, b) }
             .filter { obj -> obj.isStalled() }
             .map { m -> "Stalled. Queue '${m.getName()}' was checked  ${m.getLastCheckTimeAgoNano()} nanosecond ago." }
             .map { name -> HealthCheckResponse.down(name) }
-            .findFirst()
-            .orElse(HealthCheckResponse.up("Queue is up to date"))
+            .firstOrNull() ?: HealthCheckResponse.up("Queue is up to date")
     }
 }

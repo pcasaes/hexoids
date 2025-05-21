@@ -11,8 +11,6 @@ import jakarta.enterprise.event.Observes
 import jakarta.inject.Inject
 import jakarta.interceptor.Interceptor
 import me.pcasaes.hexoids.infrastructure.disruptor.QueueMetric
-import java.util.function.Consumer
-import java.util.function.ToDoubleFunction
 
 @ApplicationScoped
 class QueueProcessingMetrics @Inject constructor(
@@ -80,10 +78,9 @@ class QueueProcessingMetrics @Inject constructor(
 
     fun getGreaterLoadFactor(): Double {
         return queueMetricList
-            .stream()
-            .sorted { a, b -> QueueMetric.Companion.compare(a, b) }
+            .asSequence()
+            .sortedWith { a, b -> QueueMetric.Companion.compare(a, b) }
             .map { obj -> obj.getLoadFactor() }
-            .findFirst()
-            .orElse(0.0)
+            .firstOrNull() ?: 0.0
     }
 }

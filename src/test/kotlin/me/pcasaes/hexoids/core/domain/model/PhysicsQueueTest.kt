@@ -7,9 +7,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import java.util.function.IntFunction
-import java.util.function.LongPredicate
-import java.util.stream.IntStream
 
 class PhysicsQueueTest {
     @Test
@@ -24,10 +21,8 @@ class PhysicsQueueTest {
     fun testNonRecurring(processorsCount: Int) {
         val physicsQueue = create()
 
-        val processors = IntStream
-            .range(0, processorsCount)
-            .mapToObj(IntFunction { i: Int -> AtomicLong(0L) })
-            .toList()
+        val processors = (0 until processorsCount)
+            .map { AtomicLong(0L) }
 
         processors
             .forEach { p ->
@@ -52,10 +47,8 @@ class PhysicsQueueTest {
     fun testRecurring(processorsCount: Int) {
         val physicsQueue = create()
 
-        val processors = IntStream
-            .range(0, processorsCount)
-            .mapToObj { AtomicLong(0L) }
-            .toList()
+        val processors = (0 until processorsCount)
+            .map { AtomicLong(0L) }
 
         processors
             .forEach(Consumer { p ->

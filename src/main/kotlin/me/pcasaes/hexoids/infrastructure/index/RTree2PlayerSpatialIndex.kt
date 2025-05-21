@@ -22,7 +22,6 @@ import me.pcasaes.hexoids.core.domain.model.Player
 import java.util.concurrent.TimeUnit
 import java.util.function.LongPredicate
 import java.util.logging.Logger
-import java.util.stream.Collectors
 import kotlin.math.max
 import kotlin.math.min
 
@@ -123,20 +122,18 @@ class RTree2PlayerSpatialIndex @Inject constructor(
             return false
         }
 
-        fun update(players: MutableList<Player>, start: Long) {
+        fun update(players: List<Player>, start: Long) {
             this.context
                 .runOnContext { _ ->
                     if (running) {
                         val rtree = RTree.create(
                             players
-                                .stream()
                                 .map { p ->
                                     Entries.entry(
                                         p,
                                         Geometries.point(p.getX(), p.getY())
                                     )
                                 }
-                                .collect(Collectors.toList()) // NOSONAR: we want a mutable list
                         )
                         finishedUpdate(rtree, start)
                     }

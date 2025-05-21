@@ -38,8 +38,7 @@ class PeriodicTaskScheduler(
     @PostConstruct
     fun start() {
         gamePeriodicTasksFactory
-            .stream()
-            .forEach { e: GamePeriodicTask? -> gamePeriodicTasks.add(e) }
+            .forEach { gamePeriodicTasks.add(it) }
 
         this.lowFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
         this.hiFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()

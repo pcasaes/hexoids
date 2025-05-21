@@ -41,7 +41,6 @@ class DelayedStartConsumerHandler {
     fun register(nextOffsets: MutableMap<TopicPartition, Long?>) {
         nextOffsets
             .entries
-            .stream()
             .forEach { entry ->
                 val v = entry.value
                 if (v != null && v > 0) {
