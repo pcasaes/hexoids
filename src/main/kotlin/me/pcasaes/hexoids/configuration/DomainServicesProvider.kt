@@ -12,12 +12,12 @@ class DomainServicesProvider {
     @Produces
     @Singleton
     fun getGameTimeService(): GameTimeService {
-        return GameTimeService.getInstance()
+        return GameTimeService
     }
 
     @Produces
     @Singleton
     fun getGameLoopService(): GameLoopService {
-        return GameLoopService.getInstance()
+        return GameLoopService
     }
 }

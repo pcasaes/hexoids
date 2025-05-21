@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.vector.PositionVector
 import pcasaes.hexoids.proto.BoltDivertedEventDto
 import pcasaes.hexoids.proto.BoltExhaustedEventDto
@@ -164,7 +164,7 @@ class Bolt private constructor(
                 .search(
                     this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
                     this.positionVector.getX(), this.positionVector.getY(),
-                    get().getBoltCollisionIndexSearchDistance()
+                    Config.getBoltCollisionIndexSearchDistance()
                 )
                 .forEach { p -> hit(p, timestamp) }
         }
@@ -172,7 +172,7 @@ class Bolt private constructor(
 
     private fun hit(player: Player, timestamp: Long) {
         val isHit = !player.hasId(ownerPlayerId) &&
-                player.collision(positionVector, get().getBoltCollisionRadius())
+                player.collision(positionVector, Config.getBoltCollisionRadius())
 
         if (isHit) {
             player.destroy(this.ownerPlayerId, timestamp)

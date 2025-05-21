@@ -18,10 +18,10 @@ class Shockwave private constructor(
 
     private val center: Vector2 = Vector2.fromXY(destroyedPlayer.getX(), destroyedPlayer.getY())
 
-    private val duration: Long = Config.get().getPlayerDestroyedShockwave().getDuration()
+    private val duration: Long = Config.getPlayerDestroyedShockwave().getDuration()
     private val durationWithPadding: Long = this.duration + 20
-    private val distance: Float = Config.get().getPlayerDestroyedShockwave().getDistance()
-    private val impulse: Float = Config.get().getPlayerDestroyedShockwave().getImpulse()
+    private val distance: Float = Config.getPlayerDestroyedShockwave().getDistance()
+    private val impulse: Float = Config.getPlayerDestroyedShockwave().getImpulse()
 
     private fun range(elapsed: Long): Float {
         val ratio = 1.0F - MathUtil.square((elapsed / this.duration.toFloat()) - 1F)
@@ -64,7 +64,7 @@ class Shockwave private constructor(
                     )
 
                 nearPlayer.move(move.getX(), move.getY(), MoveReason.SHOCKWAVE_PUSH)
-                GameMetrics.get().getMovedByShockwave().increment(nearPlayer.getClientPlatform())
+                GameMetrics.getMovedByShockwave().increment(nearPlayer.getClientPlatform())
             }
         }
     }

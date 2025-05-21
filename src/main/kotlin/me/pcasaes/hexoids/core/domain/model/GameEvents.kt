@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.logging.Logger
 
-class GameEvents<T> private constructor(private val name: String) {
+open class GameEvents<T> private constructor(private val name: String) {
     private val dispatcher = AtomicReference<Consumer<T>?>()
 
     /**
@@ -39,19 +39,20 @@ class GameEvents<T> private constructor(private val name: String) {
         getDispatcher().accept(event)
     }
 
+
+    private object DtoGameEvents : GameEvents<Dto>("client")
+    private object DomainGameEvents : GameEvents<DomainEvent>("domain-event")
+
+
     companion object {
         private val LOGGER: Logger = Logger.getLogger(GameEvents::class.java.getName())
 
-        private val CLIENT_INSTANCE = GameEvents<Dto>("client")
-
-        private val DOMAIN_EVENT_INSTANCE = GameEvents<DomainEvent>("domain-event")
-
         fun getClientEvents(): GameEvents<Dto> {
-            return CLIENT_INSTANCE
+            return DtoGameEvents
         }
 
         fun getDomainEvents(): GameEvents<DomainEvent> {
-            return DOMAIN_EVENT_INSTANCE
+            return DomainGameEvents
         }
     }
 }

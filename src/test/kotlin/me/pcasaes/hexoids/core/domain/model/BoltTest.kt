@@ -2,7 +2,7 @@ package me.pcasaes.hexoids.core.domain.model
 
 import io.mockk.every
 import io.mockk.mockk
-import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndex
 import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pcasaes.hexoids.proto.Event
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
 import java.util.stream.Collectors
 
 class BoltTest {
@@ -40,10 +39,10 @@ class BoltTest {
 
         every { clock.getTime() } returns 0L
 
-        get().setBoltMaxDuration(10000)
-        get().setBoltSpeed(0.01F)
-        get().setBoltCollisionRadius(0.001F)
-        get().setMinMove(0.000000001F)
+        Config.setBoltMaxDuration(10000)
+        Config.setBoltSpeed(0.01F)
+        Config.setBoltCollisionRadius(0.001F)
+        Config.setMinMove(0.000000001F)
 
         every { players.iterator() } returns emptyList<Player>().iterator()
         every { players.spliterator() } returns emptyList<Player>().spliterator()
@@ -73,7 +72,7 @@ class BoltTest {
         getDomainEvents().registerEventDispatcher { e -> events.add(e) }
 
         val one = newId()
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val bolt = bolts.fired(
             players,
             newId(),
@@ -81,9 +80,9 @@ class BoltTest {
             0F,
             0F,
             0F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         val boltId = bolt!!.id
         Assertions.assertNotNull(bolt)
@@ -150,9 +149,9 @@ class BoltTest {
     @Test
     fun testMoveRight() {
         val eventReference = AtomicReference<DomainEvent?>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -161,9 +160,9 @@ class BoltTest {
             0F,
             0F,
             0F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -179,9 +178,9 @@ class BoltTest {
     @Test
     fun testMoveRightDown() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -190,9 +189,9 @@ class BoltTest {
             0F,
             0F,
             Math.PI.toFloat() / 4F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -208,9 +207,9 @@ class BoltTest {
     @Test
     fun testMoveDown() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -219,9 +218,9 @@ class BoltTest {
             0F,
             0F,
             Math.PI.toFloat() / 2F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -237,9 +236,9 @@ class BoltTest {
     @Test
     fun testMoveLeftDown() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -248,9 +247,9 @@ class BoltTest {
             1F,
             0F,
             (3 * Math.PI / 4F).toFloat(),
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -266,9 +265,9 @@ class BoltTest {
     @Test
     fun testMoveLeft() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -277,9 +276,9 @@ class BoltTest {
             1F,
             0F,
             Math.PI.toFloat(),
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -295,9 +294,9 @@ class BoltTest {
     @Test
     fun testMoveLefUp() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -306,9 +305,9 @@ class BoltTest {
             1F,
             1F,
             (5 * Math.PI / 4F).toFloat(),
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -324,9 +323,9 @@ class BoltTest {
     @Test
     fun testMoveUp() {
         val eventReference = AtomicReference<DomainEvent>(null)
-        getDomainEvents().registerEventDispatcher(Consumer { newValue -> eventReference.set(newValue) })
+        getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
         val one = newId()
         val bolt = bolts.fired(
             players,
@@ -335,9 +334,9 @@ class BoltTest {
             1F,
             1F,
             (3 * Math.PI / 2F).toFloat(),
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
@@ -351,7 +350,7 @@ class BoltTest {
 
     @Test
     fun testCollisionHit() {
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
 
         val player = mockk<Player>(relaxed = true)
 
@@ -369,16 +368,16 @@ class BoltTest {
             0.5F,
             0.5F,
             0F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
         val boltId = bolt!!.id
 
         every { clock.getTime() } returns 1000L
 
-        every { player.collision(bolt.positionVector, get().getBoltCollisionRadius()) } returns true
+        every { player.collision(bolt.positionVector, Config.getBoltCollisionRadius()) } returns true
 
 
         val domainEvents = ArrayList<DomainEvent>()
@@ -401,13 +400,13 @@ class BoltTest {
         Assertions.assertNotNull(boltExhaustedEventDto)
         Assertions.assertArrayEquals(
             boltId.getGuid().guid.toByteArray(),
-            boltExhaustedEventDto!!.boltId.getGuid().toByteArray()
+            boltExhaustedEventDto!!.boltId.guid.toByteArray()
         )
     }
 
     @Test
     fun testCollisionMiss() {
-        get().setBoltMaxDuration(1500)
+        Config.setBoltMaxDuration(1500)
 
         val player = mockk<Player>(relaxed = true)
 
@@ -426,18 +425,18 @@ class BoltTest {
             0.5F,
             0.5F,
             0F,
-            get().getBoltSpeed(),
+            Config.getBoltSpeed(),
             clock.getTime(),
-            get().getBoltMaxDuration()
+            Config.getBoltMaxDuration()
         )
         Assertions.assertNotNull(bolt)
 
 
         every { clock.getTime() } returns 1000L
-        every { player.collision(bolt!!.positionVector, get().getBoltCollisionRadius()) } returns false
+        every { player.collision(bolt!!.positionVector, Config.getBoltCollisionRadius()) } returns false
 
         val events = ArrayList<DomainEvent>()
-        getDomainEvents().registerEventDispatcher(Consumer { e -> events.add(e) })
+        getDomainEvents().registerEventDispatcher { e -> events.add(e) }
 
         bolts.fixedUpdate(clock.getTime())
 

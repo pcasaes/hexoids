@@ -39,12 +39,12 @@ class Blackhole private constructor(
     private val destroyProbability: Float
 
     init {
-        this.eventHorizonRadius = Config.get().getBlackhole().getEventHorizonRadius()
-        this.gravityRadius = Config.get().getBlackhole().getGravityRadius()
-        this.gravityImpulse = Config.get().getBlackhole().getGravityImpulse()
-        this.dampenFactor = Config.get().getBlackhole().getDampenFactor()
+        this.eventHorizonRadius = Config.getBlackhole().getEventHorizonRadius()
+        this.gravityRadius = Config.getBlackhole().getGravityRadius()
+        this.gravityImpulse = Config.getBlackhole().getGravityImpulse()
+        this.dampenFactor = Config.getBlackhole().getDampenFactor()
         this.rng = Random()
-        this.destroyProbability = 1F - Config.get().getBlackhole().getTeleportProbability()
+        this.destroyProbability = 1F - Config.getBlackhole().getTeleportProbability()
 
         val idStr = entityId.toString()
         val sbName = StringBuilder()
@@ -111,7 +111,7 @@ class Blackhole private constructor(
         val exists = clock.getTime() < endTimestamp
 
         if (!exists) {
-            GameMetrics.get().getBlackholeEvaporated().increment(ClientPlatforms.UNKNOWN)
+            GameMetrics.getBlackholeEvaporated().increment(ClientPlatforms.UNKNOWN)
             LOGGER.info { "Blackhole evaporated: $entityId" }
             players.unregisterCurrentViewModifier(entityId)
         }
@@ -148,9 +148,9 @@ class Blackhole private constructor(
 
                 if (destroyed) {
                     nearByGameObject.hazardDestroy(entityId, timestamp)
-                    GameMetrics.get().getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform())
+                    GameMetrics.getDestroyedByBlackhole().increment(nearByGameObject.getClientPlatform())
                 } else {
-                    GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
+                    GameMetrics.getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
                 }
             } else {
                 val acceleration = accel(absMagnitude)
@@ -167,7 +167,7 @@ class Blackhole private constructor(
                 }
 
                 nearByGameObject.move(move.getX(), move.getY(), MoveReason.BLACKHOLE_PULL)
-                GameMetrics.get().getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
+                GameMetrics.getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
             }
         }
     }
@@ -182,7 +182,7 @@ class Blackhole private constructor(
             players: Players,
             bolts: Bolts
         ): LongPredicate? {
-            if (rng.nextInt(Config.get().getBlackhole().getGenesisProbabilityFactor()) > 0) {
+            if (rng.nextInt(Config.getBlackhole().getGenesisProbabilityFactor()) > 0) {
                 return null
             }
 
@@ -204,7 +204,7 @@ class Blackhole private constructor(
                 bolts
             ).start()
 
-            GameMetrics.get().getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN)
+            GameMetrics.getMassCollapsedIntoBlackhole().increment(ClientPlatforms.UNKNOWN)
             LOGGER.info { "Mass collapsed. id = " + blackhole.entityId + ", name = " + blackhole.name + ", center = " + blackhole.center + ",  start = " + blackhole.startTimestamp + ", end = " + blackhole.endTimestamp }
 
             return blackhole

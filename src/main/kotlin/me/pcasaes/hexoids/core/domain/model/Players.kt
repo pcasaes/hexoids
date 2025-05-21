@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndex
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
@@ -106,7 +106,7 @@ class Players private constructor(
                     .map { obj -> obj.toDto() }
                     .collect(Collectors.toList())
             )
-            .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(get().getMaxBolts()))
+            .setBoltsAvailable(BoltsAvailableCommandDto.newBuilder().setAvailable(Config.getMaxBolts()))
 
         registeredCurrentViewModifiers
             .values

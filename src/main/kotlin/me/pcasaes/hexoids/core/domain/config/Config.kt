@@ -1,13 +1,7 @@
 package me.pcasaes.hexoids.core.domain.config
 
-class Config {
+object Config {
 
-    companion object {
-
-        fun get(): Config {
-            return ConfigHolder.INSTANCE
-        }
-    }
 
     private var updateFrequencyInMillis: Long = 0
     private var updateFrequencyInMillisWithAdded20Percent = 0F
@@ -38,10 +32,6 @@ class Config {
     private val playerDestroyedShockwave = PlayerDestroyedShockwave()
 
     private val blackhole = Blackhole()
-
-    private object ConfigHolder {
-        val INSTANCE: Config = Config()
-    }
 
     fun getUpdateFrequencyInMillis(): Long {
         return updateFrequencyInMillis

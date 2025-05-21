@@ -3,7 +3,7 @@ package me.pcasaes.hexoids.core.domain.model
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory.Companion.factory
 import me.pcasaes.hexoids.core.domain.model.Bolts.Companion.create
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
@@ -74,12 +74,12 @@ internal class PlayerTest {
 
         every { clock.getTime() } returns 0L
 
-        get().setPlayerMaxMove(1f)
-        get().setPlayerNameLength(7)
-        get().setMinMove(0.000000001f)
-        get().setPlayerMaxAngleDivisor(0.5f)
-        get().setBoltInertiaEnabled(false)
-        get().setUpdateFrequencyInMillis(50L)
+        Config.setPlayerMaxMove(1f)
+        Config.setPlayerNameLength(7)
+        Config.setMinMove(0.000000001f)
+        Config.setPlayerMaxAngleDivisor(0.5f)
+        Config.setBoltInertiaEnabled(false)
+        Config.setUpdateFrequencyInMillis(50L)
     }
 
     @Test
@@ -142,7 +142,7 @@ internal class PlayerTest {
 
         Assertions.assertNotNull(event)
         Assertions.assertEquals(one.getGuid(), event!!.playerId)
-        Assertions.assertEquals(one.toString().substring(0, get().getPlayerNameLength()), event.name)
+        Assertions.assertEquals(one.toString().substring(0, Config.getPlayerNameLength()), event.name)
 
         Assertions.assertEquals(1, this.players.getTotalNumberOfPlayers())
         Assertions.assertEquals(1, this.players.getNumberOfConnectedPlayers())
@@ -396,7 +396,7 @@ internal class PlayerTest {
 
     @Test
     fun testMaxFire() {
-        get().setMaxBolts(2)
+        Config.setMaxBolts(2)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -419,7 +419,7 @@ internal class PlayerTest {
 
     @Test
     fun testBoltExhaustion() {
-        get().setMaxBolts(2)
+        Config.setMaxBolts(2)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -444,8 +444,8 @@ internal class PlayerTest {
 
     @Test
     fun testFireDirection() {
-        get().setMaxBolts(2)
-        get().setBoltInertiaEnabled(false)
+        Config.setMaxBolts(2)
+        Config.setBoltInertiaEnabled(false)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -482,13 +482,13 @@ internal class PlayerTest {
     @Test
     @Disabled
     fun testFireDirectionWithInertia() {
-        get().setMaxBolts(2)
-        get().setBoltInertiaEnabled(true)
-        get().setBoltInertiaProjectionScale(1f)
-        get().setBoltInertiaRejectionScale(1f)
-        get().setBoltInertiaNegativeProjectionScale(1f)
-        get().setPlayerMaxMove(20f)
-        get().setBoltSpeed(20f)
+        Config.setMaxBolts(2)
+        Config.setBoltInertiaEnabled(true)
+        Config.setBoltInertiaProjectionScale(1f)
+        Config.setBoltInertiaRejectionScale(1f)
+        Config.setBoltInertiaNegativeProjectionScale(1f)
+        Config.setPlayerMaxMove(20f)
+        Config.setBoltSpeed(20f)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -528,7 +528,7 @@ internal class PlayerTest {
 
     @Test
     fun testCollisionHitBullsEye() {
-        get().setUpdateFrequencyInMillis(1000L)
+        Config.setUpdateFrequencyInMillis(1000L)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -559,7 +559,7 @@ internal class PlayerTest {
 
     @Test
     fun testCollisionHitWithinRadius() {
-        get().setUpdateFrequencyInMillis(1000L)
+        Config.setUpdateFrequencyInMillis(1000L)
         val one = newId()
         val player = this.players.createOrGet(one)
         player.join(
@@ -588,7 +588,7 @@ internal class PlayerTest {
 
     @Test
     fun testCollisionNoHitInsideSquare() {
-        get().setUpdateFrequencyInMillis(1000L)
+        Config.setUpdateFrequencyInMillis(1000L)
 
         val one = newId()
         val player = this.players.createOrGet(one)
@@ -617,7 +617,7 @@ internal class PlayerTest {
 
     @Test
     fun testCollisionNoHitOutsideSquareX() {
-        get().setUpdateFrequencyInMillis(1000L)
+        Config.setUpdateFrequencyInMillis(1000L)
 
         val one = newId()
         val player = this.players.createOrGet(one)

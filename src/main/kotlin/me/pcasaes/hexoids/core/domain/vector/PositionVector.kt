@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.vector
 
-import me.pcasaes.hexoids.core.domain.config.Config.Companion.get
+import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleBetweenTwoPoints
 import me.pcasaes.hexoids.core.domain.vector.PositionVector.Configuration.AtBoundsOptions
 import java.util.function.DoubleUnaryOperator
@@ -118,7 +118,7 @@ class PositionVector private constructor(
         It's not a game play limitation like maxMove/maxMagnitude. We do it cheaply
         here by comparing horizontal and vertical movements independently.
          */
-        val minMove = get().getMinMove()
+        val minMove = Config.getMinMove()
         if (abs(moveX) <= minMove &&
             abs(moveY) <= minMove
         ) {
@@ -142,7 +142,7 @@ class PositionVector private constructor(
     }
 
     fun scheduleMove(moveX: Float, moveY: Float) {
-        val minMove = get().getMinMove()
+        val minMove = Config.getMinMove()
         if (abs(moveX) <= minMove &&
             abs(moveY) <= minMove
         ) {
@@ -172,7 +172,7 @@ class PositionVector private constructor(
 
         val elapsed = (timestamp - this.currentTimestamp)
 
-        val minMove = get().getMinMove()
+        val minMove = Config.getMinMove()
 
         this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed))
 
@@ -263,11 +263,11 @@ class PositionVector private constructor(
             return getVelocity()
         }
 
-        val dampMagCoef = get().getInertiaDampenCoefficient()
+        val dampMagCoef = Config.getInertiaDampenCoefficient()
         if (dampMagCoef < 0F && velocity.getMagnitude() != 0F) {
             val elapsed = (timestamp - this.currentTimestamp)
 
-            val minMove = get().getMinMove()
+            val minMove = Config.getMinMove()
 
             var mag: Float = calculateDampenedMagnitude(this.velocity, dampMagCoef, elapsed)
             if (mag < minMove) {
@@ -285,7 +285,7 @@ class PositionVector private constructor(
         currentPosition.getX() < 0F || currentPosition.getX() > 1F || currentPosition.getY() < 0F || currentPosition.getY() > 1F
 
     private fun intersectedWithSegment(b: PositionVector, intersectionThreshold: Float): Boolean {
-        val minMove = get().getMinMove()
+        val minMove = Config.getMinMove()
 
         // https://gamedev.stackexchange.com/questions/125011/given-the-position-and-velocity-of-an-object-how-can-i-detect-possible-collision
         if (b.currentTimestamp > previousTimestamp) {
@@ -309,11 +309,11 @@ class PositionVector private constructor(
                 timeUntilCollision = if (currentTimestamp > b.currentTimestamp) {
                     (b.currentTimestamp - previousTimestamp) + 10F
                 } else {
-                    get().getUpdateFrequencyInMillisWithAdded20Percent()
+                    Config.getUpdateFrequencyInMillisWithAdded20Percent()
                 }
             } else {
                 bAdjustedPreviousPosition = b.previousPosition
-                timeUntilCollision = get().getUpdateFrequencyInMillisWithAdded20Percent()
+                timeUntilCollision = Config.getUpdateFrequencyInMillisWithAdded20Percent()
             }
 
             if (detectCollision(

@@ -218,7 +218,7 @@ interface Player : GameObject {
         init {
             this.ship = RNG.nextInt(12)
             this.lastSpawnOrUnspawnTimestamp = clock.getTime()
-            this.resetPosition = ResetPosition.create(Config.get().getPlayerResetPosition())
+            this.resetPosition = ResetPosition.create(Config.getPlayerResetPosition())
             this.playerPositionConfiguration = PlayerPositionConfiguration()
             this.position = PositionVector.of(
                 0F,
@@ -252,15 +252,15 @@ interface Player : GameObject {
 
             val rejection = currentShipVector
                 .minus(projection)
-                .scale(Config.get().getBoltInertiaRejectionScale())
+                .scale(Config.getBoltInertiaRejectionScale())
 
             projection = if (boltVector.sameDirection(projection)) {
-                projection.scale(Config.get().getBoltInertiaProjectionScale())
+                projection.scale(Config.getBoltInertiaProjectionScale())
             } else {
-                projection.scale(Config.get().getBoltInertiaNegativeProjectionScale())
+                projection.scale(Config.getBoltInertiaNegativeProjectionScale())
             }
             projection = projection
-                .scale(Config.get().getBoltInertiaProjectionScale())
+                .scale(Config.getBoltInertiaProjectionScale())
 
             return boltVector.add(rejection).add(projection)
         }
@@ -272,11 +272,11 @@ interface Player : GameObject {
 
             val now = clock.getTime()
 
-            var boltSpeed = Config.get().getBoltSpeed()
+            var boltSpeed = Config.getBoltSpeed()
             val boltAngle: Float
 
             val boltVector: Vector2
-            if (!Config.get().isBoltInertiaEnabled) {
+            if (!Config.isBoltInertiaEnabled) {
                 boltAngle = angle
                 boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed)
             } else {
@@ -318,7 +318,7 @@ interface Player : GameObject {
         }
 
         private fun calculateBoltTll(positionAtNow: Vector2, boltVector: Vector2, boltSpeed: Float): Int {
-            val maxTtl = Config.get().getBoltMaxDuration()
+            val maxTtl = Config.getBoltMaxDuration()
 
             val moveDelta = Vector2.calculateMoveDelta(boltVector, Float.Companion.MIN_VALUE, maxTtl.toLong())
 
@@ -361,7 +361,7 @@ interface Player : GameObject {
                     bolt.updateTimestamp(now)
                     bolt.tackleBoltExhaustion(now)
                 }
-            } else if (this.liveBolts < Config.get().getMaxBolts()) {
+            } else if (this.liveBolts < Config.getMaxBolts()) {
                 val bolt = toBolt(event)
                 if (bolt != null) {
                     firedNew(event, bolt)
@@ -373,7 +373,7 @@ interface Player : GameObject {
             this.liveBolts++
             bolt.fire(event)
             liveBoltsChanged()
-            GameMetrics.get().getBoltFired().increment(this.clientPlatform)
+            GameMetrics.getBoltFired().increment(this.clientPlatform)
         }
 
         private fun toBolt(event: BoltFiredEventDto): Bolt? {
@@ -424,8 +424,8 @@ interface Player : GameObject {
             var n = name
             n = n.ifEmpty { id.getId().toString() }
 
-            if (n.length > Config.get().getPlayerNameLength()) {
-                n = n.substring(0, Config.get().getPlayerNameLength())
+            if (n.length > Config.getPlayerNameLength()) {
+                n = n.substring(0, Config.getPlayerNameLength())
             }
             this.name = n
         }
@@ -480,7 +480,7 @@ interface Player : GameObject {
                                 )
                         ).build()
                 )
-            GameMetrics.get().getPlayerJoined().increment(this.clientPlatform)
+            GameMetrics.getPlayerJoined().increment(this.clientPlatform)
         }
 
         override fun setFixedInertialDampenFactor(value: Float) {
@@ -501,7 +501,7 @@ interface Player : GameObject {
 
             if (angle != null) {
                 this.previousAngle = this.angle
-                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.get().getPlayerMaxAngle())
+                this.angle = TrigUtil.limitRotation(this.angle, angle, Config.getPlayerMaxAngle())
             }
 
             position.scheduleMove(moveX, moveY)
@@ -581,7 +581,7 @@ interface Player : GameObject {
                     )
                     .build()
             )
-            GameMetrics.get().getPlayerLeft().increment(this.clientPlatform)
+            GameMetrics.getPlayerLeft().increment(this.clientPlatform)
             this.spawned = false
         }
 
@@ -626,19 +626,19 @@ interface Player : GameObject {
                     .setEvent(Event.newBuilder().setPlayerDestroyed(event))
                     .build()
             )
-            GameMetrics.get().getPlayerDestroyed().increment(this.clientPlatform)
+            GameMetrics.getPlayerDestroyed().increment(this.clientPlatform)
         }
 
         override fun boltExhausted() {
             this.liveBolts = max(0, liveBolts - 1)
             liveBoltsChanged()
-            GameMetrics.get().getBoltExhausted().increment(this.clientPlatform)
+            GameMetrics.getBoltExhausted().increment(this.clientPlatform)
         }
 
         private fun liveBoltsChanged() {
             if (players.isConnected(id)) {
                 val dto = BoltsAvailableCommandDto.newBuilder()
-                    .setAvailable(max(0, Config.get().getMaxBolts() - this.liveBolts))
+                    .setAvailable(max(0, Config.getMaxBolts() - this.liveBolts))
 
                 val builder = DirectedCommand.newBuilder()
                     .setPlayerId(id.getGuid())
@@ -692,16 +692,16 @@ interface Player : GameObject {
                     0L
                 )
                 movedOrSpawned(event.location, event)
-                GameMetrics.get().getPlayerSpawned().increment(this.clientPlatform)
+                GameMetrics.getPlayerSpawned().increment(this.clientPlatform)
             }
         }
 
         override fun expungeIfStalled() {
-            if ((!spawned || !this.isJoined) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config.get()
+            if ((!spawned || !this.isJoined) && clock.getTime() - this.lastSpawnOrUnspawnTimestamp > Config
                     .getExpungeSinceLastSpawnTimeout()
             ) {
                 leave()
-                GameMetrics.get().getPlayerStalled().increment(this.clientPlatform)
+                GameMetrics.getPlayerStalled().increment(this.clientPlatform)
             }
         }
 
@@ -786,11 +786,11 @@ interface Player : GameObject {
             }
 
             override fun maxMagnitude(): Double? {
-                return Config.get().getPlayerMaxMove().toDouble()
+                return Config.getPlayerMaxMove().toDouble()
             }
 
             override fun dampenMagnitudeCoefficient(): Float {
-                return Config.get().getInertiaDampenCoefficient() * dampenFactor
+                return Config.getInertiaDampenCoefficient() * dampenFactor
             }
         }
 

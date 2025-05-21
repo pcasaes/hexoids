@@ -2,15 +2,8 @@ package me.pcasaes.hexoids.core.domain.metrics
 
 import me.pcasaes.hexoids.core.domain.metrics.GameMetric.Companion.of
 
-class GameMetrics private constructor() {
+object GameMetrics {
 
-    companion object {
-        private val INSTANCE = GameMetrics()
-
-        fun get(): GameMetrics {
-            return INSTANCE
-        }
-    }
 
     private val playerDestroyed: GameMetric
     private val playerSpawned: GameMetric

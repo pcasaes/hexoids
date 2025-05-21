@@ -15,7 +15,6 @@ import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.beans.IntrospectionException
 import java.beans.Introspector
-import java.util.function.Supplier
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -107,31 +106,31 @@ class HexoidConfigurations {
             }
         }
 
-        Config.get().setUpdateFrequencyInMillis(getUpdateFrequencyInMillis())
-        Config.get().setInertiaDampenCoefficient(getInertiaDampenCoefficient())
-        Config.get().setMaxBolts(getMaxBolts())
-        Config.get().setMinMove(getMinMove())
-        Config.get().setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout())
-        Config.get().setPlayerNameLength(getPlayerNameLength())
-        Config.get().setPlayerMaxMove(getPlayerMaxMove())
-        Config.get().setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor())
-        Config.get().setPlayerResetPosition(getPlayerResetPosition())
-        Config.get().setBoltMaxDuration(getBoltMaxDuration())
-        Config.get().setBoltSpeed(getBoltSpeed())
-        Config.get().setBoltCollisionRadius(getBoltCollisionRadius())
-        Config.get().setBoltInertiaEnabled(isBoltInertiaEnabled())
-        Config.get().setBoltInertiaRejectionScale(getBoltInertiaRejectionScale())
-        Config.get().setBoltInertiaProjectionScale(getBoltInertiaProjectionScale())
-        Config.get().setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale())
-        Config.get().getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance())
-        Config.get().getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration())
-        Config.get().getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse())
-        Config.get().getBlackhole().setDampenFactor(getBlackholeDampenFactor())
-        Config.get().getBlackhole().setEventHorizonRadius(getBlackholeEventHorizonRadius())
-        Config.get().getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor())
-        Config.get().getBlackhole().setGravityImpulse(getBlackholeGravityImpulse())
-        Config.get().getBlackhole().setGravityRadius(getBlackholeGravityRadius())
-        Config.get().getBlackhole().setTeleportProbability(getBlackholeTeleportProbability())
+        Config.setUpdateFrequencyInMillis(getUpdateFrequencyInMillis())
+        Config.setInertiaDampenCoefficient(getInertiaDampenCoefficient())
+        Config.setMaxBolts(getMaxBolts())
+        Config.setMinMove(getMinMove())
+        Config.setExpungeSinceLastSpawnTimeout(getExpungeSinceLastSpawnTimeout())
+        Config.setPlayerNameLength(getPlayerNameLength())
+        Config.setPlayerMaxMove(getPlayerMaxMove())
+        Config.setPlayerMaxAngleDivisor(getPlayerMaxAngleDivisor())
+        Config.setPlayerResetPosition(getPlayerResetPosition())
+        Config.setBoltMaxDuration(getBoltMaxDuration())
+        Config.setBoltSpeed(getBoltSpeed())
+        Config.setBoltCollisionRadius(getBoltCollisionRadius())
+        Config.setBoltInertiaEnabled(isBoltInertiaEnabled())
+        Config.setBoltInertiaRejectionScale(getBoltInertiaRejectionScale())
+        Config.setBoltInertiaProjectionScale(getBoltInertiaProjectionScale())
+        Config.setBoltInertiaNegativeProjectionScale(getBoltInertiaNegativeProjectionScale())
+        Config.getPlayerDestroyedShockwave().setDistance(getPlayerDestroyedShockwaveDistance())
+        Config.getPlayerDestroyedShockwave().setDuration(getPlayerDestroyedShockwaveDuration())
+        Config.getPlayerDestroyedShockwave().setImpulse(getPlayerDestroyedShockwaveImpulse())
+        Config.getBlackhole().setDampenFactor(getBlackholeDampenFactor())
+        Config.getBlackhole().setEventHorizonRadius(getBlackholeEventHorizonRadius())
+        Config.getBlackhole().setGenesisProbabilityFactor(getBlackholeGenesisProbabilityFactor())
+        Config.getBlackhole().setGravityImpulse(getBlackholeGravityImpulse())
+        Config.getBlackhole().setGravityRadius(getBlackholeGravityRadius())
+        Config.getBlackhole().setTeleportProbability(getBlackholeTeleportProbability())
     }
 
 

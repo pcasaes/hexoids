@@ -22,7 +22,6 @@ class DomainMetrics @Inject constructor(private val metricRegistry: MeterRegistr
 
     fun startup(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) event: StartupEvent) {
         GameMetrics
-            .get()
             .getMetrics()
             .forEach(Consumer { gameMetric -> this.registry(gameMetric) })
 

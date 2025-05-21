@@ -8,9 +8,13 @@ import java.util.logging.Logger
 /**
  * Used to add events into the game loop.
  */
-class GameLoopService private constructor() {
-    private val fixedUpdateRunnable: Runnable = Runnable { this.fixedUpdate() }
+object GameLoopService {
 
+    private const val name = "game-loop"
+    private val log: Logger = Logger.getLogger(GameLoopService::class.java.getName())
+
+
+    private val fixedUpdateRunnable: Runnable = Runnable { this.fixedUpdate() }
 
     private var nextFixedUpdateTime: Long
 
@@ -28,7 +32,7 @@ class GameLoopService private constructor() {
             Game.get()
                 .fixedUpdate(timestamp)
 
-            this.nextFixedUpdateTime = timestamp + Config.get().getUpdateFrequencyInMillis()
+            this.nextFixedUpdateTime = timestamp + Config.getUpdateFrequencyInMillis()
         }
     }
 
@@ -36,13 +40,13 @@ class GameLoopService private constructor() {
         try {
             runnable.run()
         } catch (ex: RuntimeException) {
-            LOGGER.log(Level.SEVERE, ex.message, ex)
+            log.log(Level.SEVERE, ex.message, ex)
         }
         fixedUpdate()
     }
 
     fun getName(): String {
-        return NAME
+        return name
     }
 
     fun getFixedUpdateRunnable(): Runnable? {
@@ -54,14 +58,5 @@ class GameLoopService private constructor() {
         }
     }
 
-    companion object {
-        private val INSTANCE = GameLoopService()
 
-        fun getInstance(): GameLoopService {
-            return INSTANCE
-        }
-
-        private const val NAME = "game-loop"
-        private val LOGGER: Logger = Logger.getLogger(GameLoopService::class.java.getName())
-    }
 }
