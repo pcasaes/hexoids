@@ -38,7 +38,7 @@ class Shockwave private constructor(
             val dist = range(elapsed)
 
             players.getSpatialIndex()
-                .search(center.getX(), center.getY(), center.getX(), center.getY(), dist)
+                .search(center.x, center.y, center.x, center.y, dist)
                 .forEach { nearPlayer -> handleMove(nearPlayer, dist) }
         }
 
@@ -51,19 +51,19 @@ class Shockwave private constructor(
                 .fromXY(nearPlayer.getX(), nearPlayer.getY())
                 .minus(center)
 
-            val absMagnitude = abs(distanceBetweenPlayers.getMagnitude())
+            val absMagnitude = abs(distanceBetweenPlayers.magnitude)
 
             val isNotCenteredNorOutOfRange = absMagnitude <= dist && absMagnitude > 0F
             if (isNotCenteredNorOutOfRange) {
-                val sign = if (distanceBetweenPlayers.getMagnitude() < 0F) -1 else 1
+                val sign = if (distanceBetweenPlayers.magnitude < 0F) -1 else 1
 
                 val move = Vector2
                     .fromAngleMagnitude(
-                        distanceBetweenPlayers.getAngle(),
+                        distanceBetweenPlayers.angle,
                         sign * this.impulse
                     )
 
-                nearPlayer.move(move.getX(), move.getY(), MoveReason.SHOCKWAVE_PUSH)
+                nearPlayer.move(move.x, move.y, MoveReason.SHOCKWAVE_PUSH)
                 GameMetrics.getMovedByShockwave().increment(nearPlayer.getClientPlatform())
             }
         }

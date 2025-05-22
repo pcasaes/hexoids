@@ -281,8 +281,8 @@ interface Player : GameObject {
                 boltVector = Vector2.fromAngleMagnitude(boltAngle, boltSpeed)
             } else {
                 boltVector = getFiredBoltVector(boltSpeed, now)
-                boltSpeed = boltVector.getMagnitude()
-                boltAngle = boltVector.getAngle()
+                boltSpeed = boltVector.magnitude
+                boltAngle = boltVector.angle
             }
 
 
@@ -305,8 +305,8 @@ interface Player : GameObject {
                                 BoltFiredEventDto.newBuilder()
                                     .setBoltId(boltId.getGuid())
                                     .setOwnerPlayerId(id.getGuid())
-                                    .setX(positionAtNow.getX())
-                                    .setY(positionAtNow.getY())
+                                    .setX(positionAtNow.x)
+                                    .setY(positionAtNow.y)
                                     .setAngle(boltAngle)
                                     .setSpeed(boltSpeed)
                                     .setStartTimestamp(now)
@@ -328,18 +328,18 @@ interface Player : GameObject {
 
             for (barrier in barriers
                 .search(
-                    positionAtNow.getX(),
-                    positionAtNow.getY(),
-                    positionAtEnd.getX(),
-                    positionAtEnd.getY(),
+                    positionAtNow.x,
+                    positionAtNow.y,
+                    positionAtEnd.x,
+                    positionAtEnd.y,
                     SHIP_LENGTH_TIMES_10
                 )) {
                 val intersection = Vector2.intersectedWith(positionAtNow, positionAtEnd, barrier.to, barrier.from)
                 if (intersection != null) {
                     if (magnitudeForTtl == -1F) {
-                        magnitudeForTtl = intersection.minus(positionAtNow).getMagnitude()
+                        magnitudeForTtl = intersection.minus(positionAtNow).magnitude
                     } else {
-                        val m = intersection.minus(positionAtNow).getMagnitude()
+                        val m = intersection.minus(positionAtNow).magnitude
                         if (m < magnitudeForTtl) {
                             magnitudeForTtl = m
                         }
@@ -552,8 +552,8 @@ interface Player : GameObject {
                                 .setX(position.getX())
                                 .setY(position.getY())
                                 .setAngle(angle)
-                                .setThrustAngle(position.getVelocity().getAngle())
-                                .setVelocity(position.getVelocity().getMagnitude())
+                                .setThrustAngle(position.getVelocity().angle)
+                                .setVelocity(position.getVelocity().magnitude)
                                 .setTimestamp(eventTime)
                                 .addAllReasons(lastMoveReasons)
                                 .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
@@ -670,7 +670,7 @@ interface Player : GameObject {
                                             .setX(position.getX())
                                             .setY(position.getY())
                                             .setAngle(angle)
-                                            .setThrustAngle(position.getVelocity().getAngle())
+                                            .setThrustAngle(position.getVelocity().angle)
                                             .setTimestamp(now)
                                             .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
                                     )

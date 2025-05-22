@@ -100,8 +100,8 @@ class Bolt private constructor(
                                     BoltDivertedEventDto
                                         .newBuilder()
                                         .setBoltId(eventDto.boltId)
-                                        .setAngle(positionVector.getVelocity().getAngle())
-                                        .setSpeed(positionVector.getVelocity().getMagnitude())
+                                        .setAngle(positionVector.getVelocity().angle)
+                                        .setSpeed(positionVector.getVelocity().magnitude)
                                         .setX(positionVector.getX())
                                         .setY(positionVector.getY())
                                         .setDivertTimestamp(timestamp)
