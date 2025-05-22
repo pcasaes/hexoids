@@ -69,8 +69,8 @@ class Blackhole private constructor(
         val massCollapsedIntoBlackHoleEventDto =
             MassCollapsedIntoBlackHoleEventDto.newBuilder()
                 .setId(entityId.getGuid())
-                .setX(center.getX())
-                .setY(center.getY())
+                .setX(center.x)
+                .setY(center.y)
                 .setStartTimestamp(startTimestamp)
                 .setEndTimestamp(endTimestamp)
                 .setName(name)
@@ -97,7 +97,7 @@ class Blackhole private constructor(
     override fun test(timestamp: Long): Boolean {
         if (this.players.hasConnectedPlayers()) {
             players.getSpatialIndex()
-                .search(center.getX(), center.getY(), center.getX(), center.getY(), gravityRadius)
+                .search(center.x, center.y, center.x, center.y, gravityRadius)
                 .forEach(Consumer { p ->
                     if (players.isConnected(p.id())) {
                         handleMove(p, timestamp)
@@ -130,11 +130,11 @@ class Blackhole private constructor(
                 .fromXY(nearByGameObject.getX(), nearByGameObject.getY())
         )
 
-        val absMagnitude = abs(distanceFromSingularity.getMagnitude())
+        val absMagnitude = abs(distanceFromSingularity.magnitude)
 
         val isNotCenteredNorOutOfRange = absMagnitude < gravityRadius && absMagnitude > 0F
         if (isNotCenteredNorOutOfRange) {
-            val sign = if (distanceFromSingularity.getMagnitude() < 0F) -1 else 1
+            val sign = if (distanceFromSingularity.magnitude < 0F) -1 else 1
 
             val hitEventHorizon = absMagnitude <= this.eventHorizonRadius
 
@@ -157,7 +157,7 @@ class Blackhole private constructor(
 
                 val move = Vector2
                     .fromAngleMagnitude(
-                        distanceFromSingularity.getAngle(),
+                        distanceFromSingularity.angle,
                         sign * this.gravityImpulse * acceleration
                     )
 
@@ -166,7 +166,7 @@ class Blackhole private constructor(
                         .setDampenMovementFactorUntilNextFixedUpdate(1F / (acceleration * this.dampenFactor + 1F))
                 }
 
-                nearByGameObject.move(move.getX(), move.getY(), MoveReason.BLACKHOLE_PULL)
+                nearByGameObject.move(move.x, move.y, MoveReason.BLACKHOLE_PULL)
                 GameMetrics.getMovedByBlackhole().increment(nearByGameObject.getClientPlatform())
             }
         }

@@ -51,10 +51,10 @@ class RTree2BarrierSpatialIndex : BarrierSpatialIndex {
                     Entries.entry(
                         p, Geometries
                             .rectangle(
-                                min(p.from.getX(), p.to.getX()),
-                                min(p.from.getY(), p.to.getY()),
-                                max(p.from.getX(), p.to.getX()),
-                                max(p.from.getY(), p.to.getY())
+                                min(p.from.x, p.to.x),
+                                min(p.from.y, p.to.y),
+                                max(p.from.x, p.to.x),
+                                max(p.from.y, p.to.y)
                             )
                     )
                 }

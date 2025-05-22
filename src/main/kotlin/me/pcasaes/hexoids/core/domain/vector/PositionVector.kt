@@ -60,17 +60,17 @@ class PositionVector private constructor(
     }
 
     fun reflect(at: Vector2, normal: Vector2, bodySize: Float, dampen: Float) {
-        val bodyVector = Vector2.fromAngleMagnitude(velocity.getAngle(), bodySize)
+        val bodyVector = Vector2.fromAngleMagnitude(velocity.angle, bodySize)
         val atWithBody = at.minus(bodyVector)
 
-        this.velocity.set(velocity.reflect(normal).scale(dampen))
+        this.velocity.copyFrom(velocity.reflect(normal).scale(dampen))
 
 
-        val reflectMag = currentPosition.minus(atWithBody).getMagnitude()
+        val reflectMag = currentPosition.minus(atWithBody).magnitude
 
-        val reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.getAngle(), reflectMag).absMax(bodySize)
+        val reflectMagWithVelAngle = Vector2.fromAngleMagnitude(velocity.angle, reflectMag).absMax(bodySize)
 
-        this.currentPosition.set(atWithBody.add(reflectMagWithVelAngle))
+        this.currentPosition.copyFrom(atWithBody.add(reflectMagWithVelAngle))
     }
 
     fun noMovement(): Boolean {
@@ -91,9 +91,9 @@ class PositionVector private constructor(
         if (timestamp <= this.currentTimestamp) {
             return
         }
-        this.previousPosition.set(this.currentPosition)
+        this.previousPosition.copyFrom(this.currentPosition)
         this.currentPosition.setXY(x, y)
-        this.previousVelocity.set(this.velocity)
+        this.previousVelocity.copyFrom(this.velocity)
         this.velocity.setAngleMagnitude(angle, magnitude)
         this.previousTimestamp = this.currentTimestamp
         this.currentTimestamp = timestamp
@@ -131,14 +131,14 @@ class PositionVector private constructor(
             moveVector = moveVector.absMax(maxMagnitude)
         }
 
-        this.previousVelocity.set(this.velocity)
-        this.velocity.set(moveVector)
+        this.previousVelocity.copyFrom(this.velocity)
+        this.velocity.copyFrom(moveVector)
 
         val x = getX()
         val y = getY()
         update(timestamp, 0F)
 
-        return currentPosition.getX() != x || currentPosition.getY() != y
+        return currentPosition.x != x || currentPosition.y != y
     }
 
     fun scheduleMove(moveX: Float, moveY: Float) {
@@ -168,13 +168,13 @@ class PositionVector private constructor(
             return this
         }
 
-        this.previousVelocity.set(this.velocity)
+        this.previousVelocity.copyFrom(this.velocity)
 
         val elapsed = (timestamp - this.currentTimestamp)
 
         val minMove = Config.getMinMove()
 
-        this.velocity.set(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed))
+        this.velocity.copyFrom(calculateDampenedVelocity(this.velocity, dampMagCoef, minMove, elapsed))
 
         if (hasScheduledMove()) {
             var moveVector = scheduledMove.add(this.velocity)
@@ -183,31 +183,31 @@ class PositionVector private constructor(
                 moveVector = moveVector.absMax(maxMagnitude)
             }
 
-            this.velocity.set(moveVector)
+            this.velocity.copyFrom(moveVector)
             scheduledMove.setXY(0F, 0F)
             this.movedByScheduledMove = true
         } else {
             this.movedByScheduledMove = false
         }
 
-        this.previousPosition.set(this.currentPosition)
+        this.previousPosition.copyFrom(this.currentPosition)
         val moveDelta = Vector2.calculateMoveDelta(this.velocity, minMove, elapsed)
-        this.currentPosition.addXY(moveDelta.getX(), moveDelta.getY())
+        this.currentPosition.addXY(moveDelta.x, moveDelta.y)
 
         if (configuration.atBounds() == AtBoundsOptions.STOP) {
-            this.velocity.set(Vector2.fromAngleMagnitude(this.velocity.getAngle(), 0F))
+            this.velocity.copyFrom(Vector2.fromAngleMagnitude(this.velocity.angle, 0F))
         } else if (configuration.atBounds() == AtBoundsOptions.BOUNCE) {
-            if (this.currentPosition.getX() <= 0F || this.currentPosition.getX() >= 1F) {
-                velocity.set(velocity.invertX())
+            if (this.currentPosition.x <= 0F || this.currentPosition.x >= 1F) {
+                velocity.copyFrom(velocity.invertX())
             }
-            if (this.currentPosition.getY() <= 0F || this.currentPosition.getY() >= 1F) {
-                velocity.set(velocity.invertY())
+            if (this.currentPosition.y <= 0F || this.currentPosition.y >= 1F) {
+                velocity.copyFrom(velocity.invertY())
             }
         }
 
         this.currentPosition.setXY(
-            configuration.atBounds().bound(this.currentPosition.getX()),
-            configuration.atBounds().bound(this.currentPosition.getY())
+            configuration.atBounds().bound(this.currentPosition.x),
+            configuration.atBounds().bound(this.currentPosition.y)
         )
 
         this.previousTimestamp = this.currentTimestamp
@@ -220,8 +220,8 @@ class PositionVector private constructor(
         if (timestamp <= this.currentTimestamp) {
             return getX()
         }
-        val r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000F
-        val x = getX() + cos(velocity.getAngle().toDouble()).toFloat() * r
+        val r = velocity.magnitude * (timestamp - this.currentTimestamp) / 1000F
+        val x = getX() + cos(velocity.angle.toDouble()).toFloat() * r
         return configuration.atBounds().bound(x)
     }
 
@@ -229,25 +229,25 @@ class PositionVector private constructor(
         if (timestamp <= this.currentTimestamp) {
             return getY()
         }
-        val r = velocity.getMagnitude() * (timestamp - this.currentTimestamp) / 1000F
-        val y = this.getY() + sin(velocity.getAngle().toDouble()).toFloat() * r
+        val r = velocity.magnitude * (timestamp - this.currentTimestamp) / 1000F
+        val y = this.getY() + sin(velocity.angle.toDouble()).toFloat() * r
         return configuration.atBounds().bound(y)
     }
 
     fun getX(): Float {
-        return this.currentPosition.getX()
+        return this.currentPosition.x
     }
 
     fun getY(): Float {
-        return this.currentPosition.getY()
+        return this.currentPosition.y
     }
 
     fun getPreviousX(): Float {
-        return this.previousPosition.getX()
+        return this.previousPosition.x
     }
 
     fun getPreviousY(): Float {
-        return this.previousPosition.getY()
+        return this.previousPosition.y
     }
 
     fun getTimestamp(): Long {
@@ -264,7 +264,7 @@ class PositionVector private constructor(
         }
 
         val dampMagCoef = Config.getInertiaDampenCoefficient()
-        if (dampMagCoef < 0F && velocity.getMagnitude() != 0F) {
+        if (dampMagCoef < 0F && velocity.magnitude != 0F) {
             val elapsed = (timestamp - this.currentTimestamp)
 
             val minMove = Config.getMinMove()
@@ -274,7 +274,7 @@ class PositionVector private constructor(
                 mag = 0F
             }
             return Vector2.fromAngleMagnitude(
-                velocity.getAngle(),
+                velocity.angle,
                 mag
             )
         }
@@ -282,7 +282,7 @@ class PositionVector private constructor(
     }
 
     fun isOutOfBounds(): Boolean =
-        currentPosition.getX() < 0F || currentPosition.getX() > 1F || currentPosition.getY() < 0F || currentPosition.getY() > 1F
+        currentPosition.x < 0F || currentPosition.x > 1F || currentPosition.y < 0F || currentPosition.y > 1F
 
     private fun intersectedWithSegment(b: PositionVector, intersectionThreshold: Float): Boolean {
         val minMove = Config.getMinMove()
@@ -365,8 +365,8 @@ class PositionVector private constructor(
         val extendCurrentPosition = currentPosition.add(
             Vector2.fromAngleMagnitude(
                 calculateAngleBetweenTwoPoints(
-                    previousPosition.getX(), previousPosition.getY(),
-                    currentPosition.getX(), currentPosition.getY()
+                    previousPosition.x, previousPosition.y,
+                    currentPosition.x, currentPosition.y
                 ),
                 intersectionThreshold
             )
@@ -376,7 +376,7 @@ class PositionVector private constructor(
     }
 
     private fun hasScheduledMove(): Boolean {
-        return Vector2.ZERO != scheduledMove
+        return scheduledMove.isNotZero()
     }
 
     /**
@@ -485,18 +485,18 @@ class PositionVector private constructor(
             minMove: Float,
             elapsed: Long
         ): Vector2 {
-            if (dampMagCoef < 0F && velocity.getMagnitude() != 0F) {
+            if (dampMagCoef < 0F && velocity.magnitude != 0F) {
                 var mag: Float = calculateDampenedMagnitude(velocity, dampMagCoef, elapsed)
                 if (mag < minMove) {
                     mag = 0F
                 }
-                return Vector2.fromAngleMagnitude(velocity.getAngle(), mag)
+                return Vector2.fromAngleMagnitude(velocity.angle, mag)
             }
             return velocity
         }
 
         private fun calculateDampenedMagnitude(velocity: Vector2, dampMagCoef: Float, elapsed: Long): Float {
-            return 0.999994F * exp((dampMagCoef * elapsed).toDouble()).toFloat() * velocity.getMagnitude()
+            return 0.999994F * exp((dampMagCoef * elapsed).toDouble()).toFloat() * velocity.magnitude
         }
 
         private fun detectCollision(
@@ -509,14 +509,14 @@ class PositionVector private constructor(
             val relativeVelocity = bVel.minus(aVel)
 
             val timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
-                    (relativeVelocity.getMagnitude() * relativeVelocity.getMagnitude() * -1F)
+                    (relativeVelocity.magnitude * relativeVelocity.magnitude * -1F)
 
             if (timeToCollisionInSeconds * 1000F > collisionTimeInMillis) {
                 return false
             }
 
             val minSeparation =
-                relativePosition.getMagnitude() - relativeVelocity.getMagnitude() * timeToCollisionInSeconds
+                relativePosition.magnitude - relativeVelocity.magnitude * timeToCollisionInSeconds
             return minSeparation <= intersectionThreshold
         }
 

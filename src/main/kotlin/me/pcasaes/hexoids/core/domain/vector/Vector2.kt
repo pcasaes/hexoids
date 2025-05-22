@@ -4,93 +4,125 @@ import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleFromComponent
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateMagnitudeFromComponents
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateXComponentFromAngleAndMagnitude
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateYComponentFromAngleAndMagnitude
-import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.pow
-import kotlin.math.sign
 import kotlin.math.sqrt
 
-open class Vector2(
-    private var angle: Float,
-    private var magnitude: Float,
-    private var initializedAM: Boolean,
-    private var x: Float,
-    private var y: Float,
-    private var initializedXY: Boolean
+/**
+ * A 2D vector class that can be represented in two ways:
+ * 1. Angle and magnitude
+ * 2. X and Y components
+ *
+ * Angle is represented in radians.
+ */
+class Vector2 private constructor(
+    private var _angle: Float? = null,
+    private var _magnitude: Float? = null,
+
+    private var _x: Float? = null,
+    private var _y: Float? = null,
 ) {
-    open fun setAngleMagnitude(angle: Float, magnitude: Float) {
-        this.angle = angle
-        this.magnitude = magnitude
-        this.initializedAM = true
-        this.initializedXY = false
+
+    init {
+        val hasXY = _x != null && _y != null
+        val hasAngleMagnitude = _angle != null && _magnitude != null
+        require(hasXY || hasAngleMagnitude) {
+            "Either angle/magnitude or x/y must be provided"
+        }
     }
 
-    open fun setXY(x: Float, y: Float) {
-        this.x = x
-        this.y = y
-        this.initializedXY = true
-        this.initializedAM = false
+    // Public accessors
+    var angle: Float
+        get() = _angle ?: calculateAngle().also { _angle = it }
+        private set(value) {
+            _angle = value
+        }
+
+    var magnitude: Float
+        get() = _magnitude ?: calculateMagnitude().also { _magnitude = it }
+        private set(value) {
+            _magnitude = value
+        }
+
+    var x: Float
+        get() = _x ?: calculateX().also { _x = it }
+        private set(value) {
+            _x = value
+        }
+
+    var y: Float
+        get() = _y ?: calculateY().also { _y = it }
+        private set(value) {
+            _y = value
+        }
+
+    // Lazy derivation
+    private fun calculateAngle(): Float {
+        val x = this._x
+        val y = this._y
+        require(x != null && y != null) {
+            "Cannot calculate angle without x and y components"
+        }
+        return calculateAngleFromComponents(x, y)
     }
 
-    open fun addXY(x: Float, y: Float) {
-        setXY(x = getX() + x, y = getY() + y)
+    private fun calculateMagnitude(): Float {
+        val x = this._x
+        val y = this._y
+        require(x != null && y != null) {
+            "Cannot calculate magnitude without x and y components"
+        }
+        return calculateMagnitudeFromComponents(x, y)
     }
 
-    open fun set(vector: Vector2) {
+    private fun calculateX(): Float {
+        val angle = this._angle
+        val magnitude = this._magnitude
+        require(angle != null && magnitude != null) {
+            "Cannot calculate x without angle and magnitude"
+        }
+        return calculateXComponentFromAngleAndMagnitude(angle, magnitude)
+    }
+
+    private fun calculateY(): Float {
+        val angle = this._angle
+        val magnitude = this._magnitude
+        require(angle != null && magnitude != null) {
+            "Cannot calculate y without angle and magnitude"
+        }
+        return calculateYComponentFromAngleAndMagnitude(angle, magnitude)
+    }
+
+
+    fun setAngleMagnitude(angle: Float, magnitude: Float) {
+        this._angle = angle
+        this._magnitude = magnitude
+        this._x = null
+        this._y = null
+    }
+
+    fun setXY(x: Float, y: Float) {
+        this._x = x
+        this._y = y
+        this._angle = null
+        this._magnitude = null
+    }
+
+    fun addXY(x: Float, y: Float) {
+        setXY(x = this.x + x, y = this.y + y)
+    }
+
+    fun copyFrom(vector: Vector2) {
         if (this !== vector) {
-            if (vector.initializedAM && vector.initializedXY) {
-                this.x = vector.x
-                this.y = vector.y
-                this.angle = vector.angle
-                this.magnitude = vector.magnitude
-                this.initializedXY = true
-                this.initializedAM = true
-            } else if (vector.initializedXY) {
-                setXY(vector.x, vector.y)
-            } else {
-                setAngleMagnitude(vector.angle, vector.magnitude)
-            }
+            this._x = vector._x
+            this._y = vector._y
+            this._angle = vector._angle
+            this._magnitude = vector._magnitude
         }
-    }
-
-    private fun lazyInitAM() {
-        if (!this.initializedAM) {
-            this.angle = calculateAngleFromComponents(this.x, this.y)
-            this.magnitude = calculateMagnitudeFromComponents(this.x, this.y)
-            this.initializedAM = true
-        }
-    }
-
-    private fun lazyInitXY() {
-        if (!this.initializedXY) {
-            this.x = calculateXComponentFromAngleAndMagnitude(this.angle, this.magnitude)
-            this.y = calculateYComponentFromAngleAndMagnitude(this.angle, this.magnitude)
-            this.initializedXY = true
-        }
-    }
-
-    fun getAngle(): Float {
-        lazyInitAM()
-        return angle
-    }
-
-    fun getMagnitude(): Float {
-        lazyInitAM()
-        return magnitude
-    }
-
-    fun getX(): Float {
-        lazyInitXY()
-        return x
-    }
-
-    fun getY(): Float {
-        lazyInitXY()
-        return y
     }
 
     fun scale(scaler: Float): Vector2 {
-        return fromAngleMagnitude(this.getAngle(), this.getMagnitude() * scaler)
+        return fromAngleMagnitude(this.angle, this.magnitude * scaler)
     }
 
     /**
@@ -102,51 +134,56 @@ open class Vector2(
      * @return
      */
     fun absMax(magnitude: Float): Vector2 {
-        return if (this.getMagnitude() < 0) {
+        return if (this.magnitude < 0) {
             val negMagnitude = -magnitude
-            if (negMagnitude < this.getMagnitude()) {
+            if (negMagnitude < this.magnitude) {
                 this
             } else {
-                fromAngleMagnitude(this.getAngle(), negMagnitude)
+                fromAngleMagnitude(this.angle, negMagnitude)
             }
         } else {
-            if (magnitude > this.getMagnitude()) {
+            if (magnitude > this.magnitude) {
                 this
             } else {
-                fromAngleMagnitude(this.getAngle(), magnitude)
+                fromAngleMagnitude(this.angle, magnitude)
             }
         }
     }
 
     fun add(b: Vector2): Vector2 {
-        return add(b.getX(), b.getY())
+        return add(b.x, b.y)
     }
 
     fun add(x: Float, y: Float): Vector2 {
         return fromXY(
-            getX() + x,
-            getY() + y
+            this.x + x,
+            this.y + y
         )
     }
 
     fun minus(b: Vector2): Vector2 {
         return fromXY(
-            getX() - b.getX(),
-            getY() - b.getY()
+            x - b.x,
+            y - b.y
         )
     }
 
     fun dot(b: Vector2): Float {
-        return b.getX() * getX() + b.getY() * getY()
+        return b.x * x + b.y * y
     }
 
     fun magnitudeFrom(b: Vector2): Float {
         val diff = this.minus(b)
-        return sqrt(diff.getX().toDouble().pow(2.0) + diff.getY().toDouble().pow(2.0)).toFloat()
+        return sqrt(diff.x.toDouble().pow(2.0) + diff.y.toDouble().pow(2.0)).toFloat()
     }
 
     fun projection(b: Vector2): Vector2 {
-        return b.scale((b.dot(this)) / (b.dot(b)))
+        val denom = b.dot(b)
+        return if (denom == 0F) {
+            zero()
+        } else {
+            b.scale((b.dot(this)) / denom)
+        }
     }
 
     fun rejection(b: Vector2): Vector2 {
@@ -154,94 +191,95 @@ open class Vector2(
     }
 
     fun invert(): Vector2 {
-        if (getX() == 0F && getY() == 0F) {
+        if (x == 0F && y == 0F) {
             return this
         }
         return fromXY(
-            -getX(),
-            -getY()
+            -x,
+            -y
         )
     }
 
     fun invertX(): Vector2 {
-        if (getX() == 0F) {
+        if (x == 0F) {
             return this
         }
-        return fromXY(-getX(), getY())
+        return fromXY(-x, y)
     }
 
     fun invertY(): Vector2 {
-        if (getY() == 0F) {
+        if (y == 0F) {
             return this
         }
-        return fromXY(getX(), -getY())
+        return fromXY(x, -y)
     }
 
     fun reflect(normal: Vector2): Vector2 {
         return normal.scale(-2 * this.dot(normal)).add(this)
     }
 
+    fun isSameXY(x: Float, y: Float): Boolean {
+        return this.x.compareTo(x) == 0 &&
+                this.y.compareTo(y) == 0
+    }
+
+    fun isZero(): Boolean = isSameXY(0F, 0F)
+
+    fun isNotZero(): Boolean = !isZero()
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Vector2) return false
         val vector2 = other
-        return vector2.getX().compareTo(getX()) == 0 &&
-                vector2.getY().compareTo(getY()) == 0
+        return isSameXY(vector2.x, vector2.y)
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(getX(), getY())
+        return 31 * x.hashCode() + y.hashCode()
     }
 
     /**
      * Return true if both vectors have the same equivalent angle.
-     * This does take magnitude sign into account.
      *
      * @param b
      * @return
      */
     fun sameDirection(b: Vector2): Boolean {
-        val sameAngle = b.getAngle() == getAngle()
-        val sameSign = sign(b.getMagnitude()) == sign(getMagnitude())
-        return sameAngle == sameSign
+        val ax = x
+        val ay = y
+        val bx = b.x
+        val by = b.y
+        val cross = ax * by - ay * bx
+        val dot = ax * bx + ay * by
+        return cross == 0F && dot > 0F
     }
 
     override fun toString(): String {
-        return "Vector2{" +
-                "angle=" + angle +
-                ", magnitude=" + magnitude +
-                ", initializedAM=" + initializedAM +
-                ", x=" + x +
-                ", y=" + y +
-                ", initializedXY=" + initializedXY +
-                '}'
+        return "Vector2(angle=$_angle, magnitude=$_magnitude, x=$_x, y=$_y)"
     }
 
     companion object {
-        val ZERO: Vector2 = object : Vector2(0F, 0F, false, 0F, 0F, true) {
-            override fun setAngleMagnitude(angle: Float, magnitude: Float) {
-                // do nothing
-            }
 
-            override fun setXY(x: Float, y: Float) {
-                // do nothing
-            }
-
-            override fun addXY(x: Float, y: Float) {
-                // do nothing
-            }
-
-            override fun set(vector: Vector2) {
-                // do nothing
-            }
+        fun zero(): Vector2 {
+            return fromXY(0F, 0F)
         }
 
         fun fromAngleMagnitude(angle: Float, magnitude: Float): Vector2 {
-            return Vector2(angle, magnitude, true, 0F, 0F, false)
+            return if (magnitude == 0F) {
+                zero()
+            } else {
+                Vector2(
+                    _angle = angle,
+                    _magnitude = magnitude,
+                )
+            }
         }
 
         fun fromXY(x: Float, y: Float): Vector2 {
-            return Vector2(0F, 0F, false, x, y, true)
+            return Vector2(
+                _x = x,
+                _y = y,
+            )
         }
 
         /**
@@ -256,28 +294,28 @@ open class Vector2(
             a1: Vector2, a2: Vector2,
             b1: Vector2, b2: Vector2
         ): Vector2? {
-            val s1_x = a2.getX() - a1.getX()
-            val s1_y = a2.getY() - a1.getY()
-            val s2_x = b2.getX() - b1.getX()
-            val s2_y = b2.getY() - b1.getY()
+            val s1_x = a2.x - a1.x
+            val s1_y = a2.y - a1.y
+            val s2_x = b2.x - b1.x
+            val s2_y = b2.y - b1.y
 
             val s =
-                (-s1_y * (a1.getX() - b1.getX()) + s1_x * (a1.getY() - b1.getY())) / (-s2_x * s1_y + s1_x * s2_y)
+                (-s1_y * (a1.x - b1.x) + s1_x * (a1.y - b1.y)) / (-s2_x * s1_y + s1_x * s2_y)
             val t =
-                (s2_x * (a1.getY() - b1.getY()) - s2_y * (a1.getX() - b1.getX())) / (-s2_x * s1_y + s1_x * s2_y)
+                (s2_x * (a1.y - b1.y) - s2_y * (a1.x - b1.x)) / (-s2_x * s1_y + s1_x * s2_y)
 
             if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-                return fromXY(a1.getX() + (t * s1_x), a1.getY() + (t * s1_y))
+                return fromXY(a1.x + (t * s1_x), a1.y + (t * s1_y))
             }
 
             return null
         }
 
         fun calculateMoveDelta(velocity: Vector2, minMove: Float, elapsed: Long): Vector2 {
-            val velocityDelta = velocity.getMagnitude() * elapsed / 1000F
+            val velocityDelta = velocity.magnitude * elapsed / 1000F
 
-            val mx = calculateXComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta)
-            val my = calculateYComponentFromAngleAndMagnitude(velocity.getAngle(), velocityDelta)
+            val mx = calculateXComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
+            val my = calculateYComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
 
             val mxAboveMinMove = abs(mx) > minMove
             val myAboveMinMove = abs(my) > minMove
@@ -295,7 +333,7 @@ open class Vector2(
                     fromXY(0F, my)
                 }
 
-                else -> ZERO
+                else -> zero()
             }
         }
     }
