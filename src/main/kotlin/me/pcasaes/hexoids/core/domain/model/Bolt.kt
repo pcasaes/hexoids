@@ -11,6 +11,8 @@ import java.util.ArrayDeque
 import java.util.Queue
 import kotlin.math.max
 
+private val POOLED_ID: EntityId = EntityId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))
+
 /**
  * A model representation of a bolt.
  */
@@ -100,10 +102,10 @@ class Bolt private constructor(
                                     BoltDivertedEventDto
                                         .newBuilder()
                                         .setBoltId(eventDto.boltId)
-                                        .setAngle(positionVector.getVelocity().angle)
-                                        .setSpeed(positionVector.getVelocity().magnitude)
-                                        .setX(positionVector.getX())
-                                        .setY(positionVector.getY())
+                                        .setAngle(positionVector.velocity.angle)
+                                        .setSpeed(positionVector.velocity.magnitude)
+                                        .setX(positionVector.x)
+                                        .setY(positionVector.y)
                                         .setDivertTimestamp(timestamp)
                                         .build()
                                 )
@@ -162,8 +164,8 @@ class Bolt private constructor(
             this.players
                 .getSpatialIndex()
                 .search(
-                    this.positionVector.getPreviousX(), this.positionVector.getPreviousY(),
-                    this.positionVector.getX(), this.positionVector.getY(),
+                    this.positionVector.previousX, this.positionVector.previousY,
+                    this.positionVector.x, this.positionVector.y,
                     Config.getBoltCollisionIndexSearchDistance()
                 )
                 .forEach { p -> hit(p, timestamp) }
@@ -208,11 +210,11 @@ class Bolt private constructor(
     }
 
     override fun getX(): Float {
-        return positionVector.getX()
+        return positionVector.x
     }
 
     override fun getY(): Float {
-        return positionVector.getY()
+        return positionVector.y
     }
 
 
@@ -274,9 +276,8 @@ class Bolt private constructor(
         }
 
         fun destroyObject(bolt: Bolt) {
-            // FIXME: we need to reset a bolt to not have ownership when returned to the pool
-            //bolt.id = null
-            //bolt.ownerPlayerId = null
+            bolt.id = POOLED_ID
+            bolt.ownerPlayerId = POOLED_ID
             POOL.offer(bolt)
         }
 

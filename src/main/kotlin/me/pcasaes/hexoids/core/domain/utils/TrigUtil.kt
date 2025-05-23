@@ -10,11 +10,11 @@ import kotlin.math.sqrt
 object TrigUtil {
     const val PI: Float = Math.PI.toFloat()
 
-    const val HALF_CIRCLE_IN_RADIANS: Float = Math.PI.toFloat()
+    const val HALF_CIRCLE: Float = PI
 
-    const val QUARTER_CIRCLE_IN_RADIANS: Float = Math.PI.toFloat() / 2F
+    const val QUARTER_CIRCLE: Float = PI / 2F
 
-    const val FULL_CIRCLE_IN_RADIANS: Float = 2F * Math.PI.toFloat()
+    const val FULL_CIRCLE: Float = 2F * PI
 
 
     /**
@@ -24,16 +24,9 @@ object TrigUtil {
      * @param b
      * @return
      */
-    fun calculateAngleDistance(a: Float, b: Float): Float {
-        val abDiff = a - b
-
-        val d = abs(abDiff) % FULL_CIRCLE_IN_RADIANS
-        val r = if (d > HALF_CIRCLE_IN_RADIANS) FULL_CIRCLE_IN_RADIANS - d else d
-
-
-        return if ((abDiff >= 0 && abDiff <= HALF_CIRCLE_IN_RADIANS) ||
-            (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS)
-        ) r else -r
+    fun angleDistance(a: Float, b: Float): Float {
+        val delta = (a - b + PI) % FULL_CIRCLE - PI
+        return if (delta < -PI) delta + FULL_CIRCLE else delta
     }
 
     fun limitRotation(currentAngle: Float, nextAngle: Float, maxAngleDelta: Float): Float {
@@ -50,24 +43,10 @@ object TrigUtil {
             return nextAngle
         }
 
-        val d = abDiffAbs % FULL_CIRCLE_IN_RADIANS
-        val r = if (d > HALF_CIRCLE_IN_RADIANS) FULL_CIRCLE_IN_RADIANS - d else d
+        val delta = angleDistance(nextAngle, currentAngle)
+        val clampedDelta = delta.coerceIn(-maxAngleDelta, maxAngleDelta)
+        return currentAngle + clampedDelta
 
-
-        var aDiff1 = if ((abDiff >= 0 && abDiff <= HALF_CIRCLE_IN_RADIANS) ||
-            (abDiff <= -HALF_CIRCLE_IN_RADIANS && abDiff >= -FULL_CIRCLE_IN_RADIANS)
-        ) r else -r
-
-
-        if (aDiff1 > maxAngleDelta) {
-            aDiff1 = maxAngleDelta
-            return currentAngle + aDiff1
-        } else if (aDiff1 < -maxAngleDelta) {
-            aDiff1 = -maxAngleDelta
-            return currentAngle + aDiff1
-        } else {
-            return nextAngle
-        }
     }
 
     /**
@@ -85,14 +64,19 @@ object TrigUtil {
      * @param y
      * @return distance
      */
-    fun calculateShortestDistanceFromPointToLine(
+    fun shortestDistanceFromPointToLine(
         x1: Float, y1: Float,
         x2: Float, y2: Float,
         x: Float, y: Float
     ): Float {
-        return abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / sqrt(
-            (y2 - y1).toDouble().pow(2.0) + (x2 - x1).toDouble().pow(2.0)
-        ).toFloat()
+        // divide by zero guard
+        return if (x1.isSame(x2) && y1.isSame(y2)) {
+            Float.POSITIVE_INFINITY
+        } else {
+            abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / sqrt(
+                (y2 - y1).toDouble().pow(2.0) + (x2 - x1).toDouble().pow(2.0)
+            ).toFloat()
+        }
     }
 
     /**
@@ -104,26 +88,26 @@ object TrigUtil {
      * @param y2
      * @return
      */
-    fun calculateAngleBetweenTwoPoints(
+    fun angleBetweenTwoPoints(
         x1: Float, y1: Float,
         x2: Float, y2: Float
     ): Float {
         return atan2((y2 - y1).toDouble(), (x2 - x1).toDouble()).toFloat()
     }
 
-    fun calculateAngleFromComponents(x: Float, y: Float): Float {
+    fun angleFromComponents(x: Float, y: Float): Float {
         return atan2(y.toDouble(), x.toDouble()).toFloat()
     }
 
-    fun calculateMagnitudeFromComponents(x: Float, y: Float): Float {
+    fun magnitudeFromComponents(x: Float, y: Float): Float {
         return sqrt((x * x + y * y).toDouble()).toFloat()
     }
 
-    fun calculateXComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
+    fun xComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
         return speed * cos(angle.toDouble()).toFloat()
     }
 
-    fun calculateYComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
+    fun yComponentFromAngleAndMagnitude(angle: Float, speed: Float): Float {
         return speed * sin(angle.toDouble()).toFloat()
     }
 }

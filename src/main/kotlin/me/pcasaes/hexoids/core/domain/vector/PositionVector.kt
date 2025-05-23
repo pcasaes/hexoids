@@ -1,7 +1,7 @@
 package me.pcasaes.hexoids.core.domain.vector
 
 import me.pcasaes.hexoids.core.domain.config.Config
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleBetweenTwoPoints
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.angleBetweenTwoPoints
 import me.pcasaes.hexoids.core.domain.vector.PositionVector.Configuration.AtBoundsOptions
 import java.util.function.DoubleUnaryOperator
 import kotlin.math.abs
@@ -16,17 +16,17 @@ class PositionVector private constructor(
     startX: Float,
     startY: Float,
     startTime: Long,
-    configuration: Configuration
-) {
     private val configuration: Configuration
-    private val maxMagnitude: Float?
+) {
+    private val maxMagnitude: Float? = configuration.maxMagnitude()?.toFloat()
 
     /*
     Velocity here is distance unit per second (not millis!)
 
     velocity is what got us from previous position to currentPosition
      */
-    private val velocity: Vector2
+    val velocity: Vector2
+
     private val scheduledMove: Vector2 = Vector2.fromXY(0F, 0F)
 
     private var previousTimestamp: Long
@@ -36,6 +36,18 @@ class PositionVector private constructor(
     private val previousPosition: Vector2
 
     private var movedByScheduledMove = false
+
+    val x: Float
+        get() = currentPosition.x
+
+    val y: Float
+        get() = currentPosition.y
+
+    val previousX: Float
+        get() = previousPosition.x
+
+    val previousY: Float
+        get() = previousPosition.y
 
     fun initialized(x: Float, y: Float, angle: Float, magnitude: Float, timestamp: Long) {
         initialized(x, y, timestamp)
@@ -134,8 +146,8 @@ class PositionVector private constructor(
         this.previousVelocity.copyFrom(this.velocity)
         this.velocity.copyFrom(moveVector)
 
-        val x = getX()
-        val y = getY()
+        val x = this.x
+        val y = this.y
         update(timestamp, 0F)
 
         return currentPosition.x != x || currentPosition.y != y
@@ -218,49 +230,25 @@ class PositionVector private constructor(
 
     fun getXat(timestamp: Long): Float {
         if (timestamp <= this.currentTimestamp) {
-            return getX()
+            return this.x
         }
         val r = velocity.magnitude * (timestamp - this.currentTimestamp) / 1000F
-        val x = getX() + cos(velocity.angle.toDouble()).toFloat() * r
+        val x = this.x + cos(velocity.angle.toDouble()).toFloat() * r
         return configuration.atBounds().bound(x)
     }
 
     fun getYat(timestamp: Long): Float {
         if (timestamp <= this.currentTimestamp) {
-            return getY()
+            return this.y
         }
         val r = velocity.magnitude * (timestamp - this.currentTimestamp) / 1000F
-        val y = this.getY() + sin(velocity.angle.toDouble()).toFloat() * r
+        val y = this.y + sin(velocity.angle.toDouble()).toFloat() * r
         return configuration.atBounds().bound(y)
-    }
-
-    fun getX(): Float {
-        return this.currentPosition.x
-    }
-
-    fun getY(): Float {
-        return this.currentPosition.y
-    }
-
-    fun getPreviousX(): Float {
-        return this.previousPosition.x
-    }
-
-    fun getPreviousY(): Float {
-        return this.previousPosition.y
-    }
-
-    fun getTimestamp(): Long {
-        return currentTimestamp
-    }
-
-    fun getVelocity(): Vector2 {
-        return velocity
     }
 
     fun getVectorAt(timestamp: Long): Vector2 {
         if (timestamp <= this.currentTimestamp) {
-            return getVelocity()
+            return velocity
         }
 
         val dampMagCoef = Config.getInertiaDampenCoefficient()
@@ -278,7 +266,7 @@ class PositionVector private constructor(
                 mag
             )
         }
-        return getVelocity()
+        return velocity
     }
 
     fun isOutOfBounds(): Boolean =
@@ -364,7 +352,7 @@ class PositionVector private constructor(
     fun intersectedWith(fixedFrom: Vector2, fixedTo: Vector2, intersectionThreshold: Float): Vector2? {
         val extendCurrentPosition = currentPosition.add(
             Vector2.fromAngleMagnitude(
-                calculateAngleBetweenTwoPoints(
+                angleBetweenTwoPoints(
                     previousPosition.x, previousPosition.y,
                     currentPosition.x, currentPosition.y
                 ),
@@ -441,8 +429,6 @@ class PositionVector private constructor(
         this.previousPosition = Vector2.fromXY(startX, startY)
         this.previousTimestamp = startTime
         this.currentTimestamp = this.previousTimestamp
-        this.configuration = configuration
-        this.maxMagnitude = configuration.maxMagnitude()?.toFloat()
     }
 
     companion object {
@@ -485,14 +471,16 @@ class PositionVector private constructor(
             minMove: Float,
             elapsed: Long
         ): Vector2 {
-            if (dampMagCoef < 0F && velocity.magnitude != 0F) {
+            return if (dampMagCoef < 0F && velocity.magnitude != 0F) {
                 var mag: Float = calculateDampenedMagnitude(velocity, dampMagCoef, elapsed)
                 if (mag < minMove) {
                     mag = 0F
                 }
-                return Vector2.fromAngleMagnitude(velocity.angle, mag)
+
+                Vector2.fromAngleMagnitude(velocity.angle, mag)
+            } else {
+                velocity
             }
-            return velocity
         }
 
         private fun calculateDampenedMagnitude(velocity: Vector2, dampMagCoef: Float, elapsed: Long): Float {
@@ -508,8 +496,8 @@ class PositionVector private constructor(
             val relativePosition = bPos.minus(aPos)
             val relativeVelocity = bVel.minus(aVel)
 
-            val timeToCollisionInSeconds = relativePosition.dot(relativeVelocity) /
-                    (relativeVelocity.magnitude * relativeVelocity.magnitude * -1F)
+            val timeToCollisionInSeconds = -relativePosition.dot(relativeVelocity) /
+                    (relativeVelocity.magnitude * relativeVelocity.magnitude)
 
             if (timeToCollisionInSeconds * 1000F > collisionTimeInMillis) {
                 return false

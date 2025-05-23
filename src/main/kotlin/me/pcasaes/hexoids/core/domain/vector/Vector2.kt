@@ -1,9 +1,11 @@
 package me.pcasaes.hexoids.core.domain.vector
 
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateAngleFromComponents
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateMagnitudeFromComponents
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateXComponentFromAngleAndMagnitude
-import me.pcasaes.hexoids.core.domain.utils.TrigUtil.calculateYComponentFromAngleAndMagnitude
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.angleFromComponents
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.magnitudeFromComponents
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.xComponentFromAngleAndMagnitude
+import me.pcasaes.hexoids.core.domain.utils.TrigUtil.yComponentFromAngleAndMagnitude
+import me.pcasaes.hexoids.core.domain.utils.isSame
+import me.pcasaes.hexoids.core.domain.utils.isZero
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -63,7 +65,7 @@ class Vector2 private constructor(
         require(x != null && y != null) {
             "Cannot calculate angle without x and y components"
         }
-        return calculateAngleFromComponents(x, y)
+        return angleFromComponents(x, y)
     }
 
     private fun calculateMagnitude(): Float {
@@ -72,7 +74,7 @@ class Vector2 private constructor(
         require(x != null && y != null) {
             "Cannot calculate magnitude without x and y components"
         }
-        return calculateMagnitudeFromComponents(x, y)
+        return magnitudeFromComponents(x, y)
     }
 
     private fun calculateX(): Float {
@@ -81,7 +83,7 @@ class Vector2 private constructor(
         require(angle != null && magnitude != null) {
             "Cannot calculate x without angle and magnitude"
         }
-        return calculateXComponentFromAngleAndMagnitude(angle, magnitude)
+        return xComponentFromAngleAndMagnitude(angle, magnitude)
     }
 
     private fun calculateY(): Float {
@@ -90,7 +92,7 @@ class Vector2 private constructor(
         require(angle != null && magnitude != null) {
             "Cannot calculate y without angle and magnitude"
         }
-        return calculateYComponentFromAngleAndMagnitude(angle, magnitude)
+        return yComponentFromAngleAndMagnitude(angle, magnitude)
     }
 
 
@@ -172,6 +174,10 @@ class Vector2 private constructor(
         return b.x * x + b.y * y
     }
 
+    fun cross(b: Vector2): Float {
+        return x * b.y - y * b.x
+    }
+
     fun magnitudeFrom(b: Vector2): Float {
         val diff = this.minus(b)
         return sqrt(diff.x.toDouble().pow(2.0) + diff.y.toDouble().pow(2.0)).toFloat()
@@ -179,7 +185,7 @@ class Vector2 private constructor(
 
     fun projection(b: Vector2): Vector2 {
         val denom = b.dot(b)
-        return if (denom == 0F) {
+        return if (denom.isZero()) {
             zero()
         } else {
             b.scale((b.dot(this)) / denom)
@@ -191,7 +197,7 @@ class Vector2 private constructor(
     }
 
     fun invert(): Vector2 {
-        if (x == 0F && y == 0F) {
+        if (x.isZero() && y.isZero()) {
             return this
         }
         return fromXY(
@@ -201,14 +207,14 @@ class Vector2 private constructor(
     }
 
     fun invertX(): Vector2 {
-        if (x == 0F) {
+        if (x.isZero()) {
             return this
         }
         return fromXY(-x, y)
     }
 
     fun invertY(): Vector2 {
-        if (y == 0F) {
+        if (y.isZero()) {
             return this
         }
         return fromXY(x, -y)
@@ -219,8 +225,8 @@ class Vector2 private constructor(
     }
 
     fun isSameXY(x: Float, y: Float): Boolean {
-        return this.x.compareTo(x) == 0 &&
-                this.y.compareTo(y) == 0
+        return this.x.isSame(x) &&
+                this.y.isSame(y)
     }
 
     fun isZero(): Boolean = isSameXY(0F, 0F)
@@ -230,8 +236,7 @@ class Vector2 private constructor(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Vector2) return false
-        val vector2 = other
-        return isSameXY(vector2.x, vector2.y)
+        return isSameXY(other.x, other.y)
     }
 
     override fun hashCode(): Int {
@@ -245,13 +250,12 @@ class Vector2 private constructor(
      * @return
      */
     fun sameDirection(b: Vector2): Boolean {
-        val ax = x
-        val ay = y
-        val bx = b.x
-        val by = b.y
-        val cross = ax * by - ay * bx
-        val dot = ax * bx + ay * by
-        return cross == 0F && dot > 0F
+        val cross = cross(b)
+        val dot = dot(b)
+
+        val areParallel = cross.isZero()
+        val sameDirection = dot > 0F
+        return areParallel && sameDirection
     }
 
     override fun toString(): String {
@@ -265,7 +269,7 @@ class Vector2 private constructor(
         }
 
         fun fromAngleMagnitude(angle: Float, magnitude: Float): Vector2 {
-            return if (magnitude == 0F) {
+            return if (magnitude.isZero()) {
                 zero()
             } else {
                 Vector2(
@@ -314,8 +318,8 @@ class Vector2 private constructor(
         fun calculateMoveDelta(velocity: Vector2, minMove: Float, elapsed: Long): Vector2 {
             val velocityDelta = velocity.magnitude * elapsed / 1000F
 
-            val mx = calculateXComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
-            val my = calculateYComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
+            val mx = xComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
+            val my = yComponentFromAngleAndMagnitude(velocity.angle, velocityDelta)
 
             val mxAboveMinMove = abs(mx) > minMove
             val myAboveMinMove = abs(my) > minMove

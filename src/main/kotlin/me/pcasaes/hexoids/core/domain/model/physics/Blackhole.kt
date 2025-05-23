@@ -8,7 +8,7 @@ import me.pcasaes.hexoids.core.domain.model.EntityId
 import me.pcasaes.hexoids.core.domain.model.GameEvents
 import me.pcasaes.hexoids.core.domain.model.GameObject
 import me.pcasaes.hexoids.core.domain.model.Players
-import me.pcasaes.hexoids.core.domain.utils.MathUtil
+import me.pcasaes.hexoids.core.domain.utils.cube
 import me.pcasaes.hexoids.core.domain.vector.Vector2
 import pcasaes.hexoids.proto.ClientPlatforms
 import pcasaes.hexoids.proto.Dto
@@ -121,7 +121,7 @@ class Blackhole private constructor(
     private fun accel(absMagnitude: Float): Float {
         val relDistance = absMagnitude / this.gravityRadius
         val invDistance = 1.0F - relDistance
-        return MathUtil.cube(invDistance)
+        return invDistance.cube()
     }
 
     private fun handleMove(nearByGameObject: GameObject, timestamp: Long) {
