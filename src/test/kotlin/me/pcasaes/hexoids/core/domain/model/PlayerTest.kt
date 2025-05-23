@@ -387,6 +387,7 @@ class PlayerTest {
         getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
         player.move(0f, 0f, null as MoveReason?)
+        player.fixedUpdate(50L)
 
         Assertions.assertNull(eventReference.get())
     }
@@ -458,6 +459,7 @@ class PlayerTest {
 
         every { clock.getTime() } returns 50L
         player.move(0.5f, 0.5f, Math.PI.toFloat())
+        player.fixedUpdate(50L)
 
         val eventReference = AtomicReference<DomainEvent?>(null)
         getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
@@ -477,7 +479,6 @@ class PlayerTest {
     }
 
     @Test
-    @Disabled
     fun testFireDirectionWithInertia() {
         Config.setMaxBolts(2)
         Config.setBoltInertiaEnabled(true)
@@ -500,7 +501,8 @@ class PlayerTest {
         player.spawn()
 
         every { clock.getTime() } returns 1025L
-        player.move(0f, 0.5f, 0f)
+        player.move(moveX = 0F, moveY = 0.5F, angle = 0F)
+        player.fixedUpdate(1025L)
 
         val eventReference = AtomicReference<DomainEvent?>(null)
         getDomainEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
@@ -511,15 +513,18 @@ class PlayerTest {
         Assertions.assertNotNull(event)
         Assertions.assertTrue(event!!.event!!.hasPlayerFired())
 
-        player.fired(event.event.getBoltFired())
+        player.fired(event.event.getPlayerFired())
 
         event = eventReference.get()
         Assertions.assertNotNull(event)
         Assertions.assertTrue(event!!.event!!.hasBoltFired())
-        Assertions.assertEquals(
-            Math.PI.toFloat() / 4f,
-            event.event.getBoltFired().angle,
-            Float.Companion.MIN_VALUE
+
+        // almost zero angle, slightly angled upward
+        Assertions.assertTrue(
+            event.event.getBoltFired().angle > 0.0F,
+        )
+        Assertions.assertTrue(
+            event.event.getBoltFired().angle < 0.05F,
         )
     }
 
@@ -541,6 +546,7 @@ class PlayerTest {
 
         every { clock.getTime() } returns 1025L
         player.move(0.5f, 0.5f, null as MoveReason?)
+        player.fixedUpdate(1025L)
 
         val positionVector = of(
             1f,
@@ -599,6 +605,7 @@ class PlayerTest {
         player.spawn()
         every { clock.getTime() } returns 50L
         player.move(0.4f, 0.6f, null as MoveReason?)
+        player.fixedUpdate(50L)
 
         val positionVector = of(
             0.45f,
@@ -628,6 +635,7 @@ class PlayerTest {
         player.spawn()
         every { clock.getTime() } returns 50L
         player.move(0.2f, 0.2f, null as MoveReason?)
+        player.fixedUpdate(50L)
 
         val positionVector = of(
             0.45f,
@@ -655,6 +663,7 @@ class PlayerTest {
         player.spawn()
         every { clock.getTime() } returns 50L
         player.move(0.5f, 0.2f, null as MoveReason?)
+        player.fixedUpdate(50L)
 
         val positionVector = of(
             0.45f,
@@ -694,6 +703,7 @@ class PlayerTest {
 
         every { clock.getTime() } returns 50L
         player1.move(0.5f, 0.5f, 1f)
+        player1.fixedUpdate(50L)
 
         val domainEvents = ArrayList<DomainEvent>()
         getDomainEvents().registerEventDispatcher { e -> domainEvents.add(e) }

@@ -46,7 +46,7 @@ class Barrier private constructor(
             LENGTH
         )
 
-        this.normal = Vector2.fromAngleMagnitude(rotationAngle + TrigUtil.QUARTER_CIRCLE_IN_RADIANS, 1F)
+        this.normal = Vector2.fromAngleMagnitude(rotationAngle + TrigUtil.QUARTER_CIRCLE, 1F)
 
         this.dto = BarrierDto.newBuilder()
             .setX(centerPosition.x)

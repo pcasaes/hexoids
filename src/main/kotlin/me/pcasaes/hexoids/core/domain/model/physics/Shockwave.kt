@@ -4,7 +4,7 @@ import me.pcasaes.hexoids.core.domain.config.Config
 import me.pcasaes.hexoids.core.domain.metrics.GameMetrics
 import me.pcasaes.hexoids.core.domain.model.Player
 import me.pcasaes.hexoids.core.domain.model.Players
-import me.pcasaes.hexoids.core.domain.utils.MathUtil
+import me.pcasaes.hexoids.core.domain.utils.square
 import me.pcasaes.hexoids.core.domain.vector.Vector2
 import pcasaes.hexoids.proto.MoveReason
 import java.util.function.LongPredicate
@@ -24,7 +24,7 @@ class Shockwave private constructor(
     private val impulse: Float = Config.getPlayerDestroyedShockwave().getImpulse()
 
     private fun range(elapsed: Long): Float {
-        val ratio = 1.0F - MathUtil.square((elapsed / this.duration.toFloat()) - 1F)
+        val ratio = 1.0F - ((elapsed / this.duration.toFloat()) - 1F).square()
         return this.distance * ratio
     }
 

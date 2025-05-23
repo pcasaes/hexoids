@@ -1,15 +1,21 @@
 package me.pcasaes.hexoids.core.domain.utils
 
-object MathUtil {
-    fun square(value: Float): Float {
-        return value * value
-    }
+import kotlin.math.abs
 
-    fun cube(value: Float): Float {
-        return value * value * value
-    }
+private const val EPSILON = 1e-6F
 
-    fun quad(value: Float): Float {
-        return square(square(value))
-    }
+fun Float.isZero(): Boolean {
+    return abs(this) <= EPSILON
+}
+
+fun Float.isSame(other: Float): Boolean {
+    return (this - other).isZero()
+}
+
+fun Float.square(): Float {
+    return this * this
+}
+
+fun Float.cube(): Float {
+    return this * this * this
 }
