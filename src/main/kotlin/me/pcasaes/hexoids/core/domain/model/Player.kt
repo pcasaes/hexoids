@@ -406,8 +406,8 @@ interface Player : GameObject {
                 PlayerDto.newBuilder()
                     .setPlayerId(id.getGuid())
                     .setShip(ship)
-                    .setX(position.getX())
-                    .setY(position.getY())
+                    .setX(position.x)
+                    .setY(position.y)
                     .setAngle(angle)
                     .setSpawned(spawned)
                     .setName(name)
@@ -549,11 +549,11 @@ interface Player : GameObject {
                         .setPlayerMoved(
                             PlayerMovedEventDto.newBuilder()
                                 .setPlayerId(id.getGuid())
-                                .setX(position.getX())
-                                .setY(position.getY())
+                                .setX(position.x)
+                                .setY(position.y)
                                 .setAngle(angle)
-                                .setThrustAngle(position.getVelocity().angle)
-                                .setVelocity(position.getVelocity().magnitude)
+                                .setThrustAngle(position.velocity.angle)
+                                .setVelocity(position.velocity.magnitude)
                                 .setTimestamp(eventTime)
                                 .addAllReasons(lastMoveReasons)
                                 .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
@@ -667,10 +667,10 @@ interface Player : GameObject {
                                     .setLocation(
                                         PlayerMovedEventDto.newBuilder()
                                             .setPlayerId(id.getGuid())
-                                            .setX(position.getX())
-                                            .setY(position.getY())
+                                            .setX(position.x)
+                                            .setY(position.y)
                                             .setAngle(angle)
-                                            .setThrustAngle(position.getVelocity().angle)
+                                            .setThrustAngle(position.velocity.angle)
                                             .setTimestamp(now)
                                             .setInertialDampenFactor(playerPositionConfiguration.getDampenFactor())
                                     )
@@ -706,11 +706,11 @@ interface Player : GameObject {
         }
 
         override fun fixedUpdate(timestamp: Long) {
-            val x = position.getX()
-            val y = position.getY()
+            val x = position.x
+            val y = position.y
             this.position.update(timestamp)
             val angleChanged = this.previousAngle != this.angle
-            if (x != position.getX() || y != position.getY()) {
+            if (x != position.x || y != position.y) {
                 tackleBarrierHit()
                 fireMoveDomainEvent(timestamp)
             } else if (angleChanged) {
@@ -726,10 +726,10 @@ interface Player : GameObject {
             if (!position.noMovement()) {
                 for (barrier in barriers
                     .search(
-                        position.getPreviousX(),
-                        position.getPreviousY(),
-                        position.getX(),
-                        position.getY(),
+                        position.previousX,
+                        position.previousY,
+                        position.x,
+                        position.y,
                         SHIP_LENGTH_TIMES_10
                     )) {
                     val intersection = position.intersectedWith(barrier.to, barrier.from, SHIP_HALF_LENGTH)
@@ -744,11 +744,11 @@ interface Player : GameObject {
             get() = this.name != null
 
         override fun getX(): Float {
-            return this.position.getX()
+            return this.position.x
         }
 
         override fun getY(): Float {
-            return this.position.getY()
+            return this.position.y
         }
 
         override fun getClientPlatform(): ClientPlatforms {
