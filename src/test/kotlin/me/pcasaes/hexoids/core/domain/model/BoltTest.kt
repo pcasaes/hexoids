@@ -165,8 +165,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0.01F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0F, bolt.positionVector.getY())
+        Assertions.assertEquals(0.01F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0F, bolt.positionVector.y)
     }
 
     @Test
@@ -194,8 +194,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0.0070710676F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getY())
+        Assertions.assertEquals(0.0070710676F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0.0070710676F, bolt.positionVector.y)
     }
 
     @Test
@@ -223,8 +223,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0.01F, bolt.positionVector.getY())
+        Assertions.assertEquals(0F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0.01F, bolt.positionVector.y)
     }
 
     @Test
@@ -252,8 +252,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0.0070710676F, bolt.positionVector.getY())
+        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0.0070710676F, bolt.positionVector.y)
     }
 
     @Test
@@ -281,8 +281,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(0.99F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0F, bolt.positionVector.getY())
+        Assertions.assertEquals(0.99F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0F, bolt.positionVector.y)
     }
 
     @Test
@@ -310,8 +310,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(1F - 0.0070710676F, bolt.positionVector.getY())
+        Assertions.assertEquals(1F - 0.0070710676F, bolt!!.positionVector.x)
+        Assertions.assertEquals(1F - 0.0070710676F, bolt.positionVector.y)
     }
 
     @Test
@@ -338,8 +338,8 @@ class BoltTest {
 
         bolts.fixedUpdate(clock.getTime())
 
-        Assertions.assertEquals(1F, bolt!!.positionVector.getX())
-        Assertions.assertEquals(0.99F, bolt.positionVector.getY())
+        Assertions.assertEquals(1F, bolt!!.positionVector.x)
+        Assertions.assertEquals(0.99F, bolt.positionVector.y)
     }
 
     @Test
