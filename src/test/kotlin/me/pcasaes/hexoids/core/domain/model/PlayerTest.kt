@@ -4,7 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import me.pcasaes.hexoids.core.domain.config.Config
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory.Companion.factory
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
 import me.pcasaes.hexoids.core.domain.model.Bolts.Companion.create
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
@@ -13,7 +13,6 @@ import me.pcasaes.hexoids.core.domain.vector.PositionVector
 import me.pcasaes.hexoids.core.domain.vector.PositionVector.Companion.of
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.JoinCommandDto
@@ -43,7 +42,7 @@ class PlayerTest {
     fun setup() {
 
         this.bolts = create()
-        this.players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, factory())
+        this.players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, PlayerSpatialIndexFactory)
         Assertions.assertEquals(0, this.players.getTotalNumberOfPlayers())
         Assertions.assertEquals(0, this.players.getNumberOfConnectedPlayers())
 

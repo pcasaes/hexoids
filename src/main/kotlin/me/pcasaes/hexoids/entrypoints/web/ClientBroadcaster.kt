@@ -4,7 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
 import me.pcasaes.hexoids.core.domain.service.GameTimeService
-import org.eclipse.microprofile.config.inject.ConfigProperty
+import me.pcasaes.hexoids.entrypoints.config.ClientBroadcastConfiguration
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.Events
 
@@ -15,23 +15,16 @@ import pcasaes.hexoids.proto.Events
 class ClientBroadcaster @Inject constructor(
     private val clientSessions: ClientSessions,
     private val gameTime: GameTimeService,
-    @param:ConfigProperty(
-        name = "hexoids.config.service.client-broadcast.enabled",
-        defaultValue = "true"
-    ) private val enabled: Boolean,
-    @param:ConfigProperty(
-        name = "hexoids.config.service.client-broadcast.batch.size",
-        defaultValue = "64"
-    ) private val batchSize: Int,
-    @param:ConfigProperty(
-        name = "hexoids.config.service.client-broadcast.batch.timeout",
-        defaultValue = "20"
-    ) private val batchTimeout: Int
+    private val clientBroadcastConfiguration: ClientBroadcastConfiguration,
 ) {
     private val dtoBuilder: Dto.Builder = Dto.newBuilder()
     private val eventsBuilder: Events.Builder = Events.newBuilder()
 
     private var flushTimestamp: Long = 0
+
+    private val enabled = clientBroadcastConfiguration.enabled()
+    private val batchSize = clientBroadcastConfiguration.batch().size()
+    private val batchTimeout = clientBroadcastConfiguration.batch().timeout()
 
     fun accept(dto: Dto?) {
         if (dto != null) {
@@ -83,9 +76,5 @@ class ClientBroadcaster @Inject constructor(
 
     private fun canFlush(): Boolean {
         return this.gameTime.getTime() > this.flushTimestamp
-    }
-
-    fun getBatchTimeout(): Int {
-        return batchTimeout
     }
 }

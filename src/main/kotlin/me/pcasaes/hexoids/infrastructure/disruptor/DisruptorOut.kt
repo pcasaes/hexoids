@@ -19,7 +19,6 @@ import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
 import me.pcasaes.hexoids.infrastructure.clock.HRClock.nanoTime
 import me.pcasaes.hexoids.infrastructure.producer.ClientEventProducer
 import me.pcasaes.hexoids.infrastructure.producer.DomainEventProducer
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import pcasaes.hexoids.proto.Dto
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,11 +29,10 @@ import kotlin.math.pow
 class DisruptorOut @Inject constructor(
     private val domainEventProducer: DomainEventProducer,
     private val clientEventProducer: ClientEventProducer,
-    @param:ConfigProperty(
-        name = "hexoids.config.service.disruptor.buffer-size-exponent",
-        defaultValue = "17"
-    ) private val bufferSizeExponent: Int
+    disruptorConfig: DisruptorConfig,
 ) {
+
+    private val bufferSizeExponent = disruptorConfig.bufferSizeExponent()
     private val metrics: MutableList<QueueMetric>
 
     private val dtoTranslator = EventTranslatorOneArg { event: DisruptorOutEvent, _, dto: Dto ->

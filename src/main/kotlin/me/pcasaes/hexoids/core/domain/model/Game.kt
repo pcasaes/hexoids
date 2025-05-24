@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory.Companion.factory
+import me.pcasaes.hexoids.core.domain.index.PlayerSpatialIndexFactory
 import me.pcasaes.hexoids.core.domain.metrics.PhysicsMetrics
 import me.pcasaes.hexoids.core.domain.model.EventScheduler.Companion.create
 import me.pcasaes.hexoids.core.domain.model.physics.Blackhole
@@ -155,7 +155,8 @@ interface Game {
                 val physicsQueue = PhysicsQueue.create()
                 val eventScheduler = create(physicsQueue)
                 val barriers = Barriers.create()
-                val players = Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, factory())
+                val players =
+                    Players.create(bolts, clock, scoreBoard, barriers, physicsQueue, PlayerSpatialIndexFactory)
 
                 INSTANCE = Implementation(players, clock, bolts, scoreBoard, barriers, eventScheduler, physicsQueue)
             }

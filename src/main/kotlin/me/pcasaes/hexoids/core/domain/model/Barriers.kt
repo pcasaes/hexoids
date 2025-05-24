@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.model
 
-import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory.Companion.factory
+import me.pcasaes.hexoids.core.domain.index.BarrierSpatialIndexFactory
 import me.pcasaes.hexoids.core.domain.model.Barrier.Companion.place
 import me.pcasaes.hexoids.core.domain.utils.TrigUtil
 import me.pcasaes.hexoids.core.domain.vector.Vector2
@@ -30,7 +30,7 @@ class Barriers private constructor() : Iterable<Barrier> {
         createCornerSquares()
 
 
-        factory()
+        BarrierSpatialIndexFactory
             .get()
             .update(this)
     }
@@ -146,7 +146,7 @@ class Barriers private constructor() : Iterable<Barrier> {
     }
 
     fun search(x1: Float, y1: Float, x2: Float, y2: Float, distance: Float): Iterable<Barrier> {
-        return factory()
+        return BarrierSpatialIndexFactory
             .get()
             .search(x1, y1, x2, y2, distance)
     }

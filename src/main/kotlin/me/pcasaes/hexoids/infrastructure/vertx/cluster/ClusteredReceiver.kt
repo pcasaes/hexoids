@@ -27,7 +27,7 @@ import kotlin.concurrent.Volatile
 class ClusteredReceiver(
     private val vertx: Vertx,
     private val delayedStartConsumerHandler: DelayedStartConsumerHandler,
-    @ConfigProperty(name = "hexoids.config.service.kafka.subscriber", defaultValue = "true") isSubscriber: Boolean,
+    @ConfigProperty(name = "hexoids.service.subscriber", defaultValue = "true") isSubscriber: Boolean,
     @Channel("player-action") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) playerActionEmitter: Emitter<Record<UUID, Event?>>,
     @Channel("bolt-action") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) boltActionEmitter: Emitter<Record<UUID, Event?>>,
     @Channel("bolt-life-cycle") @OnOverflow(OnOverflow.Strategy.UNBOUNDED_BUFFER) boltLifeCycleEmitter: Emitter<Record<UUID, Event?>>

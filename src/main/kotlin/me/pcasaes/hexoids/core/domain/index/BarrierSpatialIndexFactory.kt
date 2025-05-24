@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.index
 
-class BarrierSpatialIndexFactory private constructor() {
+object BarrierSpatialIndexFactory {
 
     private lateinit var barrierSpatialIndex: BarrierSpatialIndex
 
@@ -10,13 +10,5 @@ class BarrierSpatialIndexFactory private constructor() {
 
     fun setBarrierSpatialIndex(barrierSpatialIndex: BarrierSpatialIndex) {
         this.barrierSpatialIndex = barrierSpatialIndex
-    }
-
-    companion object {
-        private val FACTORY = BarrierSpatialIndexFactory()
-
-        fun factory(): BarrierSpatialIndexFactory {
-            return FACTORY
-        }
     }
 }

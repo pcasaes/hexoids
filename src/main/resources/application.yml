@@ -1,9 +1,7 @@
 hexoids:
+  client:
+    assets: WEBASM
   config:
-    infrastructure:
-      players-spatial-index: rtree2
-    client:
-      assets: WEBASM
     update-frequency-in-millis: 50
     min:
       move: 0.0001
@@ -44,23 +42,19 @@ hexoids:
         enabled: true
         rejection-scale: 0.8
         projection-scale: 0.8
-        negative-projection-max: 0.1
+        negative-projection-scale: 0.1
       collision:
         radius: 0.001
 
-    service:
-      disruptor:
-        buffer-size-exponent: 17
-      client-broadcast:
-        enabled: true
-        batch:
-          size: 64
-          timeout: 20
-      kafka:
-        subscriber: true
-        topics:
-          bolt-life-cycle:
-            partitions: 1
+  service:
+    disruptor:
+      buffer-size-exponent: 17
+    client-broadcast:
+      enabled: true
+      batch:
+        size: 64
+        timeout: 20
+    subscriber: true
 
 mp:
   messaging:

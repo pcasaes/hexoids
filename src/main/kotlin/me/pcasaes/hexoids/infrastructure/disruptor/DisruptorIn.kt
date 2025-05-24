@@ -15,7 +15,6 @@ import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.service.GameLoopService
 import me.pcasaes.hexoids.infrastructure.clock.HRClock.nanoTime
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import pcasaes.hexoids.proto.Dto
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -24,11 +23,10 @@ import kotlin.math.pow
 @ApplicationScoped
 class DisruptorIn @Inject constructor(
     private val gameLoopService: GameLoopService,
-    @param:ConfigProperty(
-        name = "hexoids.config.service.disruptor.buffer-size-exponent",
-        defaultValue = "17"
-    ) private val bufferSizeExponent: Int
+    disruptorConfig: DisruptorConfig,
 ) {
+
+    private val bufferSizeExponent = disruptorConfig.bufferSizeExponent()
     private val metrics: MutableList<QueueMetric>
 
     private val gameTranslator =

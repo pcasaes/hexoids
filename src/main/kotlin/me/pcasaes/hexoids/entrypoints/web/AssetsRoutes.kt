@@ -10,7 +10,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 @ApplicationScoped
 class AssetsRoutes @Inject constructor(
     @param:ConfigProperty(
-        name = "hexoids.config.client.assets",
+        name = "hexoids.client.assets",
         defaultValue = "WEBASM"
     ) private val clientAssets: ClientAssets
 ) {
