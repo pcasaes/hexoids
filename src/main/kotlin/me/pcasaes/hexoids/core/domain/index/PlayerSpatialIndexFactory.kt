@@ -1,6 +1,6 @@
 package me.pcasaes.hexoids.core.domain.index
 
-class PlayerSpatialIndexFactory private constructor() {
+object PlayerSpatialIndexFactory {
 
     private lateinit var playerSpatialIndex: PlayerSpatialIndex
 
@@ -10,13 +10,5 @@ class PlayerSpatialIndexFactory private constructor() {
 
     fun setPlayerSpatialIndex(playerSpatialIndex: PlayerSpatialIndex) {
         this.playerSpatialIndex = playerSpatialIndex
-    }
-
-    companion object {
-        private val FACTORY = PlayerSpatialIndexFactory()
-
-        fun factory(): PlayerSpatialIndexFactory {
-            return FACTORY
-        }
     }
 }

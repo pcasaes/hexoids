@@ -38,6 +38,14 @@ class PeriodicTaskScheduler(
     @PostConstruct
     fun start() {
         gamePeriodicTasksFactory
+            .filter {
+                if (it.enabled()) {
+                    true
+                } else {
+                    gamePeriodicTasksFactory.destroy(it)
+                    false
+                }
+            }
             .forEach { gamePeriodicTasks.add(it) }
 
         this.lowFreqScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()

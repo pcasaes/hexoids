@@ -6,7 +6,6 @@ import com.github.davidmoten.rtree2.geometry.Geometries
 import com.github.davidmoten.rtree2.geometry.Point
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
-import io.quarkus.arc.properties.IfBuildProperty
 import io.quarkus.runtime.StartupEvent
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
@@ -25,7 +24,6 @@ import java.util.logging.Logger
 import kotlin.math.max
 import kotlin.math.min
 
-@IfBuildProperty(name = "hexoids.config.infrastructure.players-spatial-index", stringValue = "rtree2")
 @ApplicationScoped
 class RTree2PlayerSpatialIndex @Inject constructor(
     gameQueue: GameQueue,

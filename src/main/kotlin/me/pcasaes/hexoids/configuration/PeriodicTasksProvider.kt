@@ -1,6 +1,5 @@
 package me.pcasaes.hexoids.configuration
 
-import io.quarkus.arc.properties.IfBuildProperty
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Inject
@@ -16,16 +15,11 @@ import me.pcasaes.hexoids.core.domain.service.GameLoopService
 class PeriodicTasksProvider @Inject constructor(
     private val gameQueue: GameQueue,
     private val gameLoopService: GameLoopService,
-    private val configurations: HexoidConfigurations
+    private val configurations: Configuration
 ) {
     @Produces
     @Singleton
     @Named("StalledPlayersPeriodTask")
-    @IfBuildProperty(
-        name = "hexoids.config.core.domain.stalled-players.periodic-task.enabled",
-        stringValue = "true",
-        enableIfMissing = true
-    )
     fun getStalledPlayersPeriodTask(): GamePeriodicTask {
         return StalledPlayersPeriodTask.create(this.gameQueue)
     }
@@ -33,16 +27,11 @@ class PeriodicTasksProvider @Inject constructor(
     @Produces
     @Singleton
     @Named("GameLoopPeriodicTask")
-    @IfBuildProperty(
-        name = "hexoids.config.core.domain.game-loop.periodic-task.enabled",
-        stringValue = "true",
-        enableIfMissing = true
-    )
     fun getGameLoopPeriodicTask(): GamePeriodicTask {
         return GameLoopPeriodicTask.create(
             this.gameQueue,
             this.gameLoopService,
-            this.configurations.getUpdateFrequencyInMillis()
+            this.configurations.updateFrequencyInMillis()
         )
     }
 }

@@ -54,7 +54,7 @@ services:
     environment:
       - VIRTUAL_HOST=${HEXOIDS_HOST}
       - VIRTUAL_PORT=8080
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=false -Dmp.messaging.incomming.bolt-life-cycle.topic=HEXOIDS_NONE -Dmp.messaging.incommingscore-board-control.topic=HEXOIDS_NONE
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.service.subscriber=false -Dmp.messaging.incomming.score-board-control.enabled=false
     depends_on:
       - hexoids-kafka
       - hexoids-kafka-topic-create
@@ -67,7 +67,7 @@ services:
       dockerfile: src/main/docker/Dockerfile.jvm
     image: me.pcasaes/hexoids
     environment:
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.config.service.kafka.subscriber=true -Dhexoids.config.service.client-broadcast.enabled=false
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.service.subscriber=true -Dhexoids.service.client-broadcast.enabled=false
     depends_on:
       - hexoids-kafka
     networks:

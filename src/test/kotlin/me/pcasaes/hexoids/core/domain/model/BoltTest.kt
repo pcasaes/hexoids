@@ -46,11 +46,9 @@ class BoltTest {
         every { players.spliterator() } returns emptyList<Player>().spliterator()
 
         PlayerSpatialIndexFactory
-            .factory()
             .setPlayerSpatialIndex { x1: Float, y1: Float, x2: Float, y2: Float, distance: Float -> players }
 
         BarrierSpatialIndexFactory
-            .factory()
             .setBarrierSpatialIndex(object : BarrierSpatialIndex {
                 override fun search(x1: Float, y1: Float, x2: Float, y2: Float, distance: Float): Iterable<Barrier> {
                     return mutableListOf()
@@ -60,7 +58,7 @@ class BoltTest {
                 }
             })
 
-        every { players.getSpatialIndex() } returns PlayerSpatialIndexFactory.factory().get()
+        every { players.getSpatialIndex() } returns PlayerSpatialIndexFactory.get()
     }
 
     @Test
