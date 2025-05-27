@@ -10,7 +10,6 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.spi.ObserverMethod
 import jakarta.inject.Inject
 import me.pcasaes.hexoids.core.domain.model.EntityId
-import me.pcasaes.hexoids.core.domain.model.ScoreBoard.Implementation.Companion.SCORE_BOARD_SIZE
 import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepository
 import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepositoryFactory
 import pcasaes.hexoids.record.proto.PlayerScore
@@ -64,28 +63,6 @@ class ClusteredScoreBoardRepository @Inject constructor(
         val s = getStore()
         return if (s != null) {
             s.put(EntityId.of(playerScore.playerId).getId(), playerScore.toByteArray())
-                .onItem().transformToUni {
-                    fetchAllScores()
-                        .onItem()
-                        .invoke { list ->
-                            if (list.size > SCORE_BOARD_SIZE) {
-                                list.sortedWith { a, b ->
-                                    val r = b.score.compareTo(a.score)
-
-                                    if (r != 0) {
-                                        r
-                                    } else {
-                                        a.timestamp.compareTo(b.timestamp)
-                                    }
-                                }.subList(SCORE_BOARD_SIZE, list.size)
-                                    .forEach { score ->
-                                        s.remove(EntityId.of(score.playerId).getId())
-                                            .subscribe().with { }
-                                    }
-
-                            }
-                        }
-                }
                 .onItem().transform { Unit }
         } else {
             Uni.createFrom().nullItem()
@@ -99,20 +76,6 @@ class ClusteredScoreBoardRepository @Inject constructor(
                 .onItem().transform { Unit }
         } else {
             Uni.createFrom().nullItem()
-        }
-    }
-
-    override fun fetchAllScores(): Uni<List<PlayerScore>> {
-        val s = getStore()
-        return if (s != null) {
-            s.values()
-                .onItem().transform { entries ->
-                    entries.map { entry ->
-                        PlayerScore.parseFrom(entry)
-                    }
-                }
-        } else {
-            Uni.createFrom().item(emptyList())
         }
     }
 }
