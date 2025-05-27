@@ -17,11 +17,9 @@ interface ScoreBoardRepository {
     fun reset(
         playerId: EntityId,
     ): Uni<Unit>
-
-    fun fetchAllScores(): Uni<List<PlayerScore>>
 }
 
-object ScoreBoardRepositoryFactory: () -> ScoreBoardRepository {
+object ScoreBoardRepositoryFactory : () -> ScoreBoardRepository {
 
     private lateinit var repository: ScoreBoardRepository
 
