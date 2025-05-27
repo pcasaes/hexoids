@@ -1,25 +1,32 @@
-package me.pcasaes.hexoids.core.domain.model
+package me.pcasaes.hexoids.infrastructure.vertx.cluster
 
 import io.mockk.every
 import io.mockk.mockk
-import io.smallrye.mutiny.Uni
+import io.vertx.core.Vertx
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueueFactory
+import me.pcasaes.hexoids.core.domain.model.Clock
+import me.pcasaes.hexoids.core.domain.model.EntityId
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
+import me.pcasaes.hexoids.core.domain.model.Game
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
+import me.pcasaes.hexoids.core.domain.model.GameTopic
+import me.pcasaes.hexoids.core.domain.model.ScoreBoard
 import me.pcasaes.hexoids.core.domain.model.ScoreBoard.Companion.create
-import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepository
+import me.pcasaes.hexoids.core.domain.model.ScoreBoard.Implementation.Companion.SCORE_BOARD_SIZE
 import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepositoryFactory
+import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pcasaes.hexoids.proto.Dto
-import pcasaes.hexoids.record.proto.PlayerScore
-import java.util.concurrent.ConcurrentHashMap
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
-
-class ScoreBoardTest {
+class ClusteredScoreBoardRepositoryTest {
 
     private val game = mockk<Game>(relaxed = true)
 
@@ -27,36 +34,21 @@ class ScoreBoardTest {
 
     private lateinit var scoreBoard: ScoreBoard
 
+    private lateinit var vertx: Vertx
+
+    private val domainEventsFired = AtomicInteger(0)
+
     @BeforeEach
     fun setup() {
+        vertx = Vertx.vertx()
+
         getClientEvents().registerEventDispatcher(null)
         GameQueueFactory.register {
             it.run()
         }
 
-        val store = ConcurrentHashMap<EntityId, PlayerScore>()
-
         ScoreBoardRepositoryFactory.register(
-            object : ScoreBoardRepository {
-                override fun fetchPlayerScore(playerId: EntityId): Uni<PlayerScore?> {
-                    val r = store[playerId]
-                    return if (r != null) {
-                        Uni.createFrom().item(r)
-                    } else {
-                        Uni.createFrom().nullItem()
-                    }
-                }
-
-                override fun savePlayerScore(playerScore: PlayerScore): Uni<Unit> {
-                    store[EntityId.of(playerScore.playerId)] = playerScore
-                    return Uni.createFrom().nullItem()
-                }
-
-                override fun reset(playerId: EntityId): Uni<Unit> {
-                    store.remove(playerId)
-                    return Uni.createFrom().nullItem()
-                }
-            }
+            ClusteredScoreBoardRepository(io.vertx.mutiny.core.Vertx(vertx))
         )
 
 
@@ -68,11 +60,19 @@ class ScoreBoardTest {
 
         every { game.getScoreBoard() } returns scoreBoard
 
+        domainEventsFired.set(0)
+
         getDomainEvents().registerEventDispatcher { domainEvent ->
             GameTopic.valueOf(domainEvent.topic!!).consume(
                 domainEvent
             )
+            domainEventsFired.incrementAndGet()
         }
+    }
+
+    @AfterEach
+    fun teardown() {
+        vertx.close().toCompletionStage().toCompletableFuture().get()
     }
 
     @Test
@@ -104,15 +104,28 @@ class ScoreBoardTest {
         val one = newId()
         scoreBoard.updateScore(one, 100)
 
+        await()
+            .atMost(Duration.ofSeconds(30))
+            .untilAsserted {
+                assertTrue(domainEventsFired.get() >= 1)
+            }
+
+
         scoreBoard.fixedUpdate(1000L)
 
         scoreBoard.resetScore(one)
 
+        await()
+            .atMost(Duration.ofSeconds(30))
+            .untilAsserted {
+                assertTrue(domainEventsFired.get() >= 2)
+            }
+
 
         scoreBoard.fixedUpdate(2000L)
 
-        Assertions.assertTrue(eventReference.get()!!.hasEvent())
-        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        assertTrue(eventReference.get()!!.hasEvent())
+        assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
         val event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
         Assertions.assertNotNull(event)
 
@@ -127,29 +140,35 @@ class ScoreBoardTest {
         val eventReference = AtomicReference<Dto?>(null)
         getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        val ids = ArrayList<EntityId>(ScoreBoard.Implementation.SCORE_BOARD_SIZE)
+        val ids = ArrayList<EntityId>(SCORE_BOARD_SIZE)
 
-        repeat(ScoreBoard.Implementation.SCORE_BOARD_SIZE) { i ->
+        repeat(SCORE_BOARD_SIZE) { i ->
             ids.add(newId())
         }
 
-        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
-            scoreBoard.updateScore(ids[i], ScoreBoard.Implementation.SCORE_BOARD_SIZE - i)
+        for (i in 0..<SCORE_BOARD_SIZE) {
+            scoreBoard.updateScore(ids[i], SCORE_BOARD_SIZE - i)
         }
+
+        await()
+            .atMost(Duration.ofSeconds(30))
+            .untilAsserted {
+                assertTrue(domainEventsFired.get() >= SCORE_BOARD_SIZE)
+            }
 
         scoreBoard.fixedUpdate(1000L)
 
-        Assertions.assertTrue(eventReference.get()!!.hasEvent())
-        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        assertTrue(eventReference.get()!!.hasEvent())
+        assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
         val event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
         Assertions.assertNotNull(event)
 
-        Assertions.assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event!!.scoresCount)
+        Assertions.assertEquals(SCORE_BOARD_SIZE, event!!.scoresCount)
 
-        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+        for (i in 0..<SCORE_BOARD_SIZE) {
             Assertions.assertEquals(ids[i].getGuid(), event.scoresList[i].playerId)
             Assertions.assertEquals(
-                ScoreBoard.Implementation.SCORE_BOARD_SIZE - i,
+                SCORE_BOARD_SIZE - i,
                 event.scoresList[i].score
             )
         }
@@ -160,23 +179,30 @@ class ScoreBoardTest {
         val eventReference = AtomicReference<Dto?>(null)
         getClientEvents().registerEventDispatcher { newValue -> eventReference.set(newValue) }
 
-        val ids = ArrayList<EntityId>(ScoreBoard.Implementation.SCORE_BOARD_SIZE)
+        val ids = ArrayList<EntityId>(SCORE_BOARD_SIZE)
 
-        repeat(ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
+        repeat(SCORE_BOARD_SIZE) {
             ids.add(newId())
         }
 
         every { clock.getTime() } returns 1000L
 
-        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
-            val score = ScoreBoard.Implementation.SCORE_BOARD_SIZE - i
+        for (i in 0..<SCORE_BOARD_SIZE) {
+            val score = SCORE_BOARD_SIZE - i
             scoreBoard.updateScore(ids[i], score)
         }
 
+        await()
+            .atMost(Duration.ofSeconds(30))
+            .untilAsserted {
+                assertTrue(domainEventsFired.get() >= SCORE_BOARD_SIZE)
+            }
+
+
         scoreBoard.fixedUpdate(1000L)
 
-        Assertions.assertTrue(eventReference.get()!!.hasEvent())
-        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        assertTrue(eventReference.get()!!.hasEvent())
+        assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
         var event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
         Assertions.assertNotNull(event)
 
@@ -189,28 +215,34 @@ class ScoreBoardTest {
         scoreBoard.updateScore(b, 3)
         scoreBoard.updateScore(c, -1)
 
+        await()
+            .atMost(Duration.ofSeconds(30))
+            .untilAsserted {
+                assertTrue(domainEventsFired.get() >= SCORE_BOARD_SIZE + 3)
+            }
+
         scoreBoard.fixedUpdate(2000L)
 
-        Assertions.assertTrue(eventReference.get()!!.hasEvent())
-        Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
+        assertTrue(eventReference.get()!!.hasEvent())
+        assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
         event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
         Assertions.assertNotNull(event)
 
-        Assertions.assertEquals(ScoreBoard.Implementation.SCORE_BOARD_SIZE, event.scoresCount)
+        Assertions.assertEquals(SCORE_BOARD_SIZE, event.scoresCount)
 
         Assertions.assertEquals(a.getGuid(), event.scoresList[0].playerId)
         Assertions.assertEquals(100, event.scoresList[0].score)
 
         Assertions.assertEquals(
             b.getGuid(),
-            event.scoresList[ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1].playerId
+            event.scoresList[SCORE_BOARD_SIZE - 1].playerId
         )
-        Assertions.assertEquals(3, event.scoresList[ScoreBoard.Implementation.SCORE_BOARD_SIZE - 1].score)
+        Assertions.assertEquals(3, event.scoresList[SCORE_BOARD_SIZE - 1].score)
 
-        for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE - 2) {
+        for (i in 0..<SCORE_BOARD_SIZE - 2) {
             Assertions.assertEquals(ids[i].getGuid(), event.scoresList[i + 1].playerId)
             Assertions.assertEquals(
-                ScoreBoard.Implementation.SCORE_BOARD_SIZE - i,
+                SCORE_BOARD_SIZE - i,
                 event.scoresList[i + 1].score
             )
         }
