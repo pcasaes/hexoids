@@ -14,7 +14,7 @@ class ConsumerCaughtUpHealthCheck @Inject constructor(
 ) : HealthCheck {
     override fun call(): HealthCheckResponse {
         return if (consumerHaveStarted.asBoolean) {
-            HealthCheckResponse.up("Kafka Consumers caught up")
+            HealthCheckResponse.up("Event Consumers caught up")
         } else HealthCheckResponse.down(
             "Consumers aren't caught up yes"
         )

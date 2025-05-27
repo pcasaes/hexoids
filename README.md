@@ -129,15 +129,11 @@ Use the default login `admin` with password `admin`.
 # Architecture
 
 Hexoids is server authoritative and is built around an event driven model.
-It uses Apache Kafka to coordinate between servers nodes, WebGL via Phaser 3 on the client side and
+It uses Vertx to coordinate between servers nodes, WebGL via Phaser 3 on the client side and
 WebSockets for client server communication.
 
-Kafka isn't always the best choice for low latency, but it has some interesting properties that
-were exploited here. Primarily, a node can be started and quickly get caught up to speed by replaying
-logs. In other words the state can be retrieved by replaying all events.
-
 A client request will reach its node which will enqueue some action onto the game model. The game model
-will act upon it and fire a domain event onto Kafka which will the spread that to all nodes. The nodes
+will act upon it and fire a domain event onto a Vertx channel which will the spread that to all nodes. The nodes
 will interpret those domain events and broadcast the corresponding dto to the clients. All domain events and dtos
 are represented in Protobuf.
 
@@ -165,7 +161,7 @@ Groups commands and Event Handlers. POJO only.
 ## Entrypoint layer
 
 Here we have web socket requests and responses as well as asynchronous requests from domain events. This layer relies on
-CDI, Kafka, Vert.x (web sockets). 
+CDI, Vert.x (web sockets). 
 
 
 ## Infrastructure Layer
@@ -197,10 +193,6 @@ This is where the application configuration and wiring happens. This layer lever
     Right now nothing gets persisted long term. It would be interesting to
     persist certain player information like K/D and Hit miss ratio's. As well as a permanent
     leader board. For this to work properly though we would need authentication.
-
-* Look into migrating the Kafka client to reactive streams
-
-    This promises to reduce the code base.
 
 ## Game Play
 
