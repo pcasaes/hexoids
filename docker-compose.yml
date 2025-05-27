@@ -1,30 +1,5 @@
 services:
 
-  hexoids-kafka:
-    build:
-      context: src/main/docker/kafka
-    image: me.pcasaes/kafka
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://hexoids-kafka:29092,PLAINTEXT_HOST://hexoids-kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_OPTS: -javaagent:/var/lib/kafka/jmx_prometheus_javaagent.jar=9080:/var/lib/kafka/prometheus-config.yml
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_NODE_ID: 1
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@hexoids-kafka:29093'
-      KAFKA_LISTENERS: 'PLAINTEXT://hexoids-kafka:29092,CONTROLLER://hexoids-kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Did you forget the update_run.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
-    networks:
-      - service-network
 
   hexoids-nginx-proxy:
     image: jwilder/nginx-proxy
@@ -32,17 +7,6 @@ services:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-    networks:
-      - service-network
-  hexoids-kafka-topic-create:
-    build:
-      context: src/main/docker/topics/
-      dockerfile: Dockerfile
-    image: me.pcasaes/hexoids-topics
-    environment:
-      BROKERS_LIST: hexoids-kafka:9092
-    depends_on:
-      - hexoids-kafka
     networks:
       - service-network
 
@@ -54,10 +18,8 @@ services:
     environment:
       - VIRTUAL_HOST=${HEXOIDS_HOST}
       - VIRTUAL_PORT=8080
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.service.subscriber=false -Dmp.messaging.incomming.score-board-control.enabled=false
-    depends_on:
-      - hexoids-kafka
-      - hexoids-kafka-topic-create
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS}
+      - QUARKUS_PROFILE=api
     networks:
       - service-network
 
@@ -67,9 +29,8 @@ services:
       dockerfile: src/main/docker/Dockerfile.jvm
     image: me.pcasaes/hexoids
     environment:
-      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS} -Dhexoids.service.subscriber=true -Dhexoids.service.client-broadcast.enabled=false
-    depends_on:
-      - hexoids-kafka
+      - JAVA_EXTRA_OPTS=${JAVA_EXTRA_OPTS}
+      - QUARKUS_PROFILE=subscriber
     networks:
       - service-network
 

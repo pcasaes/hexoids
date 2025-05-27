@@ -17,3 +17,9 @@ message EventRecord {
   UUIDKey key = 1;
   pcasaes.hexoids.proto.Event event = 2;
 }
+
+message PlayerScore {
+  pcasaes.hexoids.proto.GUID playerId = 1;
+  int32 score = 2;
+  int64 timestamp = 3;
+}

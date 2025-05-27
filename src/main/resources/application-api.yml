@@ -1,0 +1,4 @@
+hexoids:
+  service:
+    client-broadcast:
+      enabled: true

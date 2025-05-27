@@ -2,15 +2,20 @@ package me.pcasaes.hexoids.core.domain.model
 
 import io.mockk.every
 import io.mockk.mockk
-import me.pcasaes.hexoids.core.domain.model.Clock.Companion.create
+import io.smallrye.mutiny.Uni
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueueFactory
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.newId
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
 import me.pcasaes.hexoids.core.domain.model.ScoreBoard.Companion.create
+import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepository
+import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepositoryFactory
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pcasaes.hexoids.proto.Dto
+import pcasaes.hexoids.record.proto.PlayerScore
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -18,15 +23,52 @@ class ScoreBoardTest {
 
     private val game = mockk<Game>(relaxed = true)
 
+    private val clock = mockk<Clock>()
+
     private lateinit var scoreBoard: ScoreBoard
 
     @BeforeEach
     fun setup() {
         getClientEvents().registerEventDispatcher(null)
+        GameQueueFactory.register {
+            it.run()
+        }
+
+        val store = ConcurrentHashMap<EntityId, PlayerScore>()
+
+        ScoreBoardRepositoryFactory.register(
+            object : ScoreBoardRepository {
+                override fun fetchPlayerScore(playerId: EntityId): Uni<PlayerScore?> {
+                    val r = store[playerId]
+                    return if (r != null) {
+                        Uni.createFrom().item(r)
+                    } else {
+                        Uni.createFrom().nullItem()
+                    }
+                }
+
+                override fun savePlayerScore(playerScore: PlayerScore): Uni<Unit> {
+                    store[EntityId.of(playerScore.playerId)] = playerScore
+                    return Uni.createFrom().nullItem()
+                }
+
+                override fun reset(playerId: EntityId): Uni<Unit> {
+                    store.remove(playerId)
+                    return Uni.createFrom().nullItem()
+                }
+
+                override fun fetchAllScores(): Uni<List<PlayerScore>> {
+                    return Uni.createFrom().item(store.values.toList())
+                }
+            }
+        )
+
 
         GameTopic.setGame(game)
 
-        scoreBoard = create(create())
+        every { clock.getTime() } returns 0L
+
+        scoreBoard = create(clock)
 
         every { game.getScoreBoard() } returns scoreBoard
 
@@ -128,8 +170,11 @@ class ScoreBoardTest {
             ids.add(newId())
         }
 
+        every { clock.getTime() } returns 1000L
+
         for (i in 0..<ScoreBoard.Implementation.SCORE_BOARD_SIZE) {
-            scoreBoard.updateScore(ids[i], ScoreBoard.Implementation.SCORE_BOARD_SIZE - i)
+            val score = ScoreBoard.Implementation.SCORE_BOARD_SIZE - i
+            scoreBoard.updateScore(ids[i], score)
         }
 
         scoreBoard.fixedUpdate(1000L)
@@ -138,6 +183,8 @@ class ScoreBoardTest {
         Assertions.assertTrue(eventReference.get()!!.getEvent().hasScoreBoardUpdated())
         var event = eventReference.get()!!.getEvent().getScoreBoardUpdated()
         Assertions.assertNotNull(event)
+
+        every { clock.getTime() } returns 2000L
 
         val a = newId()
         val b = newId()

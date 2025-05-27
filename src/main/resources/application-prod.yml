@@ -4,3 +4,8 @@ hexoids:
       expunge-since-last-spawn-timeout: 180000
       reset:
         position: rng
+
+  service:
+    subscriber: false
+    client-broadcast:
+      enabled: false

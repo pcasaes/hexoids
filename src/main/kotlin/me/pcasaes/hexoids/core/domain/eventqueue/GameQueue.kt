@@ -9,3 +9,17 @@ package me.pcasaes.hexoids.core.domain.eventqueue
 fun interface GameQueue {
     fun enqueue(event: Runnable)
 }
+
+object GameQueueFactory : () -> GameQueue {
+
+    private lateinit var gameQueue: GameQueue
+
+    fun register(queue: GameQueue) {
+        this.gameQueue = queue
+    }
+
+    override fun invoke(): GameQueue {
+        return gameQueue
+    }
+
+}

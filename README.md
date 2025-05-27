@@ -49,8 +49,6 @@ capable browser or with a [native binary](https://github.com/pcasaes/hexoids-gam
 
 ## Infrastructure
 
-Hexoids uses [Apache Kafka](https://kafka.apache.org/) as its backend
-
 To start infrastructure services run:
 
     ./start-dev.sh
@@ -59,9 +57,6 @@ If you'd like to reset the backend run:
 
     ./clean-dev.sh
 
-You will have to append the following to your `/etc/hosts` file:
-
-    127.0.0.1 hexoids-kafka
 
 ## Start Quarkus
 
@@ -176,7 +171,7 @@ CDI, Kafka, Vert.x (web sockets).
 ## Infrastructure Layer
 
 Here we set up the low latency event loop using the LMAX Disruptor. We also find domain event producers
-and kafka serializers.
+and vertx cluster configuration.
 
 ## Configuration Layer
 
