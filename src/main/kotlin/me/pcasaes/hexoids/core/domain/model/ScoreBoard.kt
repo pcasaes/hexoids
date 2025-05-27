@@ -1,10 +1,15 @@
 package me.pcasaes.hexoids.core.domain.model
 
+import io.smallrye.mutiny.Uni
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueueFactory
 import me.pcasaes.hexoids.core.domain.model.DomainEvent.Companion.create
 import me.pcasaes.hexoids.core.domain.model.DomainEvent.Companion.delete
 import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getDomainEvents
+import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepository
+import me.pcasaes.hexoids.core.domain.repostiory.ScoreBoardRepositoryFactory
 import pcasaes.hexoids.proto.DirectedCommand
 import pcasaes.hexoids.proto.Dto
 import pcasaes.hexoids.proto.Event
@@ -13,9 +18,9 @@ import pcasaes.hexoids.proto.PlayerScoreUpdateCommandDto
 import pcasaes.hexoids.proto.PlayerScoreUpdatedEventDto
 import pcasaes.hexoids.proto.ScoreBoardUpdatedEventDto
 import pcasaes.hexoids.proto.ScoreEntry
+import pcasaes.hexoids.record.proto.PlayerScore
 import java.util.Objects
 import kotlin.collections.MutableMap.MutableEntry
-import kotlin.math.max
 
 interface ScoreBoard {
 
@@ -29,13 +34,14 @@ interface ScoreBoard {
 
     fun consumeFromScoreBoardUpdateTopic(domainEvent: DomainEvent)
 
-    class Implementation(private val clock: Clock) : ScoreBoard {
-        private val scores = HashMap<EntityId, Int>()
-        private val scoresTimestamps = HashMap<EntityId, Long>()
+    class Implementation(
+        private val clock: Clock,
+        private val repositoryFactory: () -> ScoreBoardRepository,
+        private val gameQueueFactory: () -> GameQueue,
+    ) : ScoreBoard {
+        private var lastFixedUpdateTimestamp = 0L
         private val updatedScores = HashMap<EntityId, Int>()
         private val rankedScoreBoard = ArrayList<Entry>()
-
-        private var lastFixedUpdateTimestamp = 0L
 
         override fun updateScore(playerId: EntityId, deltaScore: Int) {
             getDomainEvents().dispatch(
@@ -56,47 +62,65 @@ interface ScoreBoard {
 
         private fun scoreIncreased(event: PlayerScoreIncreasedEventDto) {
             val playerId = of(event.playerId)
-            val currentTimestamp = this.scoresTimestamps[playerId]
-            if (currentTimestamp == null || currentTimestamp <= event.timestamp) {
-                this.scoresTimestamps.put(playerId, event.timestamp)
-                val score = this.scores.getOrDefault(playerId, 0) + event.gained
-                this.scores.put(playerId, score)
-
-                getDomainEvents().dispatch(
-                    create(
-                        GameTopic.SCORE_BOARD_UPDATE_TOPIC.name,
-                        playerId.getId(),
-                        Event.newBuilder()
-                            .setPlayerScoreUpdated(
-                                PlayerScoreUpdatedEventDto.newBuilder()
-                                    .setPlayerId(playerId.getGuid())
-                                    .setScore(score)
-                            )
+            repositoryFactory()
+                .fetchPlayerScore(playerId)
+                .onItem()
+                .transformToUni { playerScore ->
+                    val currentTimestamp = playerScore?.timestamp
+                    val newScore = (playerScore?.score ?: 0) + event.gained
+                    (if (currentTimestamp == null || currentTimestamp <= event.timestamp) {
+                        val newScore = PlayerScore.newBuilder()
+                            .setPlayerId(event.playerId)
+                            .setTimestamp(event.timestamp)
+                            .setScore(newScore)
                             .build()
-                    )
-                )
-            }
+
+                        repositoryFactory().savePlayerScore(newScore)
+                    } else {
+                        Uni.createFrom().nullItem()
+                    }).onItem().transform { newScore }
+                }
+                .onItem()
+                .invoke { newScore: Int ->
+                    gameQueueFactory().enqueue {
+                        getDomainEvents().dispatch(
+                            create(
+                                GameTopic.SCORE_BOARD_UPDATE_TOPIC.name,
+                                playerId.getId(),
+                                Event.newBuilder()
+                                    .setPlayerScoreUpdated(
+                                        PlayerScoreUpdatedEventDto.newBuilder()
+                                            .setPlayerId(playerId.getGuid())
+                                            .setScore(newScore)
+                                    )
+                                    .build()
+                            )
+                        )
+                    }
+                }
+                .subscribe().with { }
+
         }
 
-        private fun scoreReset(playerId: EntityId) {
-            this.scores.remove(playerId)
-            this.scoresTimestamps.remove(playerId)
 
-            getDomainEvents().dispatch(
-                delete(
-                    GameTopic.SCORE_BOARD_UPDATE_TOPIC.name,
-                    playerId.getId()
-                )
-            )
+        private fun scoreReset(playerId: EntityId) {
+            repositoryFactory()
+                .reset(playerId)
+                .onItem()
+                .invoke { _ ->
+                    gameQueueFactory().enqueue {
+                        getDomainEvents().dispatch(
+                            delete(
+                                GameTopic.SCORE_BOARD_UPDATE_TOPIC.name,
+                                playerId.getId()
+                            )
+                        )
+                    }
+                }
+                .subscribe().with { }
         }
 
         private fun scoreUpdated(playerId: EntityId, score: Int) {
-            if (score <= 0) {
-                this.scores.remove(playerId)
-                this.scoresTimestamps.remove(playerId)
-            } else {
-                this.scores.compute(playerId) { _, v -> max(v ?: 0, score) }
-            }
             this.updatedScores.put(playerId, score)
             getClientEvents()
                 .dispatch(
@@ -238,8 +262,13 @@ interface ScoreBoard {
     }
 
     companion object {
-        fun create(clock: Clock): ScoreBoard {
-            return Implementation(clock)
+
+        fun create(
+            clock: Clock,
+            repositoryFactory: () -> ScoreBoardRepository = ScoreBoardRepositoryFactory,
+            gameQueueFactory: () -> GameQueue = GameQueueFactory
+        ): ScoreBoard {
+            return Implementation(clock, repositoryFactory, gameQueueFactory)
         }
     }
 }

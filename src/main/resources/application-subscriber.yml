@@ -1,0 +1,3 @@
+hexoids:
+  service:
+    subscriber: true

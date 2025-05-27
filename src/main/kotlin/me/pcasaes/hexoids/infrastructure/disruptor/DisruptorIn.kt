@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Inject
 import me.pcasaes.hexoids.core.domain.eventqueue.GameQueue
+import me.pcasaes.hexoids.core.domain.eventqueue.GameQueueFactory
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.service.GameLoopService
 import me.pcasaes.hexoids.infrastructure.clock.HRClock.nanoTime
@@ -38,10 +39,16 @@ class DisruptorIn @Inject constructor(
     private lateinit var ringBuffer: RingBuffer<DisruptorInEvent>
     private lateinit var disruptor: Disruptor<DisruptorInEvent>
 
+    private val gameQueue = GameQueue { gameRunnable: Runnable ->
+        this.enqueueGame(gameRunnable)
+    }
+
     init {
         val m = ArrayList<QueueMetric>(1)
         m.add(QueueMetric.of(METRIC_GAME_LOOP_IN))
         this.metrics = m
+
+        GameQueueFactory.register(gameQueue)
     }
 
     @PostConstruct
@@ -118,7 +125,7 @@ class DisruptorIn @Inject constructor(
 
     @Produces
     fun getGameQueueService(): GameQueue {
-        return GameQueue { gameRunnable: Runnable -> this.enqueueGame(gameRunnable) }
+        return gameQueue
     }
 
     private fun translate(event: DisruptorInEvent, runnable: Runnable?) {
