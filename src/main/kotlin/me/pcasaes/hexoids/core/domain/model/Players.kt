@@ -7,6 +7,7 @@ import me.pcasaes.hexoids.core.domain.model.EntityId.Companion.of
 import me.pcasaes.hexoids.core.domain.model.GameEvents.Companion.getClientEvents
 import me.pcasaes.hexoids.core.domain.model.physics.Shockwave.Companion.shipExploded
 import pcasaes.hexoids.proto.BoltsAvailableCommandDto
+import pcasaes.hexoids.proto.ClientPlatforms
 import pcasaes.hexoids.proto.CurrentViewCommandDto
 import pcasaes.hexoids.proto.DirectedCommand
 import pcasaes.hexoids.proto.Dto
@@ -233,8 +234,16 @@ class Players private constructor(
         return this.playerMap.size
     }
 
+    fun getTotalNumberOfPlayersByClientPlatform(clientPlatform: ClientPlatforms): Int {
+        return this.playerMap
+            .values
+            .asSequence()
+            .filter { p -> p.getClientPlatform() == clientPlatform }
+            .count()
+    }
+
     /**
-     * Return the number of players connected this node.
+     * Return the number of players connected to this node.
      * Is weakly consistent and thread safe.
      *
      * @return
