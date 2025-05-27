@@ -31,6 +31,19 @@ class DomainMetrics @Inject constructor(private val metricRegistry: MeterRegistr
             .tags(commonTags)
             .register(metricRegistry)
 
+        ClientPlatforms.entries
+            .forEach { clientPlatform ->
+                Gauge
+                    .builder("total-number-of-players-by-client", this) {
+                        it.getTotalNumberOfPlayersByClientPlatform(
+                            clientPlatform
+                        ).toDouble()
+                    }
+                    .description("Current total number of players by client platform.")
+                    .tags(Tags.of(Tag.of("layer", "domain")).and(Tag.of("client_platform", clientPlatform.name)))
+                    .register(metricRegistry)
+            }
+
         Gauge
             .builder("number-of-connected-players", this) { it.getNumberOfConnectedPlayers().toDouble() }
             .description("Current number of players connected to this node.")
@@ -69,6 +82,10 @@ class DomainMetrics @Inject constructor(private val metricRegistry: MeterRegistr
 
     fun getTotalNumberOfPlayers(): Int {
         return Game.get().getPlayers().getTotalNumberOfPlayers()
+    }
+
+    fun getTotalNumberOfPlayersByClientPlatform(clientPlatform: ClientPlatforms): Int {
+        return Game.get().getPlayers().getTotalNumberOfPlayersByClientPlatform(clientPlatform)
     }
 
     fun getNumberOfConnectedPlayers(): Int {

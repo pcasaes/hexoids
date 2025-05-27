@@ -177,6 +177,8 @@ interface Player : GameObject {
      */
     fun fixedUpdate(timestamp: Long)
 
+    fun getClientPlatforms(): ClientPlatforms
+
     private class Implementation(
         private val id: EntityId,
         private val players: Players,
@@ -241,6 +243,10 @@ interface Player : GameObject {
         private fun setSpawned(spawned: Boolean) {
             this.spawned = spawned
             this.lastSpawnOrUnspawnTimestamp = clock.getTime()
+        }
+
+        override fun getClientPlatforms(): ClientPlatforms {
+            return clientPlatform
         }
 
         private fun getFiredBoltVector(boltSpeed: Float, firedTime: Long): Vector2 {
